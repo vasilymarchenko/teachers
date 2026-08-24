@@ -1,24 +1,23 @@
-**Next.js как fullstack.** Server Actions и Route Handlers дают вам бэкенд в том же проекте. Типы моделей БД идут напрямую в компоненты, без слоя DTO. Для однопользовательского приложения с нагрузкой «один учитель» это не компромисс, а честная экономия.
+**Next.js as fullstack.** Server Actions and Route Handlers give you a backend within the same project. Database model types flow directly into components, with no DTO layer. For a single-user app with a "one teacher" load, that's not a compromise — it's a fair economy.
 
-**Claude Code.** Это практический аргумент, не маркетинговый: на Next.js + Tailwind + shadcn/ui у модели радикально больше качественного материала, чем на Blazor или ASP.NET+React связке. Итерации по UI будут заметно быстрее и точнее — а UI здесь основная работа.
+**Claude Code.** This is a practical argument, not a marketing one: on Next.js + Tailwind + shadcn/ui the model has radically more high-quality material to draw on than on a Blazor or ASP.NET+React stack. UI iterations will be noticeably faster and more accurate — and UI is the main body of work here.
 
-**Drizzle вместо Prisma.** Prisma тянет отдельный движок и заметно жрёт память; Drizzle — тонкий слой над SQL, синтаксис близок к тому, что вы знаете по EF Core. Миграции через `drizzle-kit`.
+**Drizzle instead of Prisma.** Prisma drags along a separate engine and eats a fair amount of memory; Drizzle is a thin layer over SQL, with syntax close to what you already know from EF Core. Migrations go through `drizzle-kit`.
 
-**PostgreSQL, не SQLite.** SQLite для одного пользователя технически достаточно, но вы прямо закладываете переход на мультипользовательский режим. Postgres в Docker ест ~80–120 МБ RAM — на CX23 это ничто, а миграцию потом делать не придётся.
+**PostgreSQL, not SQLite.** SQLite would be technically sufficient for a single user, but you're deliberately laying the groundwork for a multi-user mode. Postgres in Docker uses ~80–120 MB of RAM — nothing on a CX23 — and you won't need to migrate later.
 
-## Полный стек
+## Full stack
 
-|Слой|Выбор|
+|Layer|Choice|
 |---|---|
 |Frontend + Backend|Next.js 15, TypeScript|
-|Стилизация|Tailwind + shadcn/ui|
+|Styling|Tailwind + shadcn/ui|
 |ORM|Drizzle|
-|БД|PostgreSQL 16 (Docker)|
-|Auth|better-auth (проще Auth.js, из коробки готов к мультитенантности)|
-|Валидация|Zod (он же — схема для structured output от ИИ)|
-|ИИ|`@anthropic-ai/sdk`, tool use для structured output|
-|Фоновые задачи|таблица-очередь + `node-cron`. BullMQ/Redis на этом этапе — лишняя сущность|
-|Reverse proxy|Caddy (автоматический TLS)|
-|Деплой|Docker Compose + GitHub Actions → GHCR → `docker compose pull`|
+|Database|PostgreSQL 16 (Docker)|
+|Auth|better-auth (simpler than Auth.js, multi-tenancy-ready out of the box)|
+|Validation|Zod (also used as the schema for structured output from AI)|
+|AI|`@anthropic-ai/sdk`, tool use for structured output|
+|Background jobs|a queue table + `node-cron`. BullMQ/Redis would be an unnecessary entity at this stage|
+|Reverse proxy|Caddy (automatic TLS)|
+|Deploy|Docker Compose + GitHub Actions → GHCR → `docker compose pull`|
 
-Один нюанс по деплою: **не собирайте Next.js на самом VPS**. На shared vCPU это займёт 

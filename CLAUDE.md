@@ -28,4 +28,6 @@ This repository is in the pre-code planning stage. Only `specs/tech-stack.md` ex
 ## Language requirements
 
 - All UI text must be in Ukrainian.
+- All product-level specifications must be in Ukrainian.
+- Technical documentation (design and architecture documentation, implementation plans)
 - When responding to the user in chat: reply in Ukrainian if the user's prompt is in Ukrainian or Russian; reply in English if the user's prompt is in English.
