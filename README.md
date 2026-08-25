@@ -6,7 +6,7 @@ The teacher keeps two parallel schedules — the lessons they teach themselves, 
 
 Ukrainian UI. Single user for now, multi-tenant later.
 
-See [`specs/specification.md`](specs/specification.md) for the full product specification (in Ukrainian).
+See [`docs/specs/specification.md`](docs/specs/specification.md) for the full product specification (in Ukrainian).
 
 ## Planned stack
 
@@ -18,12 +18,16 @@ See [`specs/specification.md`](specs/specification.md) for the full product spec
 | Database | PostgreSQL 16 (Docker) |
 | Auth | better-auth |
 | Validation | Zod |
-| AI | `@anthropic-ai/sdk`, tool use for structured output |
-| Background jobs | queue table + `node-cron` |
+| Dates | `date-fns` (+ `uk` locale) |
+| Tests | Vitest (unit tests for the schedule domain) |
+| Printing | `@media print` on a `/print/...` route; server-side PDF deferred |
 | Reverse proxy | Caddy (automatic TLS) |
 | Deploy | Docker Compose + GitHub Actions → GHCR → `docker compose pull` |
 
-Rationale for these choices: [`specs/tech-stack.md`](specs/tech-stack.md).
+Background jobs and AI are deliberately out of the first release — see the "Deliberately not in the first release" table in the stack doc.
+
+Rationale for these choices: [`docs/tech-stack.md`](docs/tech-stack.md).
+Application architecture: [`docs/architecture/architect-overview.md`](docs/architecture/architect-overview.md).
 
 ## Status
 
