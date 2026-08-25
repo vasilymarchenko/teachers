@@ -5,9 +5,9 @@ title: Student contact structure — one contact or several with roles
 status: open
 depends_on: []
 refs:
-  - docs/architecture/architect-overview.md#10.5
-  - docs/specs/specification.md#12.2
-  - docs/specs/specification.md#9
+  - docs/architecture/architect-overview.md §10.5
+  - docs/specs/specification.md §12.2
+  - docs/specs/specification.md §9
 ---
 
 ## Question
@@ -28,4 +28,5 @@ students table.
 
 ## Needed from
 
-The teacher, before the class-list work starts. No effect on the MVP.
+The teacher, before the class-list work starts. No effect on the MVP; there is
+no ticket for it yet, and none is expected before the second phase.

@@ -5,10 +5,10 @@ title: Schedule domain — today, parity, calendar rules, boundaries, expand
 status: todo
 depends_on: [T-001, T-002]
 refs:
-  - docs/architecture/architect-overview.md#2
-  - docs/architecture/architect-overview.md#3
-  - docs/architecture/architect-overview.md#5
-  - docs/architecture/architect-overview.md#8.5
+  - docs/architecture/architect-overview.md §2
+  - docs/architecture/architect-overview.md §3
+  - docs/architecture/architect-overview.md §5
+  - docs/architecture/architect-overview.md §8.5
 ---
 
 ## Goal

@@ -5,9 +5,9 @@ title: Server-side PDF renderer, if one is ever needed
 status: open
 depends_on: []
 refs:
-  - docs/architecture/architect-overview.md#10.4
-  - docs/architecture/architect-overview.md#6
-  - docs/architecture/architect-overview.md#9
+  - docs/architecture/architect-overview.md §10.4
+  - docs/architecture/architect-overview.md §6
+  - docs/architecture/architect-overview.md §9
 ---
 
 ## Question

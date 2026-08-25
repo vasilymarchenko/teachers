@@ -5,9 +5,9 @@ title: Drizzle schema, first migration, and the overlap constraint test
 status: todo
 depends_on: [T-002, T-003]
 refs:
-  - docs/architecture/architect-overview.md#3.2
-  - docs/architecture/architect-overview.md#4
-  - docs/architecture/architect-overview.md#8.4
+  - docs/architecture/architect-overview.md §3.2
+  - docs/architecture/architect-overview.md §4
+  - docs/architecture/architect-overview.md §8.4
 ---
 
 ## Goal
@@ -27,7 +27,9 @@ proven by a test that talks to a real Postgres.
 - [ ] Integration test: a gap between two versions is accepted (overview §3.2 —
       holes are legal).
 - [ ] Seed script runs against a clean database and produces the T-001 fixture
-      scenario.
+      scenario. The fixture document is the single source for that scenario —
+      the seed is derived from it, and the T-005 test expectations are too;
+      neither restates it independently.
 - [ ] `drizzle-kit migrate` documented in `README.md` as an explicit deploy step.
 
 ## Notes

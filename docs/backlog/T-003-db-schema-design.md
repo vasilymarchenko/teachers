@@ -5,9 +5,9 @@ title: Detailed DB schema design document
 status: todo
 depends_on: [T-001]
 refs:
-  - docs/architecture/architect-overview.md#3
-  - docs/architecture/architect-overview.md#4
-  - docs/architecture/architect-overview.md#8
+  - docs/architecture/architect-overview.md §3
+  - docs/architecture/architect-overview.md §4
+  - docs/architecture/architect-overview.md §8
   - docs/architecture/glossary.md
 ---
 

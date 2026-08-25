@@ -6,7 +6,7 @@ status: todo
 depends_on: []
 refs:
   - docs/tech-stack.md
-  - docs/architecture/architect-overview.md#2
+  - docs/architecture/architect-overview.md §2
 ---
 
 ## Goal

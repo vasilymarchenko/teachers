@@ -5,9 +5,9 @@ title: Does a full break week consume a parity position?
 status: open
 depends_on: []
 refs:
-  - docs/architecture/architect-overview.md#10.1
-  - docs/architecture/architect-overview.md#3.5
-  - docs/specs/specification.md#4
+  - docs/architecture/architect-overview.md §10.1
+  - docs/architecture/architect-overview.md §3.5
+  - docs/specs/specification.md §4
 ---
 
 ## Question

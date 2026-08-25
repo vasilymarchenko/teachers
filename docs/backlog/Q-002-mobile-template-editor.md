@@ -5,8 +5,8 @@ title: Mobile interaction pattern for the weekly template editor
 status: open
 depends_on: []
 refs:
-  - docs/architecture/architect-overview.md#10.2
-  - docs/specs/specification.md#1
+  - docs/architecture/architect-overview.md §10.2
+  - docs/specs/specification.md §1
 ---
 
 ## Question
@@ -32,5 +32,5 @@ not depend on this at all.
 
 ## Needed from
 
-A design decision before UI work starts. Blocks T-007 and the future template
-editor ticket; blocks nothing before them.
+A design decision before UI work starts. Blocks T-007 and T-010; blocks nothing
+before them.
