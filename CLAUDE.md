@@ -10,6 +10,7 @@ This repository is in the pre-code planning stage — no application code, packa
 - `docs/tech-stack.md` — stack and its rationale
 - `docs/architecture/architect-overview.md` — application architecture: data model, layers, trade-offs (§9) and open questions (§10)
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
+- `docs/backlog/` — the work tracker: one file per ticket (`T-NNN`) and per open question (`Q-NNN`), index in `docs/backlog/README.md`, conventions in `docs/backlog/CLAUDE.md`. There is no external tracker; a ticket states what to do and when it is done, and references the architecture document rather than restating it
 
 Re-run `/init` once the project scaffold and source files exist so this document can be expanded with real build/lint/test commands.
 
@@ -46,6 +47,7 @@ Language is chosen by **audience**, not by file type. If a teacher could read th
 
 **English (technical level — only developers read it):**
 - code, identifiers, code comments, commit messages, PR descriptions;
+- the backlog — `docs/backlog/**`;
 - detailed design documents, ADRs, implementation plans, `docs/tech-stack.md`, `README.md`.
 
 **Architecture (the bridge between the two) — `docs/architecture/**`:**
