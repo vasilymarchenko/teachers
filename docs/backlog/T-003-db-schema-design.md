@@ -5,6 +5,7 @@ title: Detailed DB schema design document
 status: todo
 depends_on: [T-001]
 refs:
+  - docs/architecture/design/expand-fixtures.md
   - docs/architecture/architect-overview.md §3
   - docs/architecture/architect-overview.md §4
   - docs/architecture/architect-overview.md §8
@@ -30,7 +31,10 @@ rationale rather than repeating it.
 - [ ] `TemplateSlot` payload split by `view` as decided in overview §3.3, with
       the Zod boundary named as the place `view`-specific validation happens.
 - [ ] `boundaryDate` + `boundaryKind` pairs modelled per overview §8.1 wherever
-      a symbolic boundary is stored.
+      a symbolic boundary is stored, with `boundaryDate` exclusive.
+- [ ] `NonTeachingWeekdayRule` has a `validFrom` resolved at write time as well as
+      its boundary; without one the rule reaches back over dates that have already
+      passed (`docs/architecture/design/expand-fixtures.md` §9, F-3).
 - [ ] Migration order stated, plus which constraints must exist before the
       first seed run.
 - [ ] A `seed` script is specified: Ukrainian demo data (root `CLAUDE.md`
