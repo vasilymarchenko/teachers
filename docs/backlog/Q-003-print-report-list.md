@@ -5,9 +5,9 @@ title: Which printed reports are actually required
 status: open
 depends_on: []
 refs:
-  - docs/architecture/architect-overview.md#10.3
-  - docs/specs/specification.md#12.1
-  - docs/specs/specification.md#7
+  - docs/architecture/architect-overview.md §10.3
+  - docs/specs/specification.md §12.1
+  - docs/specs/specification.md §7
 ---
 
 ## Question
@@ -28,4 +28,6 @@ subject per semester are derivable from `expand()`, but have to be known about.
 
 ## Needed from
 
-The teacher, before print work starts. Does not affect the schema.
+The teacher, before the reports beyond the weekly schedule are built. Does not
+affect the schema, and does not block T-013 — that ticket builds the print
+mechanism and the one report already named in the specification.

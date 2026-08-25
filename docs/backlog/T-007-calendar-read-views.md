@@ -3,10 +3,10 @@ id: T-007
 type: ticket
 title: Calendar read views — day, week, month, year
 status: blocked
-depends_on: [T-005, T-006, Q-002]
+depends_on: [T-005, T-008, T-014, Q-002]
 refs:
-  - docs/architecture/architect-overview.md#5
-  - docs/specs/specification.md#6
+  - docs/architecture/architect-overview.md §5
+  - docs/specs/specification.md §6
 ---
 
 ## Goal
@@ -34,4 +34,5 @@ switch. Read-only: no editing of templates or overrides in this ticket.
 ## Notes
 
 Blocked on Q-002 only for the layout pattern — the data path is ready as soon as
-T-005 and T-006 land.
+T-005 and T-008 land. Read-only by design: writing is T-010 (templates) and
+T-011 (day overrides).

@@ -5,10 +5,10 @@ title: Golden fixtures for expand() — the hard-week walkthrough
 status: todo
 depends_on: []
 refs:
-  - docs/architecture/architect-overview.md#3
-  - docs/architecture/architect-overview.md#11
-  - docs/specs/specification.md#4
-  - docs/specs/specification.md#5
+  - docs/architecture/architect-overview.md §3
+  - docs/architecture/architect-overview.md §11
+  - docs/specs/specification.md §4
+  - docs/specs/specification.md §5
 ---
 
 ## Goal
@@ -41,3 +41,6 @@ not a throwaway sanity check.
       not by running code.
 
 ## Notes
+
+This document is the single source for the hard-week scenario: the T-005 Vitest
+expectations and the T-004 seed script are both derived from it.

@@ -5,8 +5,8 @@ title: Auth boundary and user_id query discipline
 status: todo
 depends_on: [T-004]
 refs:
-  - docs/architecture/architect-overview.md#8.3
-  - docs/architecture/architect-overview.md#8.4
+  - docs/architecture/architect-overview.md §8.3
+  - docs/architecture/architect-overview.md §8.4
 ---
 
 ## Goal

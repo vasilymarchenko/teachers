@@ -37,15 +37,26 @@ title: Short imperative title
 status: todo          # tickets:   todo | in-progress | blocked | done
                       # questions: open | answered
 depends_on: []        # list of ids, e.g. [T-002, Q-002]
-refs: []              # paths into docs/, with a section anchor where useful
+refs: []              # paths into docs/, with a section reference where useful
 ---
 ```
+
+**`refs` notation.** A section is referenced as `path §N`, not as a URL fragment:
+`docs/architecture/architect-overview.md §3.2`. GitHub slugifies a heading from
+its full text, so `...md#3.2` resolves to nothing at all; `§3.2` is unambiguous
+and survives a reworded heading. The section numbers in `architect-overview.md`
+and `specification.md` are stable — the prose around them is not.
 
 `status` lives **only** in the frontmatter — that is the authoritative value.
 `README.md` is derived data: it mirrors `id`, `title`, `status` and `depends_on`
 for reading convenience, and holds no field that is not derived from the
 frontmatter. (The questions table's *Blocks* column is the inverse of the other
 items' `depends_on`, so it too changes when a `depends_on` changes.)
+
+A question that blocks no existing item writes `—` with a short parenthetical
+saying where the answer will land. Never name work that has no item file: an
+un-ticketed name in *Blocks* cannot be checked against any `depends_on`, so it
+stops being derived data and starts being prose that rots.
 
 **Any edit to an item's `id`, `title`, `status` or `depends_on` obliges you to
 update `README.md` in the same commit.** The same goes for adding, deleting or
