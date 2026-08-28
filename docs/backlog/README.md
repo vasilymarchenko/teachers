@@ -11,7 +11,7 @@ for reading. Order is priority; the ID number is not.
 | ID | Title | Status | Depends on |
 |---|---|---|---|
 | [T-002](T-002-project-scaffold.md) | Project scaffold — Next.js, Drizzle, Vitest, Postgres in Compose | todo | — |
-| [T-001](T-001-expand-fixtures.md) | Golden fixtures for `expand()` — the hard-week walkthrough | todo | — |
+| [T-001](T-001-expand-fixtures.md) | Golden fixtures for `expand()` — the hard-week walkthrough | done | — |
 | [T-003](T-003-db-schema-design.md) | Detailed DB schema design document | todo | T-001 |
 | [T-004](T-004-drizzle-schema-migration.md) | Drizzle schema, first migration, and the overlap constraint test | todo | T-002, T-003 |
 | [T-005](T-005-domain-schedule-functions.md) | Schedule domain — today, parity, calendar rules, boundaries, expand | todo | T-001, T-002 |
@@ -36,6 +36,7 @@ Each mirrors a section of `docs/architecture/architect-overview.md` §10.
 | [Q-001](Q-001-parity-across-breaks.md) | Does a full break week consume a parity position? | open | — (default lives in `parity.ts`) |
 | [Q-003](Q-003-print-report-list.md) | Which printed reports are actually required | open | — (only the reports beyond the first) |
 | [Q-005](Q-005-student-contacts.md) | Student contact structure — one contact or several with roles | open | — (second phase, no ticket yet) |
+| [Q-006](Q-006-is-taught-by-me-matching.md) | How `isTaughtByMe` matches a CLASS lesson to an OWN lesson | open | — (default pinned in `design/expand-fixtures.md` §8.6) |
 | [Q-004](Q-004-server-pdf-renderer.md) | Server-side PDF renderer, if one is ever needed | open | — (deferred with the feature) |
 
 ## Dependency shape
@@ -56,10 +57,11 @@ T-001 fixtures ──┴──> T-003 schema doc ──> T-004 schema+migration 
                                                    └──> T-010 template editor
 ```
 
-T-001 and T-002 have no dependencies and are two parallel tracks — the paper
+T-001 and T-002 had no dependencies and were two parallel tracks — the paper
 track and the code track — rather than a ranked pair; T-002 is listed first only
-because nothing is runnable before it. Only UI work waits on an open question;
-the schema and domain track is unblocked.
+because nothing is runnable before it. T-001 is done: its output,
+`docs/architecture/design/expand-fixtures.md`, is the input T-003 and T-005 read.
+Only UI work waits on an open question; the schema and domain track is unblocked.
 
 ## Coverage
 
