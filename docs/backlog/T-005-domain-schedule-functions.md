@@ -19,8 +19,11 @@ product and it is fully testable before any UI exists.
 
 ## Acceptance criteria
 
-- [ ] `lib/time/today.ts` returns the current date in `Europe/Kyiv`; no
-      `new Date()` anywhere else in domain code (overview §8.5).
+- [x] `lib/time/today.ts` returns the current date in `Europe/Kyiv`; no
+      `new Date()` anywhere else in domain code (overview §8.5). Landed in
+      T-002 — the scaffold needed it — and is covered by
+      `lib/time/today.test.ts`. What remains here is the second half: keeping
+      `new Date()` out of the rest of the domain as it is written.
 - [ ] `parity.ts` implements the formula in overview §3.5, ISO weeks, Monday
       start; the break-week default (Q-001) lives here and nowhere else.
 - [ ] `calendarRules.ts` answers "is this date non-teaching", covering both

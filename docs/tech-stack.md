@@ -16,7 +16,7 @@
 
 |Layer|Choice|
 |---|---|
-|Frontend + Backend|Next.js 15, TypeScript|
+|Frontend + Backend|Next.js 16, TypeScript|
 |Styling|Tailwind + shadcn/ui|
 |ORM|Drizzle|
 |Database|PostgreSQL 16 (Docker)|
