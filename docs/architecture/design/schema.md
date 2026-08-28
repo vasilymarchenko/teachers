@@ -35,7 +35,7 @@ teacher reads those (root `CLAUDE.md`).
 
 `id`, `user_id`, `created_at` and `updated_at` are housekeeping columns, not
 domain terms; they are covered by `glossary.md` §7 and are not repeated in the
-per-table coverage check in §9.
+per-table coverage check in §11.
 
 **Why `user_id` is `text` and not `uuid`.** The referenced `user` table is
 better-auth's, and better-auth's default id generator produces a string, not a
@@ -104,7 +104,6 @@ Eleven tables, ten of them ours. `ResolvedLesson`, `ResolvedDay`, `parity` and
 |---|---|---|---|---|
 | `id` | `uuid` | no | `gen_random_uuid()` | |
 | `user_id` | `text` | no | | → `user(id)` `ON DELETE CASCADE` |
-| `name` | `text` | no | | e.g. «2026–2027» |
 | `date_from` | `date` | no | | inclusive |
 | `date_to` | `date` | no | | **inclusive** — the last day of the year |
 | `created_at` | `timestamptz` | no | `now()` | |
@@ -119,11 +118,18 @@ EXCLUDE USING gist (
 )
 ```
 
-`INDEX academic_year_user_from_idx ON academic_year (user_id, date_from)`.
+**No separate index.** The exclusion constraint's GiST index on
+`(user_id, daterange(date_from, date_to, '[]'))` starts with `user_id` and
+answers the only lookup there is — the year covering a date.
 
-**No `initial_parity` column.** Overview §4 lists «початкова парність» on
-`AcademicYear`, and §3.5 says the initial value **is** a `ParityAnchor`
-(«окремої сутності "скидання" немає»). Storing it twice makes the two able to
+**No `name` column.** A year is identified by its dates; «2026–2027» is rendered
+from `date_from`/`date_to`, not stored. There is no product term for a year's
+label in `glossary.md`, and inventing one to hold a string the UI can compute is
+the kind of column §11 exists to catch.
+
+**No `initial_parity` column.** Overview §4 listed «початкова парність» on
+`AcademicYear` until this commit, while §3.5 said the initial value **is** a
+`ParityAnchor` («окремої сутності "скидання" немає»). Storing it twice makes the two able to
 disagree, and `parity()` reads only anchors. The year-setup form's «рік
 починається з чисельника» writes a `ParityAnchor` at `date_from` and nothing
 else. Overview §4 and `glossary.md` §1 have been corrected in the same commit as
@@ -157,8 +163,10 @@ EXCLUDE USING gist (
 )
 ```
 
-`INDEX semester_user_year_idx ON semester (user_id, academic_year_id, index)` —
-covered by the unique constraint's index, which already starts with `user_id`.
+**No separate index.** `semester_year_index_uq` already indexes
+`(user_id, academic_year_id, index)`, and the exclusion constraint indexes
+`(user_id, daterange(...))` for the «which semester covers this date» lookup
+`boundaries.ts` needs. Both start with `user_id`.
 
 `index` is a reserved word in some dialects but not in PostgreSQL; Drizzle quotes
 identifiers anyway. The name comes from `glossary.md` §1 and is kept.
@@ -229,10 +237,13 @@ one exception: it writes `valid_from = academic_year.date_from` for the rules it
 creates as part of the year frame, which is what makes the fixture's R1–R3 legal
 from 2026-09-01.
 
-**Overlapping rules for the same weekday are allowed.** Two rules covering the
-same Friday are redundant, not contradictory: the predicate is an OR. Adding an
-exclusion constraint would reject the legitimate «methodical day, paused, resumed
-later» sequence only if the ranges touched, and buys nothing otherwise.
+**Overlapping rules for the same weekday are allowed.** `isNonTeaching` is an
+OR over rows, so a second rule covering a Friday already covered changes no
+answer — the rows are redundant, never contradictory. A non-overlap exclusion
+would buy nothing and would break the ordinary «extend the methodical day past
+the winter break» edit, which writes a new rule whose range starts inside the
+old one's. The cost is a rule list that can contain duplicates; T-009 dedupes in
+the UI, not in the schema.
 
 **There is no implicit weekend.** Saturday and Sunday are non-teaching only
 because rows say so (fixtures §9, F-3, "Related"). Year setup creates R2/R3.
@@ -274,8 +285,8 @@ user, not to the year — that is overview §4 read literally; see finding F-2.
 CONSTRAINT parity_anchor_user_date_uq UNIQUE (user_id, date)
 ```
 
-`INDEX` — the unique constraint's index `(user_id, date)` serves the only query
-there is: the last anchor with `date <= d`.
+**No separate index.** The unique constraint's index `(user_id, date)` serves
+the only query there is: the last anchor with `date <= d`.
 
 The year's initial value is a row here, not a column on `academic_year` (§4.1).
 An anchor need not fall on a Monday; fixtures §5 F-1 pins what happens when it
@@ -399,9 +410,10 @@ CONSTRAINT day_override_payload_ck
 CONSTRAINT day_override_slot_uq UNIQUE (user_id, date, view, lesson_number)
 ```
 
-`INDEX day_override_user_date_idx ON day_override (user_id, date, view)` — the
-range read `expand()` does over a window; the unique constraint's index also
-starts with `user_id` and serves the single-slot lookup.
+**No separate index.** `day_override_slot_uq` indexes
+`(user_id, date, view, lesson_number)`, whose leading columns are exactly the
+range read `expand()` does over a window (`user_id`, `date` range, `view`); a
+second index on a prefix of it would be dead weight.
 
 The `payload` check is the whole of «`CLEARED` is a tombstone»: the row exists,
 the content is empty, and that is what distinguishes «урок скасовано» from «no
@@ -570,10 +582,12 @@ Rules that go with it:
   `jsonb` is `unknown` at the type level; a cast is not a check. This is cheap —
   the cost is a `safeParse` per slot on a window that already costs a few
   thousand slot computations (overview §9).
-- The `OWN` payload has exactly two keys and the `CLASS` payload exactly four
-  (specification §5.1). `zoomLink` and `note` are optional; `subject`,
-  `className` and `teacherName` are not. The fixture writes `—` for an absent
-  optional field, meaning **the key is absent**, not an empty string.
+- The `OWN` payload has two keys, both required; the `CLASS` payload has four,
+  of which `subject` and `teacherName` are required and `zoomLink` and `note`
+  are optional (specification §5.1). No other key is accepted — `z.object()`
+  strips unknown keys, and the write stores the parsed object, not the input.
+  The fixture writes `—` for an absent optional field, meaning **the key is
+  absent**, not an empty string.
 - A `day_override` payload has the same shape as a slot payload of the same
   `view`. An `EDIT` or a `SUBSTITUTION` renders as a lesson, so it carries a
   lesson's fields.
@@ -594,15 +608,15 @@ Overview §8.4 needs three things to be true of every profile table. They are:
 
 | Table | `user_id NOT NULL` | Index starting with `user_id` |
 |---|---|---|
-| `academic_year` | ✓ | `academic_year_user_from_idx`, and the exclusion's GiST index |
-| `semester` | ✓ | `semester_year_index_uq`, and the exclusion's GiST index |
+| `academic_year` | ✓ | the exclusion constraint's GiST index |
+| `semester` | ✓ | `semester_year_index_uq`, and the exclusion constraint's GiST index |
 | `non_teaching_period` | ✓ | `non_teaching_period_user_range_idx` |
 | `non_teaching_weekday_rule` | ✓ | `ntwr_user_weekday_idx` |
 | `bell_schedule` | ✓ | `bell_schedule_user_number_uq` |
 | `parity_anchor` | ✓ | `parity_anchor_user_date_uq` |
 | `schedule_template` | ✓ | the exclusion constraint's GiST index |
 | `template_slot` | ✓ | `template_slot_user_template_idx` |
-| `day_override` | ✓ | `day_override_user_date_idx` |
+| `day_override` | ✓ | `day_override_slot_uq` |
 | `event` | ✓ | `event_user_date_idx` |
 
 The third thing — `userId` as the first argument of every query, taken only from
@@ -663,7 +677,7 @@ Two things about the custom files:
 ### 9.1 What must exist before the first seed run
 
 All of 0000–0002. The seed is run after `drizzle-kit migrate` has applied the
-whole set, never against a partially migrated database, because three of its
+whole set, never against a partially migrated database, because several of its
 properties are asserted by constraints rather than by the seed itself:
 
 | Constraint | What the seed proves by not violating it |
@@ -711,6 +725,10 @@ better-auth expects. Credentials come from the environment
 (`SEED_USER_EMAIL`, `SEED_USER_PASSWORD`), with a development default; they are
 never committed.
 
+**Y1's «initial parity `NUMERATOR`»** (fixtures §3.1) is written as anchor A1
+and nowhere else — `academic_year` has no parity column (§4.1, F-1). The fixture
+lists the value on both Y1 and A1; the seed writes it once.
+
 **`valid_from` on R1–R3** is `2026-09-01`, the year's `date_from` — they are
 created as part of the year frame (§4.4). Not `today()`: the seed is writing a
 past scenario, and a rule dated today would make every Friday before it teaching.
@@ -738,8 +756,8 @@ names, class names, teacher names, notes, the period names («Осінні ка�
 comments are English (root `CLAUDE.md`).
 
 **Size.** The fixture is 33 days × 2 views of expected output from about 70
-stored rows (44 of them `template_slot`). That is enough to open every calendar view against real data and to
-hit every branch of `expand()` — a version gap, an absent slot, a full break
+stored rows, 44 of them `template_slot`. That is enough to open every calendar
+view against real data and to hit every branch of `expand()` — a version gap, an absent slot, a full break
 week, a mid-week version switch, a mid-week parity reset, and all three override
 kinds both with and without a slot underneath.
 
@@ -753,7 +771,6 @@ T-003's last acceptance criterion. Each table and each domain column, against
 | Name in the schema | Glossary entry |
 |---|---|
 | `academic_year`, `date_from`, `date_to` | §1 `AcademicYear` |
-| `academic_year.name` | §1 — the year's own label, same `name` as `NonTeachingPeriod` |
 | `semester`, `index` | §1 `Semester` |
 | `non_teaching_period`, `kind`, `name` | §1 `NonTeachingPeriod` and its three `kind` values |
 | `non_teaching_weekday_rule`, `weekday` | §1 `NonTeachingWeekdayRule` |
@@ -773,8 +790,10 @@ T-003's last acceptance criterion. Each table and each domain column, against
 | `id`, `user_id`, `created_at`, `updated_at` | §7 — code-only terms, no product counterpart |
 
 Names that are deliberately **absent** from the schema, each because the glossary
-says it is computed: `parity` as a stored week property, `replacedOriginal`,
-`isTaughtByMe`, `ResolvedLesson`, `ResolvedDay`, `origin`.
+says it is computed rather than stored: the parity **of a date or a week**
+(`parity` is a column only on `parity_anchor` and `template_slot`, where it names
+which week a row belongs to), `replacedOriginal`, `isTaughtByMe`,
+`ResolvedLesson`, `ResolvedDay`, `origin`.
 
 ---
 
@@ -800,7 +819,7 @@ lessons in the past too, because `ResolvedLesson` takes its times from the
 current row (overview §5). That is a rewrite of displayed history, which
 specification §5.2 forbids for the schedule — the schedule itself is safe,
 only the clock times move. Left as is: a second academic year is the trigger, and
-the fix is a `academic_year_id` column plus a copy at year rollover, on a table
+the fix is an `academic_year_id` column plus a copy at year rollover, on a table
 with at most ten rows per year. Recorded so T-009 does not have to rediscover it.
 
 **F-3 — a `lesson_number` with no `bell_schedule` row has no times.**
