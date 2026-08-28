@@ -50,9 +50,10 @@ Language is chosen by **audience**, not by file type. If a teacher could read th
 - the backlog — `docs/backlog/**`;
 - detailed design documents, ADRs, implementation plans, `docs/tech-stack.md`, `README.md`.
 
-**Architecture (the bridge between the two) — `docs/architecture/**`:**
+**Architecture (the bridge between the two) — `docs/architecture/*.md`, i.e. `architect-overview.md` and `glossary.md`:**
 - written in **Ukrainian prose with English nouns**: the narrative, reasoning and trade-offs are Ukrainian, but every technical entity keeps its English name verbatim — table, type and field names, file paths, layer names, library names, code blocks. Never translate an identifier into Ukrainian; a translated term is exactly where the document loses its link to the code.
 - Rationale: these documents explain *why* the product requirements produce this structure, so they constantly reference the Ukrainian specification.
+- **Exception — `docs/architecture/design/**` is English.** That subtree holds the detailed design documents from the English list above (schema notes, ADRs, golden fixtures, implementation plans). It sits under `docs/architecture/` because it belongs to the same body of work, not because it follows the same language rule: it states mechanics for a developer, not reasoning for a reader of the specification. Ukrainian appears there only inside data a teacher would read — subject names, class names, demo payloads.
 
 **Never keep the same document in two languages.** Documents are split by **level of detail, not by language**:
 - `docs/architecture/architect-overview.md` (Ukrainian) — decisions, module boundaries, trade-offs, open questions;
@@ -60,6 +61,6 @@ Language is chosen by **audience**, not by file type. If a teacher could read th
 
 A detailed document does not restate the overview — it references the relevant section of it. Every fact lives in exactly one place, in exactly one language.
 
-**Glossary.** `docs/architecture/glossary.md` is the single place binding a Ukrainian product term to its English identifier (`заміна → Substitution`, `розгорнутий урок → ExpandedLesson`). A new domain term goes there first, then into the code and the documents.
+**Glossary.** `docs/architecture/glossary.md` is the single place binding a Ukrainian product term to its English identifier (`заміна → DayOverride.kind = SUBSTITUTION`, `розгорнутий урок → ResolvedLesson`). A new domain term goes there first, then into the code and the documents.
 
 **Chat replies:** Ukrainian if the user's prompt is in Ukrainian or Russian; English if the prompt is in English.

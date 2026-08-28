@@ -22,11 +22,11 @@ three hard mechanics collide inside it:
 
 | ISO week | Dates | What happens |
 |---|---|---|
-| 2026-W42 | 10-12 … 10-18 | Baseline week. A one-day `PUBLIC_HOLIDAY`; an `EDIT` override. |
+| 2026-W42 | 10-12 … 10-18 | Baseline week. A one-day `PUBLIC_HOLIDAY`; an `EDIT` override; an override on a **non-teaching Saturday**. |
 | 2026-W43 | 10-19 … 10-25 | Mid-week `ScheduleTemplate` version switch (Wed 10-21). A `CLEARED` override. The `CLASS` gap opens. |
 | 2026-W44 | 10-26 … 11-01 | A **full break week** — seven non-teaching days. |
 | 2026-W45 | 11-02 … 11-08 | First teaching week after the break (the Q-001 default is observable on Mon–Tue), a **mid-week `ParityAnchor` reset** on Wed 11-04, the `FRI` rule expires, the `SUBSTITUTION` falls due. |
-| 2026-W46 | 11-09 … 11-13 | The reset's effect on the following week; a `CLASS`-only `CLEARED`. |
+| 2026-W46 | 11-09 … 11-13 | The reset's effect on the following week; a `CLASS`-only `CLEARED`; the two overrides with **no `TemplateSlot` underneath**. |
 
 Both views (`OWN`, `CLASS`) are expanded over the whole window.
 
@@ -188,10 +188,21 @@ The teacher (`Ковальчук М. І.`) is the class teacher of 7-А, so `MON
 | O3 | 2026-11-05 | 2 | `OWN` | `SUBSTITUTION` | Фізика · 8-А |
 | O4 | 2026-10-22 | 1 | `CLASS` | `EDIT` | Виховна година · Шевченко О. П. · — · «замість уроків» |
 | O5 | 2026-11-09 | 2 | `CLASS` | `CLEARED` | — (tombstone) |
+| O6 | 2026-10-17 | 3 | `OWN` | `EDIT` | Відпрацювання · 7-А |
+| O7 | 2026-11-10 | 2 | `OWN` | `SUBSTITUTION` | Хімія · 8-А |
+| O8 | 2026-11-12 | 3 | `CLASS` | `CLEARED` | — (tombstone) |
 
 O4 sits inside the `CLASS` version gap — there is no `TemplateSlot` under it.
 O5 clears a `CLASS` lesson on a date where the `OWN` view keeps its own
 `lessonNumber = 2`; overrides are keyed by `view` and do not leak across.
+
+O6 sits on a **non-teaching** date — Sat 2026-10-17, made non-teaching by rule
+R2 — and is the only row in the fixture where `isNonTeaching: true` coexists with
+a non-empty `lessons` (§8.7).
+
+O7 and O8 are the two «nothing underneath» cases (§8.8): a `SUBSTITUTION` on a
+`lessonNumber` the template leaves empty, and a `CLEARED` on a `lessonNumber` the
+template leaves empty. Neither is an error; they differ in what they render.
 
 ### 3.8 How the intervals got their values (write timeline)
 
@@ -204,12 +215,15 @@ the shift in §8.4 are reproducible rather than asserted.
 | 2026-08-20 | Weekly template entered for both views. `OWN` boundary `END_OF_SEMESTER` → `validTo = 2026-12-25`; `CLASS` boundary `DATE` → `validTo = 2026-10-21` | OWN-V1 `[09-01, 12-25)`, CLASS-V1 `[09-01, 10-21)` |
 | 2026-10-13 | Override entered on today's lesson | O1 |
 | **2026-10-15** | Substitution entered **for a future date**, 2026-11-05 | O3 |
+| 2026-10-17 | Make-up lesson entered on today — a Saturday that R2 makes non-teaching | O6 |
 | 2026-10-19 | Lesson cancelled on today | O2 |
 | **2026-10-21** | Teacher edits the weekly template. Copy-on-write cuts at `today() = 2026-10-21` (overview §3.2 I1, I2) | OWN-V1 trimmed to `[09-01, **10-21**)`; OWN-V2 `[10-21, 12-25)` created |
 | 2026-10-22 | Override entered on today | O4 |
 | 2026-11-02 | New class schedule entered from today | CLASS-V2 `[11-02, 12-25)`. CLASS-V1 already ended on 10-21, so I2 trims nothing and the gap survives |
 | 2026-11-04 | Parity reset entered from today | anchor A2 |
 | 2026-11-09 | Class lesson cancelled on today | O5 |
+| 2026-11-10 | Substitution entered on today, on a `lessonNumber` the template leaves empty | O7 |
+| 2026-11-12 | Class lesson cancelled on today, with nothing scheduled under it | O8 |
 
 O3 is the interesting one: it was written on 2026-10-15, six days before OWN-V2
 existed and twenty days before A2 existed. Both later writes move what
@@ -287,13 +301,19 @@ entries. `isTaughtByMe` is absent on every lesson below.
 | 2026-10-14 | Wed | `true` (P1) | ⊘ |
 | 2026-10-15 | Thu | `false` | `2 · 09:25–10:10 · Математика · 6-Б · TEMPLATE` |
 | 2026-10-16 | Fri | `true` (R1) | ⊘ |
-| 2026-10-17 | Sat | `true` (R2) | ⊘ |
+| 2026-10-17 | Sat | `true` (R2) | `3 · 10:25–11:10 · Відпрацювання · 7-А · EDIT` |
 | 2026-10-18 | Sun | `true` (R3) | ⊘ |
 
 - 10-13: O1 replaces the payload of the `TUE/2` slot. `origin = EDIT`, no
   `replacedOriginal` — that field belongs to `SUBSTITUTION` only (overview §5).
 - 10-14: the template would have given `1 · Математика · 7-А` and
-  `3 · Інформатика · 7-А`. The non-teaching check runs first and wins.
+  `3 · Інформатика · 7-А`. The non-teaching check suppresses both — it wins over
+  the **template**, and only over the template.
+- **10-17 is a non-teaching day that still has a lesson.** R2 makes the Saturday
+  non-teaching, so the template contributes nothing; O6 is bound to the date and
+  renders anyway. `isNonTeaching` stays `true` **and** `lessons` is non-empty.
+  This is the pair that separates «the template does not expand here» from «the
+  day is blank» — see §8.7.
 
 ### 2026-W43 — `DENOMINATOR`, OWN-V1 → OWN-V2 on Wed
 
@@ -364,10 +384,15 @@ Note that R1 (`boundaryDate = 2026-10-26`, exclusive) stops applying **on**
 | Date | Day | `isNonTeaching` | `lessons` |
 |---|---|---|---|
 | 2026-11-09 | Mon | `false` | `1 · 08:30–09:15 · Математика · 7-А · TEMPLATE`<br>`2 · 09:25–10:10 · Алгебра · 9-А · TEMPLATE` |
-| 2026-11-10 | Tue | `false` | ⊘ |
+| 2026-11-10 | Tue | `false` | `2 · 09:25–10:10 · Хімія · 8-А · SUBSTITUTION`<br>  `replacedOriginal` **absent** |
 | 2026-11-11 | Wed | `false` | `1 · 08:30–09:15 · Математика · 7-А · TEMPLATE`<br>`3 · 10:25–11:10 · Інформатика · 7-А · TEMPLATE` |
 | 2026-11-12 | Thu | `false` | `2 · 09:25–10:10 · Алгебра · 9-А · TEMPLATE` |
 | 2026-11-13 | Fri | `false` | `1 · 08:30–09:15 · Геометрія · 9-А · TEMPLATE` |
+
+- **11-10 is a `SUBSTITUTION` with nothing under it.** OWN-V2 has no
+  `TUE/DENOMINATOR` slot (the same emptiness asserted on 11-03), so there is no
+  original to strike through: `replacedOriginal` is **absent** — not `null`, not
+  an empty string, and not an error. The lesson itself renders normally (§8.8).
 
 O5 (`CLASS`, 11-09, lesson 2) does **not** touch this view: 2026-11-09 keeps
 `2 · Алгебра · 9-А`.
@@ -376,9 +401,11 @@ O5 (`CLASS`, 11-09, lesson 2) does **not** touch this view: 2026-11-09 keeps
 
 ## 7. Expected output — `CLASS` view
 
-`expand(range = [2026-10-12, 2026-11-13], view = CLASS)`. Every lesson carries
-`isTaughtByMe`. Non-teaching dates are identical to §6 (the rules are
-view-independent) and are collapsed here.
+`expand(range = [2026-10-12, 2026-11-13], view = CLASS)` → the same 33
+`ResolvedDay` entries as §6. Every lesson carries `isTaughtByMe`. Which dates are
+non-teaching is identical to §6 — the rules are view-independent — but the tables
+below are written out one row per date all the same, so that both views can be
+transcribed into T-005 without expanding anything by hand.
 
 ### 2026-W42 — `NUMERATOR`, CLASS-V1
 
@@ -388,7 +415,13 @@ view-independent) and are collapsed here.
 | 2026-10-13 | Tue | `false` | ⊘ |
 | 2026-10-14 | Wed | `true` (P1) | ⊘ |
 | 2026-10-15 | Thu | `false` | ⊘ |
-| 2026-10-16 … 10-18 | Fri–Sun | `true` (R1–R3) | ⊘ |
+| 2026-10-16 | Fri | `true` (R1) | ⊘ |
+| 2026-10-17 | Sat | `true` (R2) | ⊘ |
+| 2026-10-18 | Sun | `true` (R3) | ⊘ |
+
+- **10-17 is O6's counterpart.** O6 is an `OWN` override, so the `CLASS` view of
+  the same non-teaching Saturday stays empty. Together with 11-09 (O5) and 11-12
+  (O8) this is the third pair asserting that `DayOverride` is keyed by `view`.
 
 ### 2026-W43 — `DENOMINATOR`, CLASS-V1 → gap on Wed
 
@@ -398,7 +431,9 @@ view-independent) and are collapsed here.
 | 2026-10-20 | Tue | `false` | ⊘ |
 | 2026-10-21 | Wed | `false` | ⊘ (gap) |
 | 2026-10-22 | Thu | `false` | `1 · 08:30–09:15 · Виховна година · Шевченко О. П. · — · «замість уроків» · EDIT · isTaughtByMe = false` |
-| 2026-10-23 … 10-25 | Fri–Sun | `true` (R1–R3) | ⊘ |
+| 2026-10-23 | Fri | `true` (R1) | ⊘ |
+| 2026-10-24 | Sat | `true` (R2) | ⊘ |
+| 2026-10-25 | Sun | `true` (R3) | ⊘ |
 
 - **10-19 shows that `isTaughtByMe` is a per-date fact, not a per-template one.**
   O2 cleared the teacher's own `1 · Математика · 7-А` that day, so the class's
@@ -414,7 +449,19 @@ view-independent) and are collapsed here.
 
 ### 2026-W44 — full break week
 
-All seven dates: `parity: NUMERATOR`, `isNonTeaching: true`, ⊘ — as in §6.
+| Date | Day | `isNonTeaching` | `lessons` |
+|---|---|---|---|
+| 2026-10-26 | Mon | `true` (P2) | ⊘ |
+| 2026-10-27 | Tue | `true` (P2) | ⊘ |
+| 2026-10-28 | Wed | `true` (P2) | ⊘ |
+| 2026-10-29 | Thu | `true` (P2) | ⊘ |
+| 2026-10-30 | Fri | `true` (P2) | ⊘ |
+| 2026-10-31 | Sat | `true` (P2, R2 also matches) | ⊘ |
+| 2026-11-01 | Sun | `true` (P2, R3 also matches) | ⊘ |
+
+All seven carry `parity: NUMERATOR`, exactly as in §6. No `CLASS` version covers
+10-26 … 11-01 either (the gap runs to 11-02), so the week is empty for two
+independent reasons — and would still be empty if either one were removed.
 
 ### 2026-W45 — split parity, CLASS-V2 from Mon
 
@@ -425,7 +472,8 @@ All seven dates: `parity: NUMERATOR`, `isNonTeaching: true`, ⊘ — as in §6.
 | 2026-11-04 | Wed | `NUMERATOR` | `false` | `1 · … Математика · Ковальчук М. І. · https://zoom.us/j/7a-math · — · TEMPLATE · isTaughtByMe = true`<br>`3 · … Інформатика · Ковальчук М. І. · https://zoom.us/j/7a-it · — · TEMPLATE · isTaughtByMe = true` |
 | 2026-11-05 | Thu | `NUMERATOR` | `false` | ⊘ |
 | 2026-11-06 | Fri | `NUMERATOR` | `false` | `2 · 09:25–10:10 · Фізика · Ткаченко Л. В. · https://zoom.us/j/7a-phys · — · TEMPLATE · isTaughtByMe = false` |
-| 2026-11-07 … 11-08 | Sat–Sun | `NUMERATOR` | `true` (R2–R3) | ⊘ |
+| 2026-11-07 | Sat | `NUMERATOR` | `true` (R2) | ⊘ |
+| 2026-11-08 | Sun | `NUMERATOR` | `true` (R3) | ⊘ |
 
 - 11-05: O3 is an `OWN` override and leaves this view empty. CLASS-V2 has no
   Thursday slots.
@@ -443,13 +491,18 @@ All seven dates: `parity: NUMERATOR`, `isNonTeaching: true`, ⊘ — as in §6.
 | 2026-11-12 | Thu | `false` | ⊘ |
 | 2026-11-13 | Fri | `false` | `2 · 09:25–10:10 · Фізика · Ткаченко Л. В. · https://zoom.us/j/7a-phys · — · TEMPLATE · isTaughtByMe = false` |
 
+- **11-12 is a `CLEARED` with nothing under it.** CLASS-V2 has no Thursday
+  slots, so O8 has nothing to gag. The expected result is the unchanged empty
+  day — a tombstone over an absent slot is a no-op, not an error and not a
+  phantom lesson (§8.8).
+
 2026-11-09 lost `2 · Українська мова` to O5, while §6 keeps `2 · Алгебра · 9-А`
 in the `OWN` view for the same date and the same `lessonNumber`. That pair is the
 assertion that `DayOverride` is keyed by `view`.
 
 ---
 
-## 8. The six scenarios, stated as assertions
+## 8. The scenarios, stated as assertions
 
 ### 8.1 Mid-week template version change
 
@@ -504,11 +557,22 @@ rendered; it is never frozen at the moment the substitution was written
 (overview §3.4: «це прийнята поведінка, не баг»). The substituted payload
 itself — `Фізика · 8-А` — is stored and does not move.
 
-Both causes of the shift are exercised at once here on purpose. If only the
-parity had changed, `replacedOriginal` would be `Алгебра · 9-А` (OWN-V2
-`THU/DENOMINATOR`); if only the version had changed, it would be
-`Математика · 5-В` by a different route. A suite that asserts a single expected
-string catches an implementation that freezes either input.
+Both causes of the shift are exercised at once here on purpose, and each one
+alone lands somewhere else:
+
+| What the implementation freezes | Version used | Parity used | `replacedOriginal` |
+|---|---|---|---|
+| nothing (correct) | OWN-V2 | `NUMERATOR` | **`Математика · 5-В`** |
+| the parity, at write time | OWN-V2 | `DENOMINATOR` | `Алгебра · 9-А` |
+| the version, at write time | OWN-V1 | `NUMERATOR` | `Математика · 6-Б` |
+| both | OWN-V1 | `DENOMINATOR` | `Математика · 6-Б` |
+
+Freezing the version is the weaker of the two to detect from this date alone:
+OWN-V1 has the same payload in both `THU` columns, so a frozen version yields the
+write-time value whether or not the parity moved with it. It is still caught here
+— `Математика · 6-Б ≠ Математика · 5-В` — but a suite that wants to tell the last
+two rows apart needs a second date. A single expected string on 2026-11-05
+catches every one of the three wrong rows.
 
 ### 8.5 The gap between versions
 
@@ -542,6 +606,52 @@ Overview §4 described the comparison as `(day, number, parity)`. That wording
 produces a wrong flag on 2026-11-02 lesson 2; §4 has been corrected to name the
 subject as part of the comparison, and the residual weakness of comparing
 free-text subjects is recorded as **Q-006**.
+
+### 8.7 An override on a non-teaching day
+
+Sat 2026-10-17 is non-teaching by rule R2, and O6 puts a make-up lesson on it.
+The expected `ResolvedDay` is
+
+```
+{ date: 2026-10-17, parity: NUMERATOR, isNonTeaching: true,
+  lessons: [ 3 · 10:25–11:10 · Відпрацювання · 7-А · EDIT ] }
+```
+
+— `isNonTeaching: true` **and** a non-empty `lessons`. The two fields are
+independent, and this is the only date in the window where that shows.
+
+The rule, now stated in overview §3.4: `isNonTeaching` suppresses lessons with
+`origin = TEMPLATE` and nothing else. Specification §3.1 («розклад на ці дні не
+створюється») is about the template expanding; specification §5.3 («будь-який
+окремий день можна відредагувати вручну») is about a row the teacher typed on a
+date. A teacher who enters a Saturday make-up lesson, or an event on a holiday,
+must see it — while the date keeps its «канікули / свято» marking, because the
+day is still not a teaching day.
+
+It follows that an implementation must not shortcut `expand()` with «if the date
+is non-teaching, return an empty day» — the overrides for that date still have to
+be read. The same holds for the `CLASS` view of 10-17, which stays empty only
+because O6 is an `OWN` row.
+
+### 8.8 An override with no `TemplateSlot` underneath
+
+All three `kind`s occur in the window with nothing underneath them, and the three
+behave differently:
+
+| Override | Date | What is under it | Expected |
+|---|---|---|---|
+| O4 `EDIT` | 2026-10-22 `CLASS` | nothing (version gap) | renders as an ordinary added lesson |
+| O7 `SUBSTITUTION` | 2026-11-10 `OWN` | nothing (no slot for that parity) | renders; **`replacedOriginal` absent** |
+| O8 `CLEARED` | 2026-11-12 `CLASS` | nothing (no slot that weekday) | **no-op** — the day stays `lessons: []` |
+
+None of the three is an error. `replacedOriginal` is computed, never stored
+(glossary: «обчислюється з шаблону, не зберігається»), so «no slot under the
+substitution» simply means there is no field — not `null`, not an empty string. A `CLEARED` tombstone over an absent
+slot gags nothing and must not itself become a lesson.
+
+O7 is the counterpart of O3: same `kind`, same view, one with an original under
+it and one without. A renderer that assumes `replacedOriginal` is always present
+under a `SUBSTITUTION` fails on 2026-11-10 and nowhere else in this window.
 
 ---
 
@@ -580,6 +690,23 @@ non-teaching in this fixture only because R2 and R3 say so. Year setup (T-009)
 must create them, or `expand()` must treat Sat/Sun specially — this document
 assumes the former.
 
+**F-5 — nothing said whether a non-teaching day suppresses an override.**
+Overview §4 defines `isNonTeaching` as one predicate over the date and §3.4 binds
+`DayOverride` to a date, but no document said what happens when both apply, and
+the two specification clauses pull opposite ways: §3.1 «розклад на ці дні не
+створюється» against §5.3 «будь-який окремий день можна відредагувати вручну».
+Resolved in overview §3.4: `isNonTeaching` suppresses `origin = TEMPLATE` only,
+so a `ResolvedDay` may carry `isNonTeaching: true` together with a non-empty
+`lessons`. O6 (Sat 2026-10-17) was added to this fixture to pin it. The `expand()`
+sketch in overview §3.1 had the defect written into it — its first line short-cut
+a non-teaching date to «порожньо» before the `DayOverride` step was ever reached —
+and has been corrected in the same commit; it now also spells out the three
+«no slot in force» branches, which the fixture reaches through both a version gap
+and an absent slot. The same
+paragraph also states the two «nothing underneath» cases (§8.8), which were
+equally unstated: a `SUBSTITUTION` without an original has no `replacedOriginal`
+field, and a `CLEARED` over an absent slot is a no-op.
+
 **F-4 — `boundaryDate` needed an inclusivity rule.**
 `ScheduleTemplate.validTo` is exclusive by construction (`daterange`), but
 nothing said which way `NonTeachingWeekdayRule.boundaryDate` pointed. Fri
@@ -595,10 +722,24 @@ to the break's first day and the rule stops there.
 should be organised as: `parity.ts` against §5 (including the two Q-001 dates and
 the split week), `calendarRules.ts` against the `isNonTeaching` column, and
 `expand.ts` against the full `ResolvedDay[]` for both views over
-`[2026-10-12, 2026-11-13]`. The four days that render as an empty list for four
-different reasons — 10-16 (rule), 10-19 (cleared), 10-21 (gap), 11-03 (no slot) —
-are individually worth a named test; so is 2026-11-05, which is the only
-assertion that fails when `replacedOriginal` is frozen at write time.
+`[2026-10-12, 2026-11-13]`. Both §6 and §7 are written one row per date, so the
+33 expectations of each view transcribe directly; nothing in them needs expanding
+by hand.
+
+Six dates are worth a named test of their own:
+
+| Date | View | What fails without it |
+|---|---|---|
+| 2026-10-16 | either | an empty day whose emptiness comes from a weekday rule |
+| 2026-10-19 | `OWN` | `CLEARED` confused with non-teaching |
+| 2026-10-21 | `CLASS` | a version gap that throws or falls back to a neighbour |
+| 2026-11-03 | `OWN` | an absent slot treated as an error |
+| 2026-11-05 | `OWN` | `replacedOriginal` frozen at write time (§8.4) |
+| 2026-10-17 | `OWN` | `expand()` short-circuiting on a non-teaching date (§8.7) |
+
+and 2026-11-10 / 2026-11-12 cover the two «nothing underneath» cases of §8.8.
+The first four are the four routes to `lessons: []`; 10-17 is the inverse — the
+one date where `isNonTeaching: true` must not produce one.
 
 **T-004 (seed).** §3 is the seed's content, and §3.8 is the order to write it in
 if the seed exercises copy-on-write rather than inserting the final intervals

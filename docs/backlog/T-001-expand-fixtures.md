@@ -38,6 +38,8 @@ not a throwaway sanity check.
 - [x] Covers a gap between template versions, expected to render as an empty
       calendar rather than an error.
 - [x] Covers both `OWN` and `CLASS` views on one slot, showing `isTaughtByMe`.
+- [x] Covers a `DayOverride` on a non-teaching date, and the three `kind`s with
+      no `TemplateSlot` underneath.
 - [x] Every expected value was derived by hand from the rules in overview §3,
       not by running code.
 
@@ -51,7 +53,7 @@ Delivered as `docs/architecture/design/expand-fixtures.md`. The window is
 `Europe/Kyiv` dates only, with `date(1)` used for weekday and ISO-week numbers
 and nothing else.
 
-The exercise changed three things outside this ticket (fixture document §9):
+The exercise changed four things outside this ticket (fixture document §9):
 
 - `architect-overview.md` §4 — `isTaughtByMe` cannot be decided from
   `(weekday, lessonNumber, parity)`; it compares `subject` as well, and compares
@@ -62,6 +64,14 @@ The exercise changed three things outside this ticket (fixture document §9):
 - **T-003** gained a criterion: `NonTeachingWeekdayRule` has an end but no
   beginning, so a rule entered mid-year retroactively blanks past dates, which
   contradicts specification §5.2.
+- `architect-overview.md` §3.4 — nothing said whether a non-teaching date
+  suppresses a `DayOverride` on it (specification §3.1 and §5.3 pull opposite
+  ways). It does not: `isNonTeaching` suppresses `origin = TEMPLATE` only, so a
+  `ResolvedDay` may be non-teaching and still carry lessons. The same paragraph
+  states the two «nothing underneath» cases — a `SUBSTITUTION` without an
+  original has no `replacedOriginal`, a `CLEARED` over an absent slot is a
+  no-op. The `expand()` sketch in §3.1 carried the defect literally («→ порожньо»
+  before the override step) and was corrected with it.
 
 `architect-overview.md` §11 asked for exactly this walkthrough and now records
 that it happened.
