@@ -12,7 +12,7 @@ for reading. Order is priority; the ID number is not.
 |---|---|---|---|
 | [T-002](T-002-project-scaffold.md) | Project scaffold — Next.js, Drizzle, Vitest, Postgres in Compose | done | — |
 | [T-001](T-001-expand-fixtures.md) | Golden fixtures for `expand()` — the hard-week walkthrough | done | — |
-| [T-003](T-003-db-schema-design.md) | Detailed DB schema design document | todo | T-001 |
+| [T-003](T-003-db-schema-design.md) | Detailed DB schema design document | done | T-001 |
 | [T-004](T-004-drizzle-schema-migration.md) | Drizzle schema, first migration, and the overlap constraint test | todo | T-002, T-003 |
 | [T-005](T-005-domain-schedule-functions.md) | Schedule domain — today, parity, calendar rules, boundaries, expand | todo | T-001, T-002 |
 | [T-006](T-006-auth-and-query-discipline.md) | Auth boundary and `user_id` query discipline | todo | T-004 |

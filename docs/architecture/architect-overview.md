@@ -181,13 +181,15 @@ parity(d) = anchor.parity XOR ( weeksBetween( startOfISOWeek(anchor.date),
 ```
 User                    — вчитель (auth)
 
-AcademicYear            — dateFrom, dateTo, початкова парність
+AcademicYear            — dateFrom, dateTo
+                          (початкова парність зберігається не тут, а першим
+                           ParityAnchor на dateFrom — див. §3.5)
 Semester                — yearId, порядковий номер (1|2), dateFrom, dateTo
 NonTeachingPeriod       — yearId, kind: BREAK | PUBLIC_HOLIDAY | OTHER,
                           name, dateFrom, dateTo
                           (свято — це період довжиною в один день)
 NonTeachingWeekdayRule  — день тижня, виключений з розкладу,
-                          + резолвлена межа дії (див. §8.1)
+                          + validFrom і резолвлена межа дії (див. §8.1)
 BellSchedule            — час початку/кінця для номерів уроків 0–9
 
 ParityAnchor            — date → NUMERATOR | DENOMINATOR
@@ -200,10 +202,13 @@ DayOverride             — date, lessonNumber, view,
                           kind: EDIT | SUBSTITUTION | CLEARED,
                           payload (порожній для CLEARED)
 
-Event                   — kind: DEADLINE | INFO; дата/діапазон;
-                          INFO: повторення з резолвленою межею дії
+Event                   — kind: DEADLINE | INFO; title, note; дата/діапазон;
+                          INFO: recurrenceKind з резолвленою межею дії
                           DEADLINE: одноразовий, поле done
 ```
+
+Повна DDL — `docs/architecture/design/schema.md` (T-003): типи колонок,
+обмеження, індекси, порядок міграцій і seed. Тут — лише склад моделі й причини.
 
 **Чому всі неробочі періоди — одна таблиця.** Канікули (осінні/зимові/весняні), державні свята та позапланові дні (карантин, актований мороз) відрізняються лише назвою й довжиною. `expand()` робить **одну** перевірку «чи дата в неробочому періоді» замість трьох, а додати новий вид вихідних = вставити рядок, не міняти код. Жорстко зашиті «три канікули» дали б ту саму функціональність меншою ціною лише на перший погляд — реальні школи додають перерви поза планом.
 
@@ -386,3 +391,10 @@ ResolvedDay     — date, parity, isNonTeaching, lessons: ResolvedLesson[]
 Модель вважається готовою до перекладу в Drizzle-схему (`lib/db/schema`). Перед написанням міграцій пропоную одну перевірку на папері: розписати вручну один тиждень, у якому одночасно є **зміна шаблону посеред тижня, скидання парності після канікул і заміна уроку** — і звірити, що `expand()` за правилами §3 дає очікуваний результат. Це найдешевший спосіб зловити помилку в інваріантах §3.2 до того, як з'являться дані.
 
 **Зроблено.** Перевірка виконана й лежить у `docs/architecture/design/expand-fixtures.md` (T-001): п'ять тижнів жовтня–листопада 2026 з очікуваним `ResolvedDay[]` на кожну дату для обох видів. Вона й підсвітила уточнення в §4 (`isTaughtByMe`), §8.1 (виключність `boundaryDate`) і §10.6.
+
+**Зроблено (T-003).** Модель переведена в повну DDL —
+`docs/architecture/design/schema.md`. Вона підсвітила чотири речі: початкова
+парність прибрана з `AcademicYear` (дублювала `ParityAnchor` — §4 і glossary
+виправлені цим же коммітом), `NonTeachingWeekdayRule` отримав `validFrom`
+(F-3 фікстур), а `BellSchedule` без прив'язки до року і `DayOverride` без
+власного часу зафіксовані як прийняті обмеження — див. §12 того документа.
