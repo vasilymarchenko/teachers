@@ -30,7 +30,11 @@ product and it is fully testable before any UI exists.
 - [ ] `types.ts` exports `ResolvedLesson` and `ResolvedDay` as defined in
       overview §5.
 - [ ] `expand.ts` implements the algorithm in overview §3.1 for a date range and
-      one `view`.
+      one `view`. It reads `DayOverride` rows for non-teaching dates too — a
+      non-teaching date is not a short circuit (overview §3.4, fixtures §8.7).
+- [ ] `replacedOriginal` is omitted when no `TemplateSlot` is in force under a
+      `SUBSTITUTION`, and a `CLEARED` with no slot under it is a no-op
+      (overview §3.4, fixtures §8.8).
 - [ ] Vitest suite reproduces every expected value from the T-001 fixture
       document; no expectation in the suite was obtained by running the code
       first.
