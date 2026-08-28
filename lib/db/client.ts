@@ -3,7 +3,12 @@ import postgres from "postgres";
 
 type Database = ReturnType<typeof drizzle>;
 
-let database: Database | undefined;
+// Cached on globalThis, not in a module-level `let`: `next dev` re-evaluates a
+// module on every hot reload, and a per-module cache would open a fresh pool of
+// `max` connections each time until Postgres refuses new ones.
+const globalForDb = globalThis as typeof globalThis & {
+  __teachersDb?: Database;
+};
 
 /**
  * The Drizzle client, created on first use.
@@ -15,12 +20,12 @@ let database: Database | undefined;
  * The schema is registered here once `lib/db/schema` exists (T-004).
  */
 export function getDb(): Database {
-  if (!database) {
+  if (!globalForDb.__teachersDb) {
     const url = process.env.DATABASE_URL;
     if (!url) {
       throw new Error("DATABASE_URL is not set — copy .env.example to .env");
     }
-    database = drizzle(postgres(url, { max: 10 }));
+    globalForDb.__teachersDb = drizzle(postgres(url, { max: 10 }));
   }
-  return database;
+  return globalForDb.__teachersDb;
 }

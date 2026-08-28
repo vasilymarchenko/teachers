@@ -20,8 +20,9 @@ pnpm-debug.log*
 *.tsbuildinfo
 
 # Drizzle
-drizzle/meta/
-!drizzle/meta/_journal.json
+# Nothing here: the whole drizzle/ folder, meta/ snapshots included, is
+# committed. drizzle-kit diffs the latest snapshot to generate the next
+# migration, so an ignored meta/ makes every generate a full-schema one.
 
 # Docker / Postgres
 pgdata/
