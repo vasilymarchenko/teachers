@@ -34,6 +34,9 @@ switch. Read-only: no editing of templates or overrides in this ticket.
 ## Notes
 
 Q-002 is answered — the day-centric flow of `architect-overview.md` §10.2 — and
-the data path is `getScheduleInput()` (T-008). What remains before this ticket
-is T-014. Read-only by design: writing is T-010 (templates) and T-011 (day
-overrides).
+the data path is `getScheduleInput()` (T-008). The shell the views render into
+is T-014, now done, so nothing blocks this ticket. Read-only by design: writing
+is T-010 (templates) and T-011 (day overrides).
+
+The year-view render measurement is a number recorded in the PR body and in
+these notes when the work is done — not a committed benchmark.

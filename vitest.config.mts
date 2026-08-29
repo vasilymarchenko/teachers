@@ -7,8 +7,11 @@ export default defineConfig({
   },
   test: {
     // The suite that matters is `lib/domain` (overview §2); everything under
-    // `lib` is picked up so a test never has to be registered by hand.
-    include: ["lib/**/*.test.ts"],
+    // `lib` is picked up so a test never has to be registered by hand. The
+    // `components` entry is for convention tests over the source — the menu's
+    // links against the real routes (T-014) — not for rendering React, which
+    // would need a DOM environment this project does not carry.
+    include: ["lib/**/*.test.ts", "components/**/*.test.ts"],
     // Except the integration tests: they need a migrated Postgres, and folding
     // them in would make `npm test` fail on a checkout that has not run
     // `docker compose up`. They have their own config — T-004.

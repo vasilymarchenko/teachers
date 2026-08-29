@@ -17,7 +17,7 @@ for reading. Order is priority; the ID number is not.
 | [T-005](T-005-domain-schedule-functions.md) | Schedule domain — today, parity, calendar rules, boundaries, expand | done | T-001, T-002 |
 | [T-006](T-006-auth-and-query-discipline.md) | Auth boundary and `user_id` query discipline | done | T-004 |
 | [T-008](T-008-calendar-read-queries.md) | Read queries for the calendar data path | done | T-004, T-006 |
-| [T-014](T-014-app-shell.md) | Application shell — navigation, layout and visual style | todo | T-002 |
+| [T-014](T-014-app-shell.md) | Application shell — navigation, layout and visual style | done | T-002 |
 | [T-009](T-009-year-setup-screens.md) | Year setup — year, semesters, non-teaching periods, bells, parity | todo | T-006, T-014 |
 | [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | todo | T-005, T-008, T-014 |
 | [T-007](T-007-calendar-read-views.md) | Calendar read views — day, week, month, year | todo | T-005, T-008, T-014 |
@@ -64,7 +64,8 @@ track and the code track — rather than a ranked pair; T-002 is listed first on
 because nothing is runnable before it. T-001 is done: its output,
 `docs/architecture/design/expand-fixtures.md`, is the input T-003 and T-005 read.
 No item waits on an open question any more: Q-002, the one that did, is answered
-(`architect-overview.md` §10.2), and the UI tickets now wait only on T-014.
+(`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
+the shell — T-007, T-009, T-010, T-012 — have every dependency satisfied.
 
 ## Coverage
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-The scaffold (T-002) and the database schema (T-004) are in place: the app builds and runs against a migrated Postgres, but carries no screens yet. The planning documents are:
+The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), the auth boundary (T-006), the calendar read queries (T-008) and the application shell (T-014) are in place: the app builds and runs against a migrated Postgres, behind sign-in, with the navigation panel and the four screens of the first release still placeholders. The planning documents are:
 
 - `docs/specs/specification.md` — product specification (Ukrainian), the primary document
 - `docs/tech-stack.md` — stack and its rationale
