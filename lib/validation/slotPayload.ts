@@ -46,3 +46,26 @@ export type SlotPayload = OwnSlotPayload | ClassSlotPayload;
 export function slotPayloadFor(view: ScheduleView) {
   return view === "OWN" ? ownSlotPayload : classSlotPayload;
 }
+
+/**
+ * The read half of the boundary above — schema §7, second rule: *every read
+ * that hands a payload to the domain parses it on the way out too.*
+ *
+ * It throws rather than dropping the row. A slot that silently vanishes from
+ * the calendar is a lesson the teacher does not turn up to; an error names the
+ * row and gets it fixed. `where` is the caller's description of that row, and
+ * it is the whole value of the message.
+ */
+export function parseSlotPayload(
+  view: ScheduleView,
+  payload: unknown,
+  where: string,
+): SlotPayload {
+  const parsed = slotPayloadFor(view).safeParse(payload);
+  if (!parsed.success) {
+    throw new Error(
+      `${where}: payload does not match the ${view} schema — ${parsed.error.message}`,
+    );
+  }
+  return parsed.data;
+}

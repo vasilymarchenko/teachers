@@ -2,8 +2,8 @@
 id: T-010
 type: ticket
 title: Weekly template editor with copy-on-write versioning
-status: blocked
-depends_on: [T-005, T-008, T-014, Q-002]
+status: todo
+depends_on: [T-005, T-008, T-014]
 refs:
   - docs/architecture/architect-overview.md §3.2
   - docs/architecture/architect-overview.md §3.3
@@ -35,12 +35,13 @@ silently broken.
       (overview §8.1).
 - [ ] The overlap constraint from T-004 is never hit in normal use; a test
       covers the concurrent-save case that would hit it.
-- [ ] Usable on a 390 px viewport following the pattern Q-002 settles — this is
-      the screen §10.2 names as structurally dependent on that answer.
+- [ ] Usable on a 390 px viewport following the day-centric flow Q-002 settled
+      on (overview §10.2): one day at a time below the tablet breakpoint, the
+      6 × 10 grid above it.
 - [ ] All UI text in Ukrainian.
 
 ## Notes
 
-Blocked on Q-002. Overview §10.2 states this editor is the reason the question
-must close before UI work starts: adapting a desktop table afterwards means
+Q-002 is answered — the day-centric flow of overview §10.2. This editor was the
+reason it had to close first: adapting a desktop table afterwards means
 rewriting it, not adding CSS.

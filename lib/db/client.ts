@@ -34,3 +34,18 @@ export function getDb(): Database {
   }
   return globalForDb.__teachersDb;
 }
+
+/**
+ * Closes the cached client, if one was ever created.
+ *
+ * For scripts and the integration suite: `getDb()`'s pool is deliberately never
+ * closed in the application — the server keeps it for the process's life — but a
+ * test run that leaves idle connections open holds Vitest's process open with
+ * them. Application code has no reason to call this.
+ */
+export async function closeDb(): Promise<void> {
+  const db = globalForDb.__teachersDb;
+  if (!db) return;
+  globalForDb.__teachersDb = undefined;
+  await db.$client.end();
+}

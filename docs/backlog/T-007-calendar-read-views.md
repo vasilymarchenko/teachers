@@ -2,8 +2,8 @@
 id: T-007
 type: ticket
 title: Calendar read views — day, week, month, year
-status: blocked
-depends_on: [T-005, T-008, T-014, Q-002]
+status: todo
+depends_on: [T-005, T-008, T-014]
 refs:
   - docs/architecture/architect-overview.md §5
   - docs/specs/specification.md §6
@@ -26,13 +26,14 @@ switch. Read-only: no editing of templates or overrides in this ticket.
 - [ ] Non-teaching days are visually distinct and name their
       `NonTeachingPeriod`.
 - [ ] All UI text in Ukrainian (root `CLAUDE.md`).
-- [ ] Views are usable on a 390 px viewport; the interaction pattern follows
-      whatever Q-002 settles.
+- [ ] Views are usable on a 390 px viewport, following the day-centric flow of
+      overview §10.2.
 - [ ] Year-view render time measured and recorded, against the ~300 ms trigger
       in overview §9.
 
 ## Notes
 
-Blocked on Q-002 only for the layout pattern — the data path is ready as soon as
-T-005 and T-008 land. Read-only by design: writing is T-010 (templates) and
-T-011 (day overrides).
+Q-002 is answered — the day-centric flow of `architect-overview.md` §10.2 — and
+the data path is `getScheduleInput()` (T-008). What remains before this ticket
+is T-014. Read-only by design: writing is T-010 (templates) and T-011 (day
+overrides).
