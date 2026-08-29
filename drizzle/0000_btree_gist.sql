@@ -1,0 +1,13 @@
+-- Custom migration (`docs/architecture/design/schema.md` §9).
+--
+-- The `EXCLUDE USING gist` constraints of 0002 compare `user_id` (text) and
+-- `view` (an enum) with `=`. Core PostgreSQL has no GiST operator class for
+-- either; `btree_gist` supplies both, so the extension has to exist before the
+-- constraints that need it.
+--
+-- `CREATE EXTENSION` needs a superuser or a role with CREATE on the database.
+-- In Compose the `postgres` role owns it, so it works; on a managed host
+-- `btree_gist` has to be on the provider's allow-list. `IF NOT EXISTS` does not
+-- paper over a permission error — this fails loudly at deploy time (T-015)
+-- rather than leaving invariant I3 silently unenforced.
+CREATE EXTENSION IF NOT EXISTS btree_gist;

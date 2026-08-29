@@ -1,7 +1,8 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import * as schema from "./schema";
 
-type Database = ReturnType<typeof drizzle>;
+type Database = ReturnType<typeof createDb>;
 
 // Cached on globalThis, not in a module-level `let`: `next dev` re-evaluates a
 // module on every hot reload, and a per-module cache would open a fresh pool of
@@ -10,14 +11,18 @@ const globalForDb = globalThis as typeof globalThis & {
   __teachersDb?: Database;
 };
 
+// The whole schema is registered on the client so that `db.query.*` and
+// better-auth's Drizzle adapter can resolve a table by name.
+function createDb(url: string) {
+  return drizzle(postgres(url, { max: 10 }), { schema });
+}
+
 /**
  * The Drizzle client, created on first use.
  *
  * Lazy on purpose: `next build` and the unit tests load these modules without a
  * live database, and a connection opened at import time would make both of them
  * depend on `DATABASE_URL`.
- *
- * The schema is registered here once `lib/db/schema` exists (T-004).
  */
 export function getDb(): Database {
   if (!globalForDb.__teachersDb) {
@@ -25,7 +30,7 @@ export function getDb(): Database {
     if (!url) {
       throw new Error("DATABASE_URL is not set — copy .env.example to .env");
     }
-    globalForDb.__teachersDb = drizzle(postgres(url, { max: 10 }));
+    globalForDb.__teachersDb = createDb(url);
   }
   return globalForDb.__teachersDb;
 }

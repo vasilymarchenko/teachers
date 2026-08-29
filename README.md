@@ -37,7 +37,8 @@ Prerequisites: Node.js 22+, npm, and Docker (for Postgres).
 cp .env.example .env          # then set BETTER_AUTH_SECRET: openssl rand -base64 32
 npm install
 docker compose up -d          # PostgreSQL 16 on localhost:5432
-npm run db:migrate            # apply migrations (no migrations exist yet — T-004)
+npm run db:migrate            # apply migrations
+npm run db:seed               # optional: the demo teacher and the fixture scenario
 npm run dev                   # http://localhost:3000
 ```
 
@@ -51,11 +52,56 @@ npm run dev                   # http://localhost:3000
 | `npm run build` / `npm start` | production build and server |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | Vitest, once |
-| `npm run test:watch` | Vitest, watching |
+| `npm test` | Vitest — the unit suite, once |
+| `npm run test:watch` | the unit suite, watching |
+| `npm run test:integration` | the tests that need a migrated Postgres (see below) |
 | `npm run db:generate` | generate a migration from `lib/db/schema` |
 | `npm run db:migrate` | apply migrations — also an explicit deploy step |
+| `npm run db:seed` | reset the demo teacher and re-insert the fixture scenario |
 | `npm run db:studio` | Drizzle Studio |
+
+### Migrations
+
+`npm run db:migrate` (`drizzle-kit migrate`) is **an explicit deploy step**, not
+something the application does at start-up: the web process never migrates its
+own database. Deploying is `docker compose pull`, then `db:migrate`, then
+restart — see the deploy pipeline ticket, `docs/backlog/T-015-deploy-pipeline.md`.
+
+Three of the migration files in `drizzle/` are written by hand rather than
+generated, because `drizzle-kit` cannot express what they contain:
+
+| File | Why it is hand-written |
+|---|---|
+| `0000_btree_gist.sql` | `CREATE EXTENSION btree_gist` — needed before 0002, which compares a `text` and an enum column with `=` inside a GiST index |
+| `0002_exclusion_constraints.sql` | the three `EXCLUDE USING gist` constraints that keep academic years, semesters and template versions from overlapping |
+
+Their statements are invisible to the snapshot in `drizzle/meta`, so a future
+generated migration that recreates one of those tables would silently drop its
+exclusion constraint. `docs/architecture/design/schema.md` §9 is the record.
+
+`CREATE EXTENSION` needs a role with `CREATE` on the database. The Compose
+`postgres` role has it; on a managed host, `btree_gist` must be on the
+provider's allow-list.
+
+### Tests
+
+`npm test` is pure and DB-free. `npm run test:integration` runs the
+`*.integration.test.ts` files, which assert what the database itself enforces —
+the exclusion constraint above exists only in SQL, and a mock of it would be
+asserting the mock. They need `DATABASE_URL` pointing at a **migrated**
+database, and they create and delete their own `user` rows rather than touching
+the seeded teacher.
+
+### Demo data
+
+`npm run db:seed` creates the demo teacher (`SEED_USER_EMAIL` /
+`SEED_USER_PASSWORD` from `.env`, with a development default) through
+better-auth's own API, then inserts the scenario of
+`docs/architecture/design/expand-fixtures.md` §3 — an academic year, its
+semesters, holidays, bells, parity anchors, four template versions with 44 slots
+between them, and eight day overrides. It deletes that user and everything
+cascading from them first, so running it twice leaves the same database, and it
+refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=1`.
 
 ## Layout
 
@@ -76,5 +122,6 @@ The reasoning behind this layout is in
 
 ## Status
 
-Scaffold stage — the skeleton runs, no features yet. Work is tracked in
+Early stage: the skeleton runs and the database schema is in place, but there
+are no screens yet. Work is tracked in
 [`docs/backlog/`](docs/backlog/README.md).
