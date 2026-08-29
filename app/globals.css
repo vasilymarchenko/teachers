@@ -3,50 +3,88 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* shadcn/ui "neutral" base colour, expressed as CSS variables (Tailwind v4). */
+/*
+ * The theme — specification §8.
+ *
+ * Every colour in the application is one of the variables below. Components
+ * name a role (`bg-sidebar`, `text-muted-foreground`), never a hue, so the
+ * whole style can be replaced by editing this file alone. That is the actual
+ * requirement of §8: the mockups are a sample of style, and the style must be
+ * changeable later without reworking the application.
+ *
+ * The scale is the shadcn/ui token set, with its neutral base swapped for the
+ * calm green-and-beige of §8: a warm beige work area, a deep green ink, and a
+ * dark green navigation panel (the `--sidebar-*` family).
+ *
+ * Provisional: the reference mockups were not available when this was written,
+ * so the hues are chosen to the description in §8 rather than sampled. Adjust
+ * the values here; nothing else in the application encodes them.
+ */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+
+  /* Work area — light, warm beige. */
+  --background: oklch(0.975 0.010 90);
+  --foreground: oklch(0.25 0.020 155);
+  --card: oklch(0.995 0.004 90);
+  --card-foreground: oklch(0.25 0.020 155);
+  --popover: oklch(0.995 0.004 90);
+  --popover-foreground: oklch(0.25 0.020 155);
+  --primary: oklch(0.48 0.075 155);
+  --primary-foreground: oklch(0.985 0.008 90);
+  --secondary: oklch(0.93 0.018 88);
+  --secondary-foreground: oklch(0.30 0.025 155);
+  --muted: oklch(0.945 0.014 88);
+  --muted-foreground: oklch(0.50 0.020 150);
+  --accent: oklch(0.90 0.035 150);
+  --accent-foreground: oklch(0.28 0.030 155);
+  --destructive: oklch(0.55 0.170 27);
+  --destructive-foreground: oklch(0.985 0.008 90);
+  --border: oklch(0.89 0.014 88);
+  --input: oklch(0.89 0.014 88);
+  --ring: oklch(0.55 0.070 155);
+
+  /* Navigation panel — dark green. */
+  --sidebar: oklch(0.27 0.035 158);
+  --sidebar-foreground: oklch(0.93 0.015 90);
+  --sidebar-primary: oklch(0.72 0.095 150);
+  --sidebar-primary-foreground: oklch(0.22 0.030 158);
+  --sidebar-accent: oklch(0.34 0.040 158);
+  --sidebar-accent-foreground: oklch(0.97 0.010 90);
+  --sidebar-border: oklch(0.38 0.035 158);
+  --sidebar-ring: oklch(0.72 0.095 150);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: oklch(0.22 0.020 158);
+  --foreground: oklch(0.94 0.012 90);
+  --card: oklch(0.26 0.024 158);
+  --card-foreground: oklch(0.94 0.012 90);
+  --popover: oklch(0.26 0.024 158);
+  --popover-foreground: oklch(0.94 0.012 90);
+  --primary: oklch(0.72 0.095 150);
+  --primary-foreground: oklch(0.20 0.028 158);
+  --secondary: oklch(0.31 0.026 158);
+  --secondary-foreground: oklch(0.94 0.012 90);
+  --muted: oklch(0.31 0.026 158);
+  --muted-foreground: oklch(0.72 0.016 90);
+  --accent: oklch(0.34 0.038 155);
+  --accent-foreground: oklch(0.96 0.010 90);
+  --destructive: oklch(0.65 0.150 25);
+  --destructive-foreground: oklch(0.97 0.008 90);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.60 0.070 152);
+
+  /* Darker than the work area, so the panel still reads as a panel. */
+  --sidebar: oklch(0.19 0.024 158);
+  --sidebar-foreground: oklch(0.92 0.014 90);
+  --sidebar-primary: oklch(0.72 0.095 150);
+  --sidebar-primary-foreground: oklch(0.18 0.026 158);
+  --sidebar-accent: oklch(0.28 0.032 158);
+  --sidebar-accent-foreground: oklch(0.96 0.010 90);
+  --sidebar-border: oklch(0.32 0.030 158);
+  --sidebar-ring: oklch(0.72 0.095 150);
 }
 
 @theme inline {
@@ -75,6 +113,14 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
@@ -83,5 +129,19 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /*
+   * "Великі заголовки" of §8, as base element styles rather than a class every
+   * page has to remember. A page writes `<h1>`; the size lives here.
+   */
+  h1 {
+    @apply text-3xl leading-tight font-semibold tracking-tight sm:text-4xl;
+  }
+  h2 {
+    @apply text-2xl leading-snug font-semibold tracking-tight sm:text-3xl;
+  }
+  h3 {
+    @apply text-xl leading-snug font-medium;
   }
 }
