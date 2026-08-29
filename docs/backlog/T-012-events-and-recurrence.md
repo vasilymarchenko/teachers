@@ -26,9 +26,17 @@ that create both kinds, so the calendar has events to render.
       repetition for them (overview §4, deliberate).
 - [ ] Marking a deadline done and undone from the calendar.
 - [ ] CRUD forms for both kinds, one Zod schema each, shared client and server.
+- [ ] The calendar views show events on their dates, overdue deadlines marked
+      (specification §6.3) — the half of T-007's first criterion T-007 left open.
 - [ ] All UI text in Ukrainian.
 
 ## Notes
 
-T-007 renders whatever the event query returns for a range; expanding a
-recurring INFO event into that range is this ticket's job.
+Expanding a recurring INFO event into a range is this ticket's job, and so is
+putting events on the calendar: T-007 built the four views without them
+deliberately, because a calendar that showed one-off events while silently
+dropping repeating ones would mislead. `getEventsInRange()` (T-008) is written
+and unused; the day components consume `CalendarDay`
+(`docs/architecture/design/T-007-calendar-views.md` §4), which is where the
+markers attach. T-007 stays `in-progress` until this ticket closes that
+criterion.

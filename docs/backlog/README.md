@@ -20,7 +20,7 @@ for reading. Order is priority; the ID number is not.
 | [T-014](T-014-app-shell.md) | Application shell — navigation, layout and visual style | done | T-002 |
 | [T-009](T-009-year-setup-screens.md) | Year setup — year, semesters, non-teaching periods, bells, parity | todo | T-006, T-014 |
 | [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | todo | T-005, T-008, T-014 |
-| [T-007](T-007-calendar-read-views.md) | Calendar read views — day, week, month, year | todo | T-005, T-008, T-014 |
+| [T-007](T-007-calendar-read-views.md) | Calendar read views — day, week, month, year | in-progress | T-005, T-008, T-014 |
 | [T-010](T-010-weekly-template-editor.md) | Weekly template editor with copy-on-write versioning | todo | T-005, T-008, T-014 |
 | [T-011](T-011-day-override-editing.md) | Day overrides — edit, substitution, cancel a single lesson | todo | T-007 |
 | [T-013](T-013-print-views.md) | Print mechanism — the `/print` route and its page layout | todo | T-007 |
