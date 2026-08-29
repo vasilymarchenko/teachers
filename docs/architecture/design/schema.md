@@ -778,12 +778,20 @@ That is what the seed does. Fixtures §3.8 gives the write timeline that produce
 those values, and a seed that replayed it would additionally exercise
 copy-on-write (I2); it is not what this seed is for, and T-004 says so.
 
-**Idempotency.** `npm run db:seed` deletes the demo user's rows and re-inserts
-them, in one transaction. `ON DELETE CASCADE` from `user` does most of it;
+**Idempotency.** `npm run db:seed` deletes the demo user and re-inserts the
+scenario. `ON DELETE CASCADE` from `user` does the deleting;
 `day_override`, `parity_anchor`, `bell_schedule`, `non_teaching_weekday_rule`,
 `schedule_template` and `event` are cascaded from `user` directly, and
 `template_slot`, `semester` and `non_teaching_period` from their parents. Running
 it twice leaves the same database.
+
+The scenario rows go in as one transaction, but the delete and the sign-up in
+front of them do not: the user is created through better-auth's API (below),
+which owns its own connection and cannot be enrolled in a Drizzle transaction.
+A failure partway therefore leaves the demo user with some of their rows — which
+the next run clears, because the delete is the first thing it does. Idempotency
+is what this buys instead of atomicity, and for a demo reset it is the same
+thing one run later.
 
 **Guard.** The script refuses to run when `NODE_ENV === "production"` unless
 `SEED_ALLOW_PRODUCTION=1` is set. It deletes data; the guard is the difference

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-The scaffold is in place (T-002): the app builds and runs, but carries no features yet. The planning documents are:
+The scaffold (T-002) and the database schema (T-004) are in place: the app builds and runs against a migrated Postgres, but carries no screens yet. The planning documents are:
 
 - `docs/specs/specification.md` — product specification (Ukrainian), the primary document
 - `docs/tech-stack.md` — stack and its rationale
@@ -22,16 +22,18 @@ npm run build        # production build
 npm start            # serve the production build
 npm run lint         # ESLint
 npm run typecheck    # tsc --noEmit
-npm test             # Vitest, once
-npm run test:watch   # Vitest, watching
+npm test             # Vitest, the unit suite, once
+npm run test:watch   # the unit suite, watching
+npm run test:integration  # the *.integration.test.ts files — needs a migrated Postgres
 npm run db:generate  # drizzle-kit generate — migration from lib/db/schema
 npm run db:migrate   # drizzle-kit migrate — also an explicit deploy step
+npm run db:seed      # reset the demo teacher and re-insert the fixture scenario
 npm run db:studio    # Drizzle Studio
 ```
 
 Postgres runs from `docker-compose.yml` (`docker compose up -d`). Copy `.env.example` to `.env` first; `DATABASE_URL` must agree with the `POSTGRES_*` values in the same file.
 
-Before pushing, run `npm run lint && npm run typecheck && npm test`. A single test file: `npx vitest run lib/time/today.test.ts`.
+Before pushing, run `npm run lint && npm run typecheck && npm test`. A single test file: `npx vitest run lib/time/today.test.ts`. The integration suite is separate because it needs a live database — run it too when touching `lib/db`.
 
 ## Code layout
 
