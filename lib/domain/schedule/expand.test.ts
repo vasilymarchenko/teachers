@@ -40,6 +40,11 @@ describe("expand(), CLASS view", () => {
     expect(classDays.map((day) => day.date)).toStrictEqual(
       ownDays.map((day) => day.date),
     );
+    // Without this the `it.each` below would silently run fewer cases if a row
+    // of §7 went missing from the transcription.
+    expect(EXPECTED_CLASS.map((day) => day.date)).toStrictEqual(
+      classDays.map((day) => day.date),
+    );
   });
 
   it("marks every lesson with isTaughtByMe", () => {

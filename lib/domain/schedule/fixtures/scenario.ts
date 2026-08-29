@@ -151,7 +151,7 @@ const CLASS_V2_CELLS: Cell[] = [
 ];
 
 /** Fixtures §3.6 — the four versions, at their final intervals (§10). */
-export const TEMPLATES: TemplateVersionInput[] = [
+const TEMPLATES: TemplateVersionInput[] = [
   {
     view: "OWN",
     validFrom: "2026-09-01",

@@ -53,6 +53,10 @@ Three obligations on T-008, which builds this from the database:
 3. **Rows must cover more than the window.** A version whose `validFrom` precedes
    the window still covers its dates, and an anchor before the window is the one
    in force inside it.
+4. **`anchors` is never empty.** `parityOn` throws on an empty list (D-4), so
+   `expand()` is not the way to render a calendar for a teacher who has not run
+   year setup yet — that screen has no `AcademicYear` either, and T-007 owes it
+   an empty state rather than an expansion.
 
 `expand()`'s range — `{ from, to }` — has **both ends inclusive**: it is an
 entity range, not a validity boundary (`schema.md` §6). `[2026-10-12,
