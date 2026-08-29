@@ -17,7 +17,9 @@ standard the final review measures against.
 
 ## Phase 1 — Choose the ticket
 
-If the invocation carries an id (`/ticket T-005`), that is the ticket.
+If the invocation carries an id (`/ticket T-005`), that is the ticket. The
+invocation may also carry `--persist-plan` or `--no-persist-plan`, which decide
+phase 4's output; note the flag and carry it forward.
 
 Otherwise take the **first ticket in `docs/backlog/README.md` table order whose
 `status` is `todo`** — the table is ordered by priority, the id number is not.
@@ -97,10 +99,53 @@ The plan must state:
   `docs/architecture/design/**` change, and the backlog status update.
 - **Risks and trade-offs**, including anything the plan deliberately leaves out.
 
-Present the plan and get the user's approval before implementing. Keep the plan
-ephemeral (it lives in the conversation and, condensed, in the PR body). Write a
-durable document under `docs/architecture/design/` only when the ticket itself
-asks for one — that subtree is English, per root `CLAUDE.md`.
+Present the plan and get the user's approval before implementing.
+
+### Where the plan lives
+
+**Ephemeral by default.** The plan lives in the conversation and, condensed, in
+the PR body. Most tickets need nothing more, and a plan file per ticket would
+rot against the code it describes.
+
+**Persist it when the invocation says so or a trigger fires.** The user can force
+either way with a flag: `/ticket T-005 --persist-plan` or `--no-persist-plan`
+(the flag always wins, in both directions, and no trigger overrides it). With no
+flag, *offer* to persist — one `AskUserQuestion`, defaulting to yes — when any
+of these holds:
+
+- the ticket itself asks for a design document (as `T-001` and `T-003` did);
+- the plan changes the database schema, a migration, or a contract other tickets
+  are written against;
+- the plan pins a decision on an open `Q-NNN` that later work will have to find;
+- the plan carries hand-derived expected values — fixtures, worked examples —
+  that the tests must be checkable against and that no one should recompute;
+- the work is large enough to span sessions, so the next agent needs the plan
+  rather than this conversation.
+
+Volume of files alone is not a trigger. What earns a file is a fact that outlives
+the ticket.
+
+**How to persist.** `docs/architecture/design/T-NNN-<short-slug>.md`, English (the
+`design/` subtree is the exception to the Ukrainian architecture rule — root
+`CLAUDE.md`). Follow the header the existing documents in that directory use:
+
+```markdown
+# <Title>
+
+**Ticket:** `docs/backlog/T-NNN-....md`
+**Status:** authoritative for T-NNN.
+
+Rationale lives in `docs/architecture/architect-overview.md` §N. This document
+adds no reasoning: it states <mechanics: signatures, columns, order, expected
+values>.
+```
+
+That last sentence is the contract. A persisted plan states mechanics and never
+re-argues the overview — reference the section instead. Reference it from the
+ticket's `## Notes` and from the PR body, commit it with the implementation, and
+keep it reconciled in phase 7: after the review, either update the document to
+what was actually built or change its `**Status:**` line to say what superseded
+it. A plan file that contradicts the merged code is worse than no plan file.
 
 ## Phase 5 — Implement on a new branch
 
@@ -192,13 +237,17 @@ and update the PR body if a decision changed. If a finding is real but out of
 scope, say so in the PR body under *Follow-ups* and add a backlog ticket rather
 than silently widening the change.
 
+If the plan was persisted, reconcile the document against the merged shape in the
+same commit — updated, or its `**Status:**` line marked superseded and by what.
+
 Report back to the user with the PR link, what the review changed, and anything
 left open.
 
 ## Definition of done
 
 - The right ticket was chosen and its dependencies were satisfied.
-- The plan was approved before implementation.
+- The plan was approved before implementation, and — if it was persisted —
+  the document under `docs/architecture/design/` matches what was built.
 - Branch, commits and PR follow the naming and language conventions.
 - Backlog frontmatter, checkboxes and `README.md` agree with each other and with
   the work.
