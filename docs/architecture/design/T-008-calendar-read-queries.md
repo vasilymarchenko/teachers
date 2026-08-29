@@ -19,7 +19,7 @@ plain data: no Drizzle row type reaches `lib/domain` or a component.
 |---|---|
 | `lib/db/queries/scheduleInput.ts` | `getScheduleInput(userId, range)` — the assembling read; returns `ScheduleInput` |
 | `lib/db/queries/parityAnchors.ts` | `getParityAnchors(userId, range)` |
-| `lib/db/queries/calendarRules.ts` | `getNonTeachingPeriods(userId, range)`, `getNonTeachingPeriodsForDisplay(userId, range)`, `getNonTeachingWeekdayRules(userId, range)` |
+| `lib/db/queries/calendarRules.ts` | `getNonTeachingPeriods(userId, range)`, `getNonTeachingWeekdayRules(userId, range)`, `NonTeachingPeriodRow` |
 | `lib/db/queries/bells.ts` | `getBellSchedule(userId)` |
 | `lib/db/queries/templates.ts` | `getTemplateVersions(userId, range)` |
 | `lib/db/queries/overrides.ts` | `getDayOverrides(userId, range)` |
@@ -31,6 +31,10 @@ plain data: no Drizzle row type reaches `lib/domain` or a component.
 | `lib/db/testDatabase.ts` | `createRecordingDatabase()` — test support for the index-usage check |
 
 `range` is the domain's `DateRange` (`{ from, to }`, **both ends inclusive**).
+
+`getNonTeachingPeriods()` returns the whole row, `name` and `kind` included,
+because T-007 names the period on a shaded day; `getScheduleInput()` narrows it
+to the two dates `isNonTeaching` uses. One read, not two that would drift apart.
 
 ## 2. Predicates
 

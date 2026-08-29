@@ -1,20 +1,33 @@
-import { and, asc, eq, gt, lte, gte } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lte } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
+import { nonTeachingPeriod, nonTeachingWeekdayRule } from "@/lib/db/schema";
+import type { NonTeachingKind } from "@/lib/db/schema/enums";
 import type {
+  DateRange,
   NonTeachingPeriodInput,
   NonTeachingWeekdayRuleInput,
 } from "@/lib/domain/schedule/types";
-import { nonTeachingPeriod, nonTeachingWeekdayRule } from "@/lib/db/schema";
-import type { DateRange } from "@/lib/domain/schedule/types";
 
 /**
- * The two sources `isNonTeachingOn()` reads — `lib/domain/schedule/calendarRules.ts`,
- * overview §3.1.
+ * The two sources `isNonTeachingOn()` reads —
+ * `lib/domain/schedule/calendarRules.ts`, overview §3.1.
  *
- * Both select by overlap with the window, in SQL. Loading the year and filtering
- * in JS would give the same answer for one teacher and the wrong shape for the
- * year view, which asks for ~250 days at a time.
+ * Both select by overlap with the window, in SQL. Loading the year and
+ * filtering in JS would give the same answer for one teacher and the wrong
+ * shape for the year view, which asks for ~250 days at a time.
  */
+
+/**
+ * A period as the calendar shows it: `isNonTeaching` needs only the two dates,
+ * but T-007 names the period on a shaded day, so the read returns the whole row
+ * and `getScheduleInput()` narrows it to `NonTeachingPeriodInput`.
+ */
+export type NonTeachingPeriodRow = NonTeachingPeriodInput & {
+  id: string;
+  /** Ukrainian — the teacher reads it. */
+  name: string;
+  kind: NonTeachingKind;
+};
 
 /**
  * `NonTeachingPeriod` rows overlapping the window.
@@ -22,41 +35,8 @@ import type { DateRange } from "@/lib/domain/schedule/types";
  * Both ends of a period are inclusive, so it overlaps `[from, to]` when
  * `date_from <= to AND date_to >= from`. `non_teaching_period_user_range_idx`
  * (`user_id`, `date_from`, `date_to`) covers it.
- *
- * The `name` and `kind` the teacher sees are deliberately not selected: the
- * domain input has no place for them, and the screen that names a period
- * (T-007) reads it through `getNonTeachingPeriodsForDisplay()` below.
  */
 export async function getNonTeachingPeriods(
-  userId: string,
-  range: DateRange,
-): Promise<NonTeachingPeriodInput[]> {
-  return getDb()
-    .select({
-      dateFrom: nonTeachingPeriod.dateFrom,
-      dateTo: nonTeachingPeriod.dateTo,
-    })
-    .from(nonTeachingPeriod)
-    .where(
-      and(
-        eq(nonTeachingPeriod.userId, userId),
-        lte(nonTeachingPeriod.dateFrom, range.to),
-        gte(nonTeachingPeriod.dateTo, range.from),
-      ),
-    )
-    .orderBy(asc(nonTeachingPeriod.dateFrom), asc(nonTeachingPeriod.dateTo));
-}
-
-/** A period as the calendar shows it: T-007 names the period on a shaded day. */
-export type NonTeachingPeriodRow = NonTeachingPeriodInput & {
-  id: string;
-  /** Ukrainian — the teacher reads it. */
-  name: string;
-  kind: "BREAK" | "PUBLIC_HOLIDAY" | "OTHER";
-};
-
-/** The same rows as above, with the fields a screen displays. */
-export async function getNonTeachingPeriodsForDisplay(
   userId: string,
   range: DateRange,
 ): Promise<NonTeachingPeriodRow[]> {

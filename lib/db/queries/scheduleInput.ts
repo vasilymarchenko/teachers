@@ -46,7 +46,13 @@ export async function getScheduleInput(
 
   return {
     anchors,
-    nonTeachingPeriods,
+    // Narrowed to the two dates the domain uses: `name` and `kind` belong to
+    // the screen that shades a day and names the period (T-007), not to
+    // `isNonTeaching`.
+    nonTeachingPeriods: nonTeachingPeriods.map(({ dateFrom, dateTo }) => ({
+      dateFrom,
+      dateTo,
+    })),
     weekdayRules,
     bells,
     templates,

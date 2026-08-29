@@ -1,20 +1,31 @@
 import { and, asc, eq, gt, gte, lte, ne, or, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { event } from "@/lib/db/schema";
+import type { EventKind, RecurrenceKind } from "@/lib/db/schema/enums";
 import type { DateRange } from "@/lib/domain/schedule/types";
+import type { IsoDate } from "@/lib/time/today";
 
-/** An `Event` row as the calendar and T-012's `recurrence.ts` read it. */
+/**
+ * An `Event` row as the calendar and T-012's `recurrence.ts` read it.
+ *
+ * The enum unions come from `lib/db/schema/enums.ts` rather than being spelled
+ * again here: a value added by a migration must not leave a second, narrower
+ * copy of the set behind (schema §2).
+ */
 export type EventRow = {
   id: string;
-  kind: "DEADLINE" | "INFO";
+  kind: EventKind;
   /** Ukrainian — the teacher reads it. */
   title: string;
   note: string | null;
-  dateFrom: string;
-  dateTo: string | null;
+  dateFrom: IsoDate;
+  /** `INFO` only, inclusive; `null` is a one-day event. */
+  dateTo: IsoDate | null;
+  /** `DEADLINE` only (glossary §5). */
   done: boolean | null;
-  recurrenceKind: "NONE" | "WEEKLY" | "MONTHLY" | "YEARLY";
-  boundaryDate: string | null;
+  recurrenceKind: RecurrenceKind;
+  /** Exclusive; present exactly when the event recurs. */
+  boundaryDate: IsoDate | null;
 };
 
 /**
