@@ -13,6 +13,15 @@ import { cn } from "@/lib/utils";
  * (`expand-fixtures.md` §8.8).
  */
 
+/**
+ * `http(s)` only. `zoomLink` is free text the teacher typed, checked by
+ * `z.url()` (`lib/validation/slotPayload.ts`), and a URL parser accepts
+ * schemes an `href` must never carry.
+ */
+function isWebLink(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
 /** `OWN` payloads carry a class, `CLASS` payloads carry a teacher. */
 function isOwnPayload(
   payload: SlotPayload,
@@ -50,18 +59,23 @@ function PayloadBody({ payload }: { payload: SlotPayload }) {
   return (
     <div className="text-muted-foreground space-y-0.5 text-sm">
       <p>{payload.teacherName}</p>
-      {payload.zoomLink !== undefined && (
-        <p>
-          <a
-            className="text-primary underline underline-offset-2"
-            href={payload.zoomLink}
-            rel="noreferrer noopener"
-            target="_blank"
-          >
-            Посилання на Zoom
-          </a>
-        </p>
-      )}
+      {payload.zoomLink !== undefined &&
+        (isWebLink(payload.zoomLink) ? (
+          <p>
+            <a
+              className="text-primary underline underline-offset-2"
+              href={payload.zoomLink}
+              rel="noreferrer noopener"
+              target="_blank"
+            >
+              Посилання на Zoom
+            </a>
+          </p>
+        ) : (
+          // Not a link the browser should follow: shown as text, so a stored
+          // `javascript:` or `data:` URL cannot become a clickable `href`.
+          <p className="break-all">{payload.zoomLink}</p>
+        ))}
       {payload.note !== undefined && <p>{payload.note}</p>}
     </div>
   );

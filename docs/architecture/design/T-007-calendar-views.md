@@ -46,6 +46,15 @@ segment that is not a view name, or not a real date (`2026-02-30`), is
 teacher did not ask for. `?schedule=class` selects `CLASS`; anything else,
 absent included, is `OWN`.
 
+Read order on the page: `requireUser()` first (overview §8.3), then the three
+reads. Only the year view's range depends on `getYearFrame()`, so the other
+three views await it alongside `getScheduleInput()` and `getNonTeachingPeriods()`
+rather than before them.
+
+`zoomLink` renders as an `<a href>` only when it starts with `http://` or
+`https://`; anything else is shown as text. `z.url()` accepts schemes an `href`
+must not carry, and the write path (T-010, T-011) does not exist yet.
+
 ## 3. Ranges — `rangeFor(view, date, yearRange?)`
 
 Both ends inclusive, as everywhere in the domain (schema §6).
@@ -136,3 +145,8 @@ RSC payload. If the trigger is ever reached, the recorded reaction is to cache
   The `origin` badges and the struck-through cancelled rows are what T-011 will
   attach its actions to.
 - **Birthdays**, second phase (specification §9).
+
+The year view's title says «Навчальний рік» only when an `AcademicYear` covers
+the anchor; on the calendar-year fallback it says «Рік», and the quick jump
+§6.1 calls «до вересня» is named «На початок року» for a year that does not
+begin in September.

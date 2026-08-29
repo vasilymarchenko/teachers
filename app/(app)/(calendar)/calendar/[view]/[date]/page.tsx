@@ -12,10 +12,11 @@ import {
 import { requireUser } from "@/lib/auth/session";
 import { getNonTeachingPeriods } from "@/lib/db/queries/calendarRules";
 import { getScheduleInput } from "@/lib/db/queries/scheduleInput";
-import { getYearFrame } from "@/lib/db/queries/yearFrame";
+import { getYearFrame, type YearFrame } from "@/lib/db/queries/yearFrame";
 import { buildCalendarDays } from "@/lib/domain/calendar/days";
 import { isCalendarViewName, rangeFor } from "@/lib/domain/calendar/views";
 import { isIsoDate } from "@/lib/domain/schedule/dates";
+import type { DateRange } from "@/lib/domain/schedule/types";
 import { today } from "@/lib/time/today";
 
 // The calendar reads the teacher's data per request; nothing may be frozen
@@ -48,6 +49,9 @@ export default async function Page({
   params: Promise<{ view: string; date: string }>;
   searchParams: Promise<{ schedule?: string }>;
 }) {
+  // The boundary first, before anything reads or answers (overview §8.3).
+  const { id: userId } = await requireUser();
+
   const { view, date } = await params;
   const { schedule: scheduleParam } = await searchParams;
 
@@ -56,21 +60,24 @@ export default async function Page({
   // not ask for.
   if (!isCalendarViewName(view) || !isIsoDate(date)) notFound();
 
-  const { id: userId } = await requireUser();
   const schedule = scheduleViewOf(scheduleParam);
 
   // The year frame bounds the year view and feeds the quick jumps of §6.1;
   // `null` before the year setup of T-009 has run, which is a normal state and
-  // not an error.
-  const frame = await getYearFrame(userId, date);
-  const yearRange =
-    frame === null ? undefined : { from: frame.dateFrom, to: frame.dateTo };
+  // not an error. Only the year view's range depends on it, so the other three
+  // read it alongside their data instead of waiting for it first.
+  const framePromise = getYearFrame(userId, date);
+  const range =
+    view === "year"
+      ? rangeFor(view, date, rangeOfFrame(await framePromise))
+      : rangeFor(view, date);
 
-  const range = rangeFor(view, date, yearRange);
-  const [input, periods] = await Promise.all([
+  const [frame, input, periods] = await Promise.all([
+    framePromise,
     getScheduleInput(userId, range),
     getNonTeachingPeriods(userId, range),
   ]);
+  const yearRange = rangeOfFrame(frame);
 
   const days = buildCalendarDays(input, { ...range, view: schedule }, periods);
   const viewProps = { days, schedule, today: today() };
@@ -78,7 +85,7 @@ export default async function Page({
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">
-        {periodTitle(view, date, range)}
+        {periodTitle(view, date, range, frame !== null)}
       </h1>
 
       <CalendarNav
@@ -105,4 +112,10 @@ export default async function Page({
       {view === "year" && <YearView {...viewProps} />}
     </div>
   );
+}
+
+function rangeOfFrame(frame: YearFrame | null): DateRange | undefined {
+  return frame === null
+    ? undefined
+    : { from: frame.dateFrom, to: frame.dateTo };
 }

@@ -86,7 +86,12 @@ export function CalendarNav({
               Весь навчальний рік
             </NavLink>
             <NavLink href={calendarHref("month", yearRange.from, schedule)}>
-              До вересня
+              {/* Specification §6.1 names this jump «до вересня», which is what
+                  a year beginning on 1 September is; a year set up otherwise
+                  gets the honest name of the same jump. */}
+              {yearRange.from.slice(5, 7) === "09"
+                ? "До вересня"
+                : "На початок року"}
             </NavLink>
             <NavLink href={calendarHref("month", yearRange.to, schedule)}>
               Кінець навчального року

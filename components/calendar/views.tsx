@@ -72,8 +72,9 @@ export function MonthView({
 }: ViewProps & { anchor: IsoDate }) {
   return (
     <>
-      {/* Phone: the day-centric list, teaching days only — a month of empty
-          weekend cards would bury the days that carry lessons. */}
+      {/* Phone: the day-centric list of overview §10.2, this month's days only
+          — the padding days belong to the grid, which needs whole weeks; a
+          list does not. */}
       <ul className="space-y-2 md:hidden">
         {days
           .filter((day) => isInMonthOf(day.date, anchor))

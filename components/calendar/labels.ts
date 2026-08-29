@@ -56,6 +56,9 @@ export function periodTitle(
   view: CalendarViewName,
   date: IsoDate,
   range: { from: IsoDate; to: IsoDate },
+  /** `false` when no `AcademicYear` covers the date — the range is then a
+      calendar year, and calling it a school year would be a lie. */
+  hasAcademicYear = false,
 ): string {
   switch (view) {
     case "day":
@@ -65,7 +68,9 @@ export function periodTitle(
     case "month":
       return capitalise(monthAndYear(date));
     case "year":
-      return `Навчальний рік: ${fullDate(range.from)} — ${fullDate(range.to)}`;
+      return hasAcademicYear
+        ? `Навчальний рік: ${fullDate(range.from)} — ${fullDate(range.to)}`
+        : `Рік: ${fullDate(range.from)} — ${fullDate(range.to)}`;
   }
 }
 
