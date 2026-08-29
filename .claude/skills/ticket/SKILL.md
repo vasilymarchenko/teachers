@@ -1,0 +1,206 @@
+---
+name: ticket
+description: Take a backlog ticket from docs/backlog, plan it, implement it on a fresh branch, open a well-described PR, then re-review that PR against the ticket, the architecture documents and the repository conventions and push the fixes. Use when the user invokes /ticket (optionally with a ticket id such as /ticket T-005), or asks to "take the next ticket", "work the backlog", "implement T-NNN", or "pick up the next item from docs/backlog".
+---
+
+# Work a backlog ticket
+
+End to end: pick the ticket, understand it, plan it, build it, ship a PR, then
+review your own PR and fix what the review finds. Seven phases, in order. Do not
+skip ahead — in particular, no code is written before the plan is approved, and
+no PR is called finished before phase 7 has run.
+
+The repository's own rules win over anything below. Read the root `CLAUDE.md`
+(layout, language rules, the `new Date()` and `userId` rules) and
+`docs/backlog/CLAUDE.md` (backlog conventions) before phase 3; they are the
+standard the final review measures against.
+
+## Phase 1 — Choose the ticket
+
+If the invocation carries an id (`/ticket T-005`), that is the ticket.
+
+Otherwise take the **first ticket in `docs/backlog/README.md` table order whose
+`status` is `todo`** — the table is ordered by priority, the id number is not.
+Verify against the authoritative frontmatter, not the table:
+
+```sh
+grep -H -E '^(id|title|status|depends_on):' docs/backlog/[TQ]-*.md
+```
+
+If the table and a frontmatter disagree, the frontmatter is right; fix the table
+in your first commit and say so.
+
+Then check the gate before starting:
+
+- Every id in `depends_on` must be `done` (tickets) or `answered` (questions).
+  If one is not, skip to the next `todo` ticket and tell the user why.
+- `status: blocked` is never picked automatically. Neither is a ticket whose
+  `depends_on` names an `open` question.
+- If the user named a ticket that is blocked or has unmet dependencies, say what
+  is unmet and ask whether to proceed anyway (`AskUserQuestion`) rather than
+  quietly starting.
+
+State the chosen ticket — id, title, why this one — in one line before moving on.
+
+## Phase 2 — Understand it
+
+Read, in this order:
+
+1. The ticket file: `## Goal`, every acceptance criterion, `## Notes`.
+2. Every path in `refs:`. `path §N` means section N of that document — read that
+   section and enough around it to see the reasoning. A ticket deliberately does
+   not restate the architecture, so the `refs` are not optional background.
+3. `docs/architecture/glossary.md` for every domain term the ticket uses. Code
+   uses the English identifier the glossary binds; a term that is not in the
+   glossary does not exist yet.
+4. The code the ticket touches, plus one neighbouring module already written in
+   the target style, so the new code reads like its surroundings.
+5. Any `Q-NNN` the ticket's `refs` or acceptance criteria point at — an open
+   question usually has a *current default* that the code must implement, in one
+   named place.
+
+## Phase 3 — Ask before assuming
+
+Ask the user — with `AskUserQuestion`, options first, one round if possible —
+when:
+
+- an acceptance criterion can be read two ways and the readings produce
+  materially different code;
+- the ticket requires a product decision that neither the specification nor the
+  architecture document settles (a UI wording, a rule about a teacher's day);
+- the work would need a schema change, a new dependency, or a change to
+  `architect-overview.md`;
+- an open question the ticket depends on has no recorded default to code against.
+
+Do not ask what the documents already answer, and do not ask for permission to
+follow the conventions. Do everything that does not depend on the answer while
+you wait, and batch the questions into one round rather than trickling them.
+
+## Phase 4 — Plan first
+
+Produce a written implementation plan **before any edit**. For a ticket that
+touches more than two or three files, delegate the exploration to the `Plan`
+subagent — give it the ticket text, the `refs` sections and the two `CLAUDE.md`
+files, and ask for the file-by-file plan; then take its output and check it
+yourself against the acceptance criteria. For a small, obvious ticket, write the
+plan directly.
+
+The plan must state:
+
+- **Files** to add or change, each with one line on what it does.
+- **Acceptance criteria → work item** — a mapping, so an untouched criterion is
+  visible before implementation rather than after.
+- **Tests**: which suites, which cases, and which fixture document they come
+  from. Expectations must be derived from the fixtures or the specification,
+  **never obtained by running the code first**.
+- **Documentation impact**: which of `architect-overview.md`, `glossary.md`,
+  `docs/architecture/design/**` change, and the backlog status update.
+- **Risks and trade-offs**, including anything the plan deliberately leaves out.
+
+Present the plan and get the user's approval before implementing. Keep the plan
+ephemeral (it lives in the conversation and, condensed, in the PR body). Write a
+durable document under `docs/architecture/design/` only when the ticket itself
+asks for one — that subtree is English, per root `CLAUDE.md`.
+
+## Phase 5 — Implement on a new branch
+
+Branch from the up-to-date default branch, one branch per ticket:
+
+```sh
+git fetch origin main && git checkout -b claude/ticket-t-NNN-<short-slug> origin/main
+```
+
+(If the session was handed a designated branch, use that name instead — never
+push to a different branch than the one you were given.)
+
+While implementing, hold the rules that are easy to break silently:
+
+- **No `new Date()` in domain code.** "Today" comes from `lib/time/today.ts`.
+- **`userId` is the first argument** of every `lib/db/queries` function and every
+  mutation, and comes only from `requireUser()` — never from request input.
+- **Language by audience.** UI text, user-facing errors and seed data: Ukrainian.
+  Code, comments, commit messages, PR text, `docs/backlog/**`: English.
+  `docs/architecture/*.md`: Ukrainian prose, English identifiers verbatim.
+- **A new domain term goes into `glossary.md` first**, then into the code.
+- Tests for `lib/domain` are the point of that layer, not an extra.
+
+Update the backlog in the same commit as the work it describes: the ticket's
+frontmatter `status`, the checkboxes under `## Acceptance criteria`, and the
+mirrored row in `docs/backlog/README.md`. Set `done` only when every criterion is
+actually checked; otherwise `in-progress`, and say in `## Notes` what remains. A
+decision that changes the design belongs in `architect-overview.md` with a
+reference from `## Notes`, not buried in the ticket.
+
+Commit message: `T-NNN: <what changed>`, English, imperative, body explaining the
+non-obvious choices.
+
+## Phase 6 — Verify, then open the PR
+
+Everything must pass before the PR exists:
+
+```sh
+npm run lint && npm run typecheck && npm test
+```
+
+Add `npm run test:integration` whenever `lib/db` was touched (it needs a migrated
+Postgres — `docker compose up -d`, then `npm run db:migrate`). If a check cannot
+run in this environment, say so explicitly in the PR body rather than implying it
+passed.
+
+Push with `git push -u origin <branch>`, then open the PR. Check for a PR
+template first (`.github/pull_request_template.md`,
+`.github/PULL_REQUEST_TEMPLATE.md`, root, `docs/`) and populate its headings if
+one exists. Otherwise write the body as:
+
+- **Ticket** — `T-NNN`, title, link to the ticket file.
+- **What changed** — the shape of the change, file groups, not a file list.
+- **Acceptance criteria** — each one, checked, with the file or test that
+  satisfies it; anything left unchecked, with the reason.
+- **Decisions** — choices a reviewer would otherwise have to reverse-engineer,
+  and the alternatives rejected.
+- **Tests** — what runs, and the commands' results.
+- **Follow-ups** — deliberately out of scope; a new ticket id if one was added.
+
+Title: `T-NNN: <ticket title>`. English, like everything else developer-facing.
+
+## Phase 7 — Review your own PR, then fix it
+
+This phase is not optional and it is not a re-read of your own diff from memory.
+Fetch the PR diff and review it cold, against three standards:
+
+1. **The ticket.** Walk each acceptance criterion and point at the code or test
+   that satisfies it. A criterion satisfied "in spirit" is not satisfied.
+2. **The documents.** `architect-overview.md` sections in `refs`, the glossary,
+   both `CLAUDE.md` files, the language rules. Check specifically for:
+   `new Date()` outside `lib/time`, a query or mutation without `userId` first,
+   Ukrainian in developer-facing text or English in teacher-facing text, a domain
+   term missing from the glossary, a `README.md` row that disagrees with the
+   frontmatter it mirrors, a fact now stated in two documents.
+3. **The code.** Correctness first — boundary dates, parity edges, timezone,
+   null and empty-range handling, N+1 queries, unvalidated input crossing a
+   Server Action boundary. Then reuse and simplification: something reimplemented
+   that already exists in `lib/`, a test that asserts the implementation instead
+   of the behaviour, an expectation that was clearly read off the output.
+
+Running `/code-review` on the branch is a good second pass, but it does not
+replace the ticket-and-documents check above — it does not know the acceptance
+criteria.
+
+Apply every finding **in the same branch**, as a separate commit
+(`T-NNN review fixes: <what>`), re-run lint, typecheck and the test suites, push,
+and update the PR body if a decision changed. If a finding is real but out of
+scope, say so in the PR body under *Follow-ups* and add a backlog ticket rather
+than silently widening the change.
+
+Report back to the user with the PR link, what the review changed, and anything
+left open.
+
+## Definition of done
+
+- The right ticket was chosen and its dependencies were satisfied.
+- The plan was approved before implementation.
+- Branch, commits and PR follow the naming and language conventions.
+- Backlog frontmatter, checkboxes and `README.md` agree with each other and with
+  the work.
+- `lint`, `typecheck` and the relevant test suites pass on the pushed head.
+- Phase 7 ran, its findings are pushed, and the PR body reflects the final state.
