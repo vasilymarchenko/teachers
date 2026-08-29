@@ -38,7 +38,14 @@ export async function getBellSchedule(userId: string): Promise<BellInput[]> {
  *
  * Whole seconds are dropped, anything else is kept rather than rounded away: a
  * bell at `08:30:45` is a data-entry mistake worth seeing, not one worth hiding.
+ *
+ * The whole string is matched rather than its tail: a bare `HH:MM` also ends in
+ * `:00` on the hour, and trimming three characters off `08:00` would leave `08`.
+ * `time` never yields that shape today, and this function is not the place that
+ * finds out when it does.
  */
+const WHOLE_MINUTE = /^(\d{2}:\d{2}):00$/;
+
 function clockTime(value: string): string {
-  return value.endsWith(":00") ? value.slice(0, -3) : value;
+  return WHOLE_MINUTE.exec(value)?.[1] ?? value;
 }

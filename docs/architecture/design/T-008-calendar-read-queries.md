@@ -34,7 +34,20 @@ plain data: no Drizzle row type reaches `lib/domain` or a component.
 
 `getNonTeachingPeriods()` returns the whole row, `name` and `kind` included,
 because T-007 names the period on a shaded day; `getScheduleInput()` narrows it
-to the two dates `isNonTeaching` uses. One read, not two that would drift apart.
+to the two dates `isNonTeaching` uses, since `ScheduleInput` is exactly
+`expand()`'s input and nothing more. So a screen that shades a day and names its
+period calls `getNonTeachingPeriods()` itself — **one module and one predicate**,
+not a second query written beside this one that would drift away from it. That
+is a second round trip on the pages that name a period, and whether it is worth
+folding into the assembled result is T-007's question to answer, with a screen
+in front of it.
+
+`getYearFrame()` is the one read `getScheduleInput()` does not call: the year
+frame bounds navigation and feeds `resolveBoundary()`, neither of which is part
+of expanding a window. Its behaviour is asserted by
+`lib/db/queries/yearFrame.integration.test.ts` — the semesters in `index` order,
+and `null` outside every year — because a plan check alone says nothing about
+what a read returns.
 
 ## 2. Predicates
 
