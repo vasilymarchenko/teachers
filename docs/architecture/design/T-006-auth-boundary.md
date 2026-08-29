@@ -16,6 +16,7 @@ accepts and rejects.
 |---|---|
 | `lib/auth/auth.ts` | `getAuth()` — the better-auth instance. Called only by `lib/auth/session.ts` and the mounted route handler. |
 | `lib/auth/session.ts` | `requireUser()`, `getUser()`, `SessionUser` |
+| `lib/auth/signInError.ts` | `isBadCredentials()` — which `APIError`s from `signInEmail()` mean the credentials were wrong |
 | `lib/auth/queryDiscipline.ts` | `checkSource()`, `SourceKind`, `Violation`, `ACTIONS_WITHOUT_A_SESSION` — test support only; it imports `typescript`, a devDependency, so application code must never import it |
 | `lib/actions/auth.ts` | `signInAction`, `signOutAction`, `SignInState` |
 | `lib/validation/signIn.ts` | `signInInput`, `SignInInput` |
@@ -148,5 +149,33 @@ unanchored alternative also excludes `/sign-inbox` and `/apitest`.
 `after` hook that copies better-auth's `Set-Cookie` onto Next's cookie store;
 without it `signInAction` succeeds and no session cookie is ever written.
 
+`disabledPaths: ["/sign-up/email"]`. `toNextJsHandler` serves every endpoint
+better-auth defines under `/api/auth/*`, and `proxy.ts` does not cover `/api`,
+so that route would otherwise let anyone who can reach the host create an
+account and hold a valid session. The teacher comes from `npm run db:seed`;
+there is no sign-up screen, so the route is answered with 404.
+
+`disabledPaths` rather than `emailAndPassword.disableSignUp`, which would also
+close `auth.api.signUpEmail()` — the server API the seed uses to create the
+teacher with a hash better-auth will accept (`design/schema.md` §10). The
+exposure is the mounted route; `disabledPaths` is checked in the router's
+`onRequest` and reaches nothing else.
+
 `BETTER_AUTH_SECRET` must be a real value — sign-in fails against the
 `replace-me` placeholder in `.env.example`.
+
+`isBadCredentials()` decides which failures the form may report as a wrong
+password: `INVALID_EMAIL_OR_PASSWORD` and `INVALID_EMAIL` only. better-auth
+answers a bad address, a bad password and an unknown account with the first of
+those, so the single Ukrainian message covers exactly the cases it claims to.
+Every other `APIError` — an unverified email, a session that could not be
+created — is rethrown, so a broken deployment reaches the logs instead of
+telling the teacher to retype a password that was right.
+`lib/auth/signInError.test.ts` pins the line, including the two failures that
+share the credential error's 401 status.
+
+**Rate limiting does not apply to this flow.** better-auth's limiter (3 requests
+per 10 s on `/sign-in*`, on by default in production) runs in the router's
+`onRequest`, so it covers `auth.handler(request)` — the mounted route — and not
+`auth.api.signInEmail()`, which is what `signInAction` calls. `T-016` owns
+closing that, before T-015 puts the app on a public host.

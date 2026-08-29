@@ -6,6 +6,7 @@ import { APIError } from "better-auth/api";
 import { z } from "zod";
 import { getAuth } from "@/lib/auth/auth";
 import { requireUser } from "@/lib/auth/session";
+import { isBadCredentials } from "@/lib/auth/signInError";
 import { signInInput } from "@/lib/validation/signIn";
 
 /**
@@ -62,12 +63,16 @@ export async function signInAction(
       headers: await headers(),
     });
   } catch (error) {
-    if (error instanceof APIError) {
+    if (error instanceof APIError && isBadCredentials(error)) {
       return {
         email: parsed.data.email,
         error: "Неправильна електронна пошта або пароль",
       };
     }
+    // Anything else — an unset BETTER_AUTH_SECRET, an unreachable database, a
+    // session that could not be created — is a fault, not a wrong password.
+    // Rethrowing puts it in the logs and on the error page instead of telling
+    // the teacher to retype a password that was right all along.
     throw error;
   }
 

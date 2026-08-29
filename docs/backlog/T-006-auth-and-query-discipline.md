@@ -45,6 +45,10 @@ whose pool never closes, and choosing how a query module takes a database handle
 so it can be tested belongs to T-008, which builds the rest of them. Recorded in
 the design document §5.
 
-Out of scope, no ticket opened: sign-up UI (the seed creates the teacher),
-password reset, and rate limiting on sign-in. The last one needs a ticket before
-T-015 puts the app on a public host.
+Out of scope: sign-up UI and password reset. The teacher comes from
+`npm run db:seed`, so `POST /api/auth/sign-up/email` is in `disabledPaths` —
+otherwise the mounted handler publishes a route no screen backs. Design
+document §7.
+
+Rate limiting on sign-in is `T-016`: the form calls better-auth's server API,
+which its limiter does not cover. Design document §7.
