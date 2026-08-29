@@ -66,6 +66,16 @@ where it changed an already-published fact, in the document that published it:
   is served by changing the `lessonNumber`; a nullable time pair is one migration
   away if it turns out not to be.
 
+Three smaller rules the review of this document added, each recorded where the
+implementation will read it: a second template edit on the same day updates the
+version in place rather than cutting it to zero length (§4.7, and a T-004
+criterion); `updated_at` is maintained by Drizzle's `$onUpdate`, because the SQL
+default only fires on `INSERT` (§1, and a T-004 criterion); and a recurring
+`Event` is one day per occurrence — `event_recurring_span_ck` (§4.10). The
+inclusive/exclusive rule was also restated: validity boundaries are exclusive,
+entity ranges (`AcademicYear`, `Semester`, `NonTeachingPeriod`, `Event`) have an
+inclusive `dateTo`. Overview §8.1 corrected accordingly.
+
 Two further items are handed to other tickets rather than decided here: a
 `lessonNumber` with no `BellSchedule` row (T-005/T-010, §12 F-3) and the
 better-auth tables having to land in T-004's first migration because every

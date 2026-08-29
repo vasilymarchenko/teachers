@@ -25,13 +25,13 @@ teacher reads those (root `CLAUDE.md`).
 | Column names | `snake_case` in SQL; the Drizzle property is the `camelCase` identifier from `glossary.md` (`valid_from` ↔ `validFrom`) |
 | Primary key | `id uuid PRIMARY KEY DEFAULT gen_random_uuid()` — core in PostgreSQL 16, no extension needed |
 | Tenancy | `user_id text NOT NULL REFERENCES "user"(id) ON DELETE CASCADE` on every profile table (§8) |
-| Timestamps | `created_at timestamptz NOT NULL DEFAULT now()`, `updated_at timestamptz NOT NULL DEFAULT now()` on every table the teacher edits |
+| Timestamps | `created_at timestamptz NOT NULL DEFAULT now()`, `updated_at timestamptz NOT NULL DEFAULT now()` on every table the teacher edits. The default fires on `INSERT` only: `updated_at` is maintained by the application, `.$onUpdate(() => new Date())` on the Drizzle column, not by a database trigger. A row never updated through Drizzle keeps its insert value, which is the accepted cost of not having a trigger per table |
 | Domain dates | `date`, no time zone (overview §8.5) |
 | Clock times | `time` (without time zone) — `BellSchedule` only (overview §8.5) |
 | Free text | `text`, never `varchar(n)`: subjects, class names, teacher names are free text (overview §4) and a length cap buys nothing |
 | Payloads | `jsonb`, validated by Zod at the Server Action boundary (§7) |
 | Enums | PostgreSQL enum types (`CREATE TYPE ... AS ENUM`), one per closed value set (§2) |
-| Date intervals | half-open `[from, to)` with an exclusive upper bound everywhere **except** `non_teaching_period`, whose `date_from`/`date_to` are both inclusive (overview §8.1, fixtures §3.2) |
+| Date intervals | Two kinds, and they differ on purpose (§6). A **validity boundary** — how long a rule or a version is in force (`schedule_template.valid_to`, `boundary_date`) — is **exclusive**: the interval is half-open `[from, to)`. An **entity range** — a thing that has a first and a last day (`academic_year`, `semester`, `non_teaching_period`, `event`) — has an **inclusive** `date_to` |
 
 `id`, `user_id`, `created_at` and `updated_at` are housekeeping columns, not
 domain terms; they are covered by `glossary.md` §7 and are not repeated in the
@@ -195,9 +195,10 @@ CONSTRAINT non_teaching_period_dates_ck CHECK (date_from <= date_to)
 
 `INDEX non_teaching_period_user_range_idx ON non_teaching_period (user_id, date_from, date_to)`.
 
-**This is the one inclusive-`date_to` in the model** (overview §8.1: «у моделі
-немає жодного інклюзивного кінця діапазону, крім `NonTeachingPeriod.dateTo`»).
-Fixtures §3.2 depends on it: P1 is `2026-10-14 … 2026-10-14`.
+**`date_to` is inclusive**, like every other entity range (§1, §6). Fixtures
+§3.2 depends on it: P1 is `2026-10-14 … 2026-10-14`, a one-day holiday. What is
+never inclusive is a *validity boundary* — `boundary_date`, `valid_to` — and
+overview §8.1 is about those.
 
 **Periods are deliberately allowed to overlap** — a `PUBLIC_HOLIDAY` inside a
 `BREAK` is a normal data shape, and `isNonTeaching` is an OR over rows, so an
@@ -354,6 +355,16 @@ does the two writes — `UPDATE ... SET valid_to = today()` on the current versi
 never transiently violated. The cut point is always `today()` from
 `lib/time/today.ts` (T-005).
 
+**A second edit on the same day updates the current version in place.** If the
+version in force already has `valid_from = today()` — it was created by an
+earlier edit today — cutting it would set `valid_to = valid_from`, which
+`schedule_template_range_ck` rejects, and rightly: a zero-length version is not
+a thing. The write is then an `UPDATE` of that version's slots, not a new
+version. This is not a weakening of I1: nothing before today is being rewritten,
+because that version has never been in force on a day that has passed. `lib/actions`
+therefore branches on `current.valid_from = today()` before choosing between
+copy-on-write and an in-place edit; T-004's constraint test covers both paths.
+
 **Gaps are legal.** Nothing forbids `[A, B)` followed by `[C, D)` with `B < C`;
 fixtures §3.6 requires the `CLASS` gap `[2026-10-21, 2026-11-02)` to survive.
 
@@ -389,6 +400,14 @@ version gap, which O7 depends on (fixtures §8.8).
 
 «Скопіювати з чисельника» is a UI action that inserts the mirrored rows
 (glossary §3); it has no column and no table.
+
+**There is no «both weeks» value.** A lesson identical in the numerator and the
+denominator week is two rows, one per `parity` — which is why the fixture's four
+versions carry 44 slots. The copy action is a one-time insert, not a link:
+editing the numerator afterwards leaves the denominator row as it was. That is
+the shape specification §3.4 asks for («скопіювати та відредагувати»), and it is
+what keeps `expand()` a single lookup by `(weekday, parity)` with no fallback
+rule.
 
 ### 4.9 `day_override`
 
@@ -463,18 +482,31 @@ CONSTRAINT event_recurrence_ck CHECK (
 ),
 CONSTRAINT event_boundary_ck CHECK (
   boundary_date IS NULL OR date_from < boundary_date
+),
+CONSTRAINT event_recurring_span_ck CHECK (
+  recurrence_kind = 'NONE' OR date_to IS NULL
 )
 ```
 
 `INDEX event_user_date_idx ON event (user_id, date_from)`, plus
-`INDEX event_user_recurring_idx ON event (user_id, recurrence_kind, date_from)
+`INDEX event_user_recurring_idx ON event (user_id, date_from)
  WHERE recurrence_kind <> 'NONE'` — a recurring event has to be read for a
-window its `date_from` is not inside, so it cannot be found by the date index.
+window its `date_from` is not inside, so it cannot be found by the date index;
+the partial index is the whole set of them and is read without a date filter.
+`recurrence_kind` is not a column of the index: the predicate has already
+selected on it.
 
 `event_deadline_shape_ck` is overview §4 as a constraint: a `DEADLINE` is
 one-off, because `done` is one field per event and a repeating deadline would
 close a whole series at once. The database, not a comment, is what keeps that
 true.
+
+`event_recurring_span_ck` closes the shape nobody has defined: a repeating
+multi-day `INFO` — «щотижня, по три дні» — has no meaning in specification §6.3
+and no expansion rule in T-012's `recurrence.ts`. A recurring event is therefore
+one day per occurrence, and a multi-day event is one-off. If the teacher asks
+for «щороку, тиждень» later, it is a `CHECK` to drop and an expansion rule to
+write — in that order.
 
 `recurrence_kind` values `WEEKLY` / `MONTHLY` / `YEARLY` are new in this
 document and have been added to `glossary.md` §5 in the same commit; `YEARLY` is
@@ -531,10 +563,17 @@ constraint and the `[validFrom, validTo)` notation use throughout overview §3.2
 and the fixtures. The `boundary_kind` beside it records how the teacher entered
 that date («до кінця семестру») so the UI can say it back.
 
-**Exclusive means exclusive, everywhere.** A rule applies to `d` while
+**A validity boundary is always exclusive.** A rule applies to `d` while
 `d < boundary_date`. `NEXT_BREAK` resolves to the **first day** of the break;
-`END_OF_SEMESTER` to the **day after** `semester.date_to` (overview §8.1). The
-one inclusive end in the whole model is `non_teaching_period.date_to` (§4.3).
+`END_OF_SEMESTER` to the **day after** `semester.date_to` (overview §8.1).
+
+**An entity range is always inclusive**, and that is a different thing, not an
+exception: `academic_year`, `semester`, `non_teaching_period` and `event` each
+have a first and a last day, and `date_to` is that last day. The two rules meet
+where one feeds the other — `END_OF_SEMESTER` is `semester.date_to + 1 day`
+precisely because `date_to` is inclusive and `boundary_date` is not. Fixtures
+§3.6 pins the result: S1 ends 2026-12-24, and OWN-V2 is `[2026-10-21,
+2026-12-25)`.
 
 `boundary_kind` is never read by `expand()`. It exists so the UI can render «до
 зимових канікул» instead of a bare date. Changing the dates of a break does
