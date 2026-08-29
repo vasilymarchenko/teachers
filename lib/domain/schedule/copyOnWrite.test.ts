@@ -83,6 +83,24 @@ describe("planTemplateEdit()", () => {
     ).toThrow(/begins after the cut/);
   });
 
+  // The mirror of the case above, and the one a stale read produces: CLASS-V1
+  // had ended on 2026-10-21 by the time of the 2026-11-02 write. Passing it as
+  // `current` would trim it to the cut — moving `validTo` forward and closing
+  // the gap §3.6 stores — so it is refused rather than silently rewritten.
+  it("refuses a version that ended before the cut", () => {
+    expect(() =>
+      planTemplateEdit({
+        current: {
+          id: "CLASS-V1",
+          validFrom: "2026-09-01",
+          validTo: "2026-10-21",
+        },
+        validTo: "2026-12-25",
+        now: ON_2026_11_02,
+      }),
+    ).toThrow(/ended before the cut/);
+  });
+
   it("refuses a validTo that is not after the cut", () => {
     expect(() =>
       planTemplateEdit({ validTo: "2026-10-21", now: ON_2026_10_21 }),

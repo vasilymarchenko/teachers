@@ -36,7 +36,10 @@ export type TemplateEditPlan = {
 };
 
 export type TemplateEditRequest = {
-  /** The version in force on the cut date, if there is one. */
+  /**
+   * The version in force on the cut date, if there is one: `validFrom <= cutAt
+   * < validTo`. A version that ends at or before the cut is a gap — pass none.
+   */
   current?: TemplateVersionRange;
   /** The new version's exclusive bound, from `resolveBoundary()`. */
   validTo: IsoDate;
@@ -67,6 +70,14 @@ export function planTemplateEdit({
   if (current !== undefined && current.validFrom > cutAt) {
     throw new Error(
       `planTemplateEdit: version ${current.id} begins after the cut ${cutAt}`,
+    );
+  }
+  if (current !== undefined && current.validTo <= cutAt) {
+    // Trimming it would move `validTo` *forward* to the cut and close a gap the
+    // teacher's earlier edit opened on purpose (fixtures §3.8, 2026-11-02): a
+    // version that has already ended is a gap, and the caller must pass none.
+    throw new Error(
+      `planTemplateEdit: version ${current.id} ended before the cut ${cutAt}`,
     );
   }
 

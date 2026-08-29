@@ -69,21 +69,15 @@ type Cell = [
 ];
 
 const slotsOf = (cells: Cell[]): TemplateSlotInput[] =>
-  cells.flatMap(([weekday, lessonNumber, numerator, denominator]) =>
-    (
-      [
-        ["NUMERATOR", numerator],
-        ["DENOMINATOR", denominator],
-      ] as [Parity, OwnSlotPayload | ClassSlotPayload | null][]
-    )
-      .filter(([, payload]) => payload !== null)
-      .map(([parity, payload]) => ({
-        weekday,
-        lessonNumber,
-        parity,
-        payload: payload as OwnSlotPayload | ClassSlotPayload,
-      })),
-  );
+  cells.flatMap(([weekday, lessonNumber, numerator, denominator]) => {
+    const columns: [Parity, OwnSlotPayload | ClassSlotPayload | null][] = [
+      ["NUMERATOR", numerator],
+      ["DENOMINATOR", denominator],
+    ];
+    return columns.flatMap(([parity, payload]) =>
+      payload === null ? [] : [{ weekday, lessonNumber, parity, payload }],
+    );
+  });
 
 /** Fixtures §3.6, `TemplateSlot` — OWN-V1. */
 const OWN_V1_CELLS: Cell[] = [

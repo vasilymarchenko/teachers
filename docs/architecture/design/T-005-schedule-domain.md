@@ -41,7 +41,7 @@ type ScheduleInput = {
 };
 ```
 
-Three obligations on T-008, which builds this from the database:
+Four obligations on T-008, which builds this from the database:
 
 1. **Both views, always.** `templates` and `overrides` carry `OWN` and `CLASS`
    whichever view is asked for. `isTaughtByMe` is decided against the resolved
@@ -159,6 +159,7 @@ test can pin the clock without being able to pin the date.
 | `validFrom < cutAt` | `trim` to `cutAt` + `create` | I1 and I2 together — fixtures §3.8, 2026-10-21 |
 | `validFrom === cutAt` | `replace` + `create` | no past to freeze; a trim would leave `[d, d)`, which `schedule_template_range_ck` rejects |
 | `validFrom > cutAt` | throws | not the version in force |
+| `current.validTo <= cutAt` | throws | already ended — it is a gap, and trimming it would move its `validTo` forward and close the gap |
 | `validTo <= cutAt` | throws | an empty interval |
 
 **Out of scope by design:** versions that begin *after* the cut date. This plans
