@@ -12,6 +12,13 @@ The scaffold (T-002) and the database schema (T-004) are in place: the app build
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
 - `docs/backlog/` — the work tracker: one file per ticket (`T-NNN`) and per open question (`Q-NNN`), index in `docs/backlog/README.md`, conventions in `docs/backlog/CLAUDE.md`. There is no external tracker; a ticket states what to do and when it is done, and references the architecture document rather than restating it
 
+## Skills
+
+`.claude/skills/ticket` — `/ticket [T-NNN]` takes a backlog ticket (the named one,
+or the first `todo` in `docs/backlog/README.md` order), plans it, implements it on
+a branch, opens a PR and then reviews that PR against the ticket and these
+conventions.
+
 ## Commands
 
 Package manager: **npm** (`package-lock.json` is committed). Node.js 22+.
