@@ -2,7 +2,7 @@
 id: Q-002
 type: question
 title: Mobile interaction pattern for the weekly template editor
-status: open
+status: answered
 depends_on: []
 refs:
   - docs/architecture/architect-overview.md §10.2
@@ -18,7 +18,14 @@ table. Which pattern?
 
 ## Current default
 
-None. No UI code exists yet.
+Answered: the day-centric flow. On a narrow screen both the calendar and the
+template editor show **one day** — that day's lessons, with navigation between
+days — and the 6 × 10 grid appears only from the tablet breakpoint up, as a
+wrapper over seven day components rather than the other way round.
+
+The decision and its consequence for how the components split are recorded in
+`docs/architecture/architect-overview.md` §10.2; this file is the record that it
+was asked.
 
 ## Cost of changing later
 
@@ -32,5 +39,5 @@ not depend on this at all.
 
 ## Needed from
 
-A design decision before UI work starts. Blocks T-007 and T-010; blocks nothing
-before them.
+A design decision before UI work starts — taken, so T-007 and T-010 no longer
+wait on it.
