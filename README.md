@@ -108,6 +108,7 @@ refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=1`.
 ```
 app/          App Router: pages, layouts, route handlers, /print views
 components/   React components, including shadcn/ui wrappers
+drizzle/      migrations and their drizzle-kit snapshots, all committed
 lib/
   actions/    Server Actions: requireUser -> Zod -> domain/db -> revalidate
   auth/       the authorisation boundary
@@ -115,6 +116,7 @@ lib/
   domain/     pure, DB-free logic: schedule expansion, parity, recurrence
   time/       the single source of "today", in Europe/Kyiv
   validation/ Zod schemas shared by forms and Server Actions
+scripts/      one-off scripts run through npm, e.g. the demo seed
 ```
 
 The reasoning behind this layout is in

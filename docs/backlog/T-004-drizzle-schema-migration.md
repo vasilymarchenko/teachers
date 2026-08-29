@@ -71,6 +71,12 @@ not overwriting.
 Verified end to end against a clean database: drop, `db:migrate`, `db:seed`,
 `test:integration`.
 
+`updated_at` is covered twice: `lib/db/schema/timestamps.test.ts` asserts
+structurally that every table declaring the column also declares the
+`.$onUpdate()` hook — the failure mode is a new aggregate written without the
+`timestamps()` helper, which nothing else would report — and the integration
+suite asserts that the hook actually moves the value.
+
 **Tests.** `*.integration.test.ts` files are excluded from `npm test` and run by
 `npm run test:integration` against a migrated database, so a checkout without
 Docker still has a green unit suite. `lib/db/testDatabase.ts` opens a closable
