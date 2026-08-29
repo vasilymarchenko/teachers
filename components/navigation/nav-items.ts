@@ -17,9 +17,11 @@ export type NavItem = {
 /**
  * The navigation menu — the single place it is defined.
  *
- * One item per screen of the first release, named after the specification's own
- * section titles: Календар (§6, the main screen), Розклад (§5, the weekly
- * template), Події (§6.3) and Навчальний рік (§3, boundaries, bells, parity).
+ * One item per screen of the first release, each named for the section of the
+ * specification it serves: Календар (§6, the main screen), Розклад (§5, the
+ * weekly template), Події (§6.3) and Навчальний рік (§3 — boundaries, bells,
+ * parity). The labels follow `docs/architecture/glossary.md` where it names the
+ * term; they are screen names, not entity names.
  *
  * Specification §8 excludes two items that appear on the mockups —
  * «Календарне планування» and «Розробка уроку». They are absent here, and

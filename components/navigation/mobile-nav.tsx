@@ -2,7 +2,7 @@
 
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { NavLinks } from "./nav-links";
 
 /**
@@ -13,14 +13,21 @@ import { NavLinks } from "./nav-links";
  * with no JavaScript and needs no dialog dependency. The one thing script adds
  * is closing it after a navigation — client routing keeps the element mounted,
  * so without this the menu would stay open over the screen it just opened.
+ *
+ * Closing is driven from both ends because neither covers the other: the
+ * pathname effect catches a navigation that did not start here (a link inside
+ * the page, the back button), and the link callback catches a tap on the screen
+ * already open, which changes no pathname at all.
  */
 export function MobileNav({ footer }: { footer: React.ReactNode }) {
   const pathname = usePathname();
   const ref = useRef<HTMLDetailsElement>(null);
 
-  useEffect(() => {
+  const close = useCallback(() => {
     if (ref.current) ref.current.open = false;
-  }, [pathname]);
+  }, []);
+
+  useEffect(close, [pathname, close]);
 
   return (
     <details
@@ -33,7 +40,7 @@ export function MobileNav({ footer }: { footer: React.ReactNode }) {
       </summary>
       <div className="flex flex-col gap-4 px-3 pb-4">
         <nav aria-label="Головне меню">
-          <NavLinks />
+          <NavLinks onNavigate={close} />
         </nav>
         {footer}
       </div>

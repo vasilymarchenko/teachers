@@ -33,16 +33,15 @@ than inventing chrome.
 ## Notes
 
 The shell layout lives in an `(app)` route group that wraps `(calendar)`,
-`(schedule)` and `(events)`; `(auth)` and `print` are its siblings, so they
-cannot inherit the navigation. The tree in `architect-overview.md` §2 was
-updated to match — a layout that carries navigation needs a group to hang on,
-and this makes "print without navigation" structural rather than a convention
-each new layout has to remember.
+`(schedule)` and `(events)`; `(auth)` and `print` are its siblings. The decision
+and its reasoning are recorded where they belong —
+`architect-overview.md` §2, whose tree was updated in this ticket.
 
 The palette is provisional. The mockups §8 refers to were not available, so the
 hues were chosen to its description (calm green and beige, dark panel). Every
-value is a CSS variable in `app/globals.css` and nothing else in the
-application encodes a colour, so replacing them is a one-file change.
+value is a CSS variable in `app/globals.css`, so replacing them is a one-file
+change. The single place outside it that names a colour is the print layout's
+black on white, which §7 requires of paper and which a restyle must not touch.
 
 The navigation is defined once, in `components/navigation/nav-items.ts`.
 `nav-items.test.ts` checks each item against the routes that actually exist, so

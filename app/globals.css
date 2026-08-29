@@ -12,6 +12,11 @@
  * requirement of §8: the mockups are a sample of style, and the style must be
  * changeable later without reworking the application.
  *
+ * One deliberate exception: `app/print/layout.tsx` names black and white
+ * literally. §7 asks for a printed page that is black on white — a property of
+ * paper, not a style choice — so restyling the application must not tint what
+ * comes out of the printer. The reasoning is stated in that file.
+ *
  * The scale is the shadcn/ui token set, with its neutral base swapped for the
  * calm green-and-beige of §8: a warm beige work area, a deep green ink, and a
  * dark green navigation panel (the `--sidebar-*` family).

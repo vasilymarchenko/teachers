@@ -11,8 +11,12 @@ import { navItems } from "./nav-items";
  * A client component for one reason: marking the current screen needs the
  * pathname, and there is no server-side equivalent. Without JavaScript the
  * links still navigate — only the highlight is missing.
+ *
+ * `onNavigate` fires on every activated link, including the one for the screen
+ * already open. The mobile disclosure needs that: a re-tap of the current item
+ * changes no pathname, so an effect watching the pathname never sees it.
  */
-export function NavLinks() {
+export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -26,6 +30,7 @@ export function NavLinks() {
           <li key={href}>
             <Link
               href={href}
+              onClick={onNavigate}
               aria-current={isCurrent ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-base transition-colors",
