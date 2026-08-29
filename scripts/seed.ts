@@ -135,6 +135,11 @@ async function main() {
   // Idempotency: the demo user's rows go with the user, through
   // `ON DELETE CASCADE` (schema §10). Running the seed twice leaves the same
   // database.
+  //
+  // This delete and the sign-up below are outside the transaction that follows,
+  // because better-auth's API owns its own connection and cannot join one. A
+  // failure partway leaves a half-seeded user, which the next run clears —
+  // idempotency rather than atomicity, as schema §10 records.
   await db.delete(user).where(eq(user.email, SEED_USER_EMAIL));
 
   // Through better-auth's own API rather than an INSERT into its tables, so the

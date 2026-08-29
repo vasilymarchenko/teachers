@@ -67,7 +67,7 @@ something the application does at start-up: the web process never migrates its
 own database. Deploying is `docker compose pull`, then `db:migrate`, then
 restart — see the deploy pipeline ticket, `docs/backlog/T-015-deploy-pipeline.md`.
 
-Three of the migration files in `drizzle/` are written by hand rather than
+Two of the migration files in `drizzle/` are written by hand rather than
 generated, because `drizzle-kit` cannot express what they contain:
 
 | File | Why it is hand-written |

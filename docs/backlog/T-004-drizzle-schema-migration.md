@@ -97,3 +97,19 @@ unchanged by the implementation: neither `template_slot.lesson_number` nor
 `day_override.lesson_number` is constrained to a number that has a
 `bell_schedule` row (F-3, for T-005/T-010), and `day_override` still has no
 per-day time columns (F-4).
+
+**Three fixes made in review.** `drizzle.config.ts`'s schema glob was
+`./lib/db/schema/*.ts`, which matches this ticket's two test files as well as
+the aggregates; drizzle-kit `require()`s every file the glob matches and threw
+on the `vitest` import, without a non-zero exit — `npm run db:generate` was
+broken and silent about it. The glob excludes test files now. The seed's row
+inserts are one transaction but the delete and the sign-up ahead of them are
+not, because better-auth's API cannot join a Drizzle transaction — corrected in
+`docs/architecture/design/schema.md` §10 and in `scripts/seed.ts`. `README.md`
+said three migration files are hand-written and listed the two there are.
+
+**The `event` table has no test yet.** Its six check constraints are
+hand-transcribed boolean expressions that nothing exercises, and the seed cannot
+cover them: the fixture scenario has no events, and adding some would break the
+rule that the seed transcribes the fixture and nothing else. An
+`event.integration.test.ts` belongs with T-012's recurrence work.
