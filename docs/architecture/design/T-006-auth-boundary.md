@@ -16,7 +16,7 @@ accepts and rejects.
 |---|---|
 | `lib/auth/auth.ts` | `getAuth()` — the better-auth instance. Called only by `lib/auth/session.ts` and the mounted route handler. |
 | `lib/auth/session.ts` | `requireUser()`, `getUser()`, `SessionUser` |
-| `lib/auth/queryDiscipline.ts` | `checkSource()`, `SourceKind`, `Violation`, `ACTIONS_WITHOUT_A_SESSION` — test support, imported by the test only |
+| `lib/auth/queryDiscipline.ts` | `checkSource()`, `SourceKind`, `Violation`, `ACTIONS_WITHOUT_A_SESSION` — test support only; it imports `typescript`, a devDependency, so application code must never import it |
 | `lib/actions/auth.ts` | `signInAction`, `signOutAction`, `SignInState` |
 | `lib/validation/signIn.ts` | `signInInput`, `SignInInput` |
 | `lib/db/queries/teacher.ts` | `getTeacher(userId)` |
@@ -91,7 +91,7 @@ no program, no type checker.
 | # | Rule | Applies to |
 |---|---|---|
 | 1 | Every exported function's first parameter is `userId: string` | `query` |
-| 2 | Every exported function calls `requireUser()` | `action`, minus `ACTIONS_WITHOUT_A_SESSION` |
+| 2 | Every exported function calls `requireUser()` somewhere in its body | `action`, minus `ACTIONS_WITHOUT_A_SESSION` |
 | 3 | No `<expr>.get("userId")` | all three |
 | 4 | No `userId` read off a parameter of an enclosing function | all three |
 | 5 | No `userId` key in a `z.object({…})` | all three |
@@ -100,6 +100,10 @@ Rules 3 and 5 are additionally expressed as `no-restricted-syntax` selectors in
 `eslint.config.mjs` over `app/`, `lib/` and `components/`, so they surface in the
 editor. Rules 1, 2 and 4 are beyond what a selector can state; the test is the
 authority for all five.
+
+Rule 2 checks that `requireUser()` is called somewhere in the function, not that
+it is the first statement — proving "first" needs ordering effects, which syntax
+alone cannot establish once a helper or a branch is involved.
 
 **What it does not prove.** That an accepted `userId` is actually used in the
 `where`. A query with the right signature and no filter passes rule 1. That gap
@@ -122,21 +126,21 @@ directory fails loudly instead of turning the suite into a no-op.
 `getSessionCookie(request)` returns nothing; it does not verify the cookie.
 
 §8.3 calls this layer "middleware". Next.js 16 renamed the file convention from
-`middleware.ts` to `proxy.ts` — `middleware.ts` still runs but warns on every
-build. Same position in the pipeline, so §8.3's reasoning is unchanged and the
-overview needs no edit. Verification would put the boundary in
-the place §8.3 says must not hold it, and would cost a round trip per
-navigation; an expired cookie takes one extra redirect from `requireUser()`.
+`middleware.ts` to `proxy.ts`, and the export from `middleware` to `proxy`;
+`middleware.ts` still runs but warns on every build. Same position in the
+pipeline, so §8.3's reasoning carries over unchanged and the overview needs no
+edit. Why the cookie is not verified here is §8.3's to answer.
 
-Matcher — everything except `sign-in`, `api`, `_next`, `favicon.ico` and any
-path with a file extension:
+Matcher — everything except `sign-in`, `api`, `_next` and any path with a file
+extension:
 
 ```
-/((?!sign-in|api|_next|favicon\.ico|.*\.[^/]+$).*)
+/((?!(?:sign-in|api|_next)(?:$|/)|.*\.[^/]+$).*)
 ```
 
 `api` is excluded because better-auth's own handler is mounted under it and must
-stay reachable while signed out.
+stay reachable while signed out. Each name is anchored with `($|/)`: an
+unanchored alternative also excludes `/sign-inbox` and `/apitest`.
 
 ## 7. Configuration
 

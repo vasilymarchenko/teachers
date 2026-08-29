@@ -18,6 +18,10 @@ import ts from "typescript";
  * that it proves a `userId` is *taken* correctly, not that it is *used* — a
  * query that accepts `userId` and forgets to filter on it still passes. That
  * one is the reviewer's, and the integration tests'.
+ *
+ * **Test support — never import this from application code.** It pulls in
+ * `typescript`, which is a devDependency; an `app/` or `lib/` module importing
+ * it would break the production build.
  */
 
 export type Violation = { file: string; line: number; message: string };
@@ -25,8 +29,8 @@ export type Violation = { file: string; line: number; message: string };
 /** Server Actions that legitimately run before a session exists. */
 export const ACTIONS_WITHOUT_A_SESSION = ["signInAction"];
 
-/** Identifiers a `userId` may never be read out of — see `checkSource`. */
-const FORBIDDEN_GETTER_KEY = "userId";
+/** The key this module is about, in the one place it is spelled. */
+const GUARDED_KEY = "userId";
 
 export type SourceKind = "query" | "action" | "validation";
 
@@ -91,7 +95,14 @@ function checkUserIdIsFirstParameter(
   }
 }
 
-/** Rule 2 — overview §8.3: the boundary runs at the entry of every action. */
+/**
+ * Rule 2 — overview §8.3: an action reaches the boundary.
+ *
+ * It checks that `requireUser()` is called *somewhere* in the function, not
+ * that it is the first statement: proving "first" would mean ordering effects,
+ * which syntax alone cannot do once a helper or a branch is involved. An action
+ * that calls it late still trips review; one that never calls it trips here.
+ */
 function checkCallsRequireUser(
   fn: ExportedFunction,
   report: (node: ts.Node, message: string) => void,
@@ -133,14 +144,14 @@ function checkNoUserIdFromInput(
   report: (node: ts.Node, message: string) => void,
 ) {
   const visit = (node: ts.Node) => {
-    if (isGetterFor(node, FORBIDDEN_GETTER_KEY)) {
+    if (isGetterFor(node, GUARDED_KEY)) {
       report(
         node,
         "userId is read out of request input; it comes only from requireUser()",
       );
     }
 
-    if (ts.isPropertyAccessExpression(node) && node.name.text === "userId") {
+    if (ts.isPropertyAccessExpression(node) && node.name.text === GUARDED_KEY) {
       const root = leftmostIdentifier(node.expression);
       if (root && isParameterOfAnEnclosingFunction(node, root)) {
         report(
@@ -150,7 +161,7 @@ function checkNoUserIdFromInput(
       }
     }
 
-    if (isZodObjectKey(node, "userId")) {
+    if (isZodObjectKey(node, GUARDED_KEY)) {
       report(
         node,
         "a Zod schema declares userId; validating it does not make it trusted",

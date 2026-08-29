@@ -35,8 +35,11 @@ export const config = {
      *  - /api/*              Route Handlers, including better-auth's own,
      *                        which must stay reachable while signed out
      *  - /_next/*            build output
-     *  - favicon.ico and any path with a file extension (static assets)
+     *  - any path with a file extension (static assets, favicon.ico included)
+     *
+     * Each name is anchored with `($|/)` so that a future `/sign-inbox` or
+     * `/apitest` is *not* silently excluded by a prefix match.
      */
-    "/((?!sign-in|api|_next|favicon\\.ico|.*\\.[^/]+$).*)",
+    "/((?!(?:sign-in|api|_next)(?:$|/)|.*\\.[^/]+$).*)",
   ],
 };

@@ -34,8 +34,8 @@ export async function getUser(): Promise<SessionUser | null> {
  *
  * `redirect()` throws, so control never returns to the caller without a user.
  * The redirect makes an expired session land on the sign-in page rather than on
- * an error; `middleware.ts` usually gets there first, but it is UX and this is
- * the check that actually holds.
+ * an error; `proxy.ts` usually gets there first, but that layer is UX and this
+ * is the check that actually holds.
  */
 export async function requireUser(): Promise<SessionUser> {
   const user = await getUser();
