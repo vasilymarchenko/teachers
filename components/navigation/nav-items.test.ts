@@ -52,6 +52,9 @@ describe("navigation menu", () => {
     // which is the `(app)` layout — T-014.
     for (const item of navItems) {
       const pageDir = pageDirs.find((dir) => routeOf(dir) === item.href);
+      // Guarded rather than asserted non-null: without this a menu item with no
+      // page fails here as a TypeError instead of naming the route.
+      expect(pageDir, `no page for ${item.href}`).toBeDefined();
       expect(groupsOf(pageDir!)).toContain("(app)");
     }
   });

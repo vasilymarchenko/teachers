@@ -8,7 +8,9 @@ export default function Page() {
   return (
     <div className="space-y-3">
       <h1>Розклад</h1>
-      <p className="text-muted-foreground">Тут з’явиться тижневий шаблон розкладу — окремо для чисельника й знаменника.</p>
+      <p className="text-muted-foreground">
+        Тут з’явиться тижневий шаблон розкладу — окремо для чисельника й знаменника.
+      </p>
     </div>
   );
 }

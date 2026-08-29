@@ -8,7 +8,9 @@ export default function Page() {
   return (
     <div className="space-y-3">
       <h1>Календар</h1>
-      <p className="text-muted-foreground">Тут з’являться види календаря — рік, місяць, тиждень і день.</p>
+      <p className="text-muted-foreground">
+        Тут з’являться види календаря — рік, місяць, тиждень і день.
+      </p>
     </div>
   );
 }

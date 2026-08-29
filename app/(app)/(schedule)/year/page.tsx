@@ -8,7 +8,9 @@ export default function Page() {
   return (
     <div className="space-y-3">
       <h1>Навчальний рік</h1>
-      <p className="text-muted-foreground">Тут з’являться межі року, семестри, канікули, розклад дзвінків і точки відліку парності.</p>
+      <p className="text-muted-foreground">
+        Тут з’являться межі року, семестри, канікули, розклад дзвінків і точки відліку парності.
+      </p>
     </div>
   );
 }

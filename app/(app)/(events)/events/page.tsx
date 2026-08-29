@@ -8,7 +8,9 @@ export default function Page() {
   return (
     <div className="space-y-3">
       <h1>Події</h1>
-      <p className="text-muted-foreground">Тут з’являться завдання з терміном та інформаційні події.</p>
+      <p className="text-muted-foreground">
+        Тут з’являться завдання з терміном та інформаційні події.
+      </p>
     </div>
   );
 }
