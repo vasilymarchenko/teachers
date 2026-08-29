@@ -15,7 +15,7 @@ for reading. Order is priority; the ID number is not.
 | [T-003](T-003-db-schema-design.md) | Detailed DB schema design document | done | T-001 |
 | [T-004](T-004-drizzle-schema-migration.md) | Drizzle schema, first migration, and the overlap constraint test | done | T-002, T-003 |
 | [T-005](T-005-domain-schedule-functions.md) | Schedule domain — today, parity, calendar rules, boundaries, expand | done | T-001, T-002 |
-| [T-006](T-006-auth-and-query-discipline.md) | Auth boundary and `user_id` query discipline | todo | T-004 |
+| [T-006](T-006-auth-and-query-discipline.md) | Auth boundary and `user_id` query discipline | done | T-004 |
 | [T-008](T-008-calendar-read-queries.md) | Read queries for the calendar data path | todo | T-004, T-006 |
 | [T-014](T-014-app-shell.md) | Application shell — navigation, layout and visual style | todo | T-002 |
 | [T-009](T-009-year-setup-screens.md) | Year setup — year, semesters, non-teaching periods, bells, parity | todo | T-006, T-014 |
