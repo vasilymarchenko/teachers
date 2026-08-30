@@ -222,10 +222,17 @@ Title: `T-NNN: <ticket title>`. English, like everything else developer-facing.
 
 This phase is not optional and it is not a re-read of your own diff from memory.
 
-Invoke `/review` in self-review mode on the PR you just opened, with the ticket
-id: it fetches the diff, reads the documents that govern the code you changed,
-runs the `review-contract` agent and `/code-review`, and returns ranked
-findings. The standard is those documents, not a checklist — so a rule you added
+Invoke it on the PR you just opened, passing the ticket id:
+
+```sh
+/review <pr> --self-review T-NNN
+```
+
+That flag is what selects self-review defaults — no merge, no inline comments,
+and no questions to the user about anything this ticket already answers. It
+fetches the diff, reads the documents that govern the code you changed, runs the
+`review-contract` agent and `/code-review`, and returns ranked findings for you
+to fix. The standard is those documents, not a checklist — so a rule you added
 to the architecture in this very ticket is one the review applies to it.
 
 Apply every finding **in the same branch**, as a separate commit

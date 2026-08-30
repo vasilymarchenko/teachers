@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review a pull request, a branch, or the uncommitted working tree against this repository's own documents — the acceptance criteria of the ticket it implements, the architecture, and the conventions. Reviews only: it reports and proposes, and merges a pull request afterwards solely under --merge=no|ask|auto, which defaults to asking. Use when the user invokes /review (optionally with a PR number, a PR URL or a branch name), asks to "review PR NNN", "review my changes", "review this branch before I push", or when /ticket phase 7 reviews its own PR.
+description: Review a pull request, a branch, or the uncommitted working tree against this repository's own documents — the acceptance criteria of the ticket it implements, the architecture, and the conventions. It reviews only, never edits, and touches a pull request afterwards solely under its two policy flags — --merge=no|ask|auto, which defaults to asking, and --comment/--no-comment, which defaults to posting. Use when the user invokes /review (optionally with a PR number, a PR URL or a branch name), asks to "review PR NNN", "review my changes", "review this branch before I push", or when /ticket phase 7 reviews its own PR.
 ---
 
 # Review
@@ -15,12 +15,9 @@ A decision the project makes must not require an edit to this skill. Only a
 change in the *kind* of thing being reviewed — another framework, another
 database, another language — should.
 
-## Phase 1 — Resolve the target and the merge policy
+## Phase 1 — Resolve the invocation
 
-`--merge=no|ask|auto` decides what may happen to a pull request once the review
-is done. **The default is `ask`**, and in self-review mode (`/ticket` phase 7)
-the default is `no` — an author's own review is the last thing that should be
-allowed to merge unattended. See phase 7.
+**The target**, from the first positional argument:
 
 | Invocation | Target |
 |---|---|
@@ -28,6 +25,29 @@ allowed to merge unattended. See phase 7.
 | `/review <branch>` | `origin/main...<branch>` |
 | `/review` with a dirty tree | the uncommitted diff |
 | `/review` with a clean tree on a feature branch | `origin/main...HEAD` |
+
+**The arguments.** Resolve all of them before doing anything, and state the ones
+in force in the same line that states the target — a policy nobody saw applied
+is a policy nobody agreed to.
+
+| Argument | Values | Default in review mode | Default in self-review |
+|---|---|---|---|
+| `--merge` | `no` \| `ask` \| `auto` | `ask` | `no` |
+| `--comment` / `--no-comment` | — | `--comment` | `--no-comment` |
+| `--self-review` | `T-NNN` | off | set by `/ticket` phase 7 |
+
+**An explicit flag always wins over a mode default**, in both directions: a
+`/ticket` run told `--comment` posts comments, and a standalone review told
+`--merge=no` does not offer to merge.
+
+Both policies apply to a pull request target only. A branch or a working tree
+has nothing to comment on and nothing to merge, so both are silently
+inapplicable there — say so once rather than reporting them as refusals.
+
+Both also need `gh` authenticated. If it is not, the review still runs in full
+against the local checkout; report the findings in the terminal and say plainly
+that commenting and merging were unavailable. Never report a policy as honoured
+when the tool to honour it was missing.
 
 ```sh
 gh pr checkout <n> && git diff origin/main...HEAD          # a PR
@@ -41,7 +61,9 @@ clean `main` type-checks perfectly while the PR under review does not. Either
 check the target out, or say in the report that the gate did not run against it.
 Note where you started, and return there when the review is done.
 
-Then find the ticket, because half the review is unusable without one:
+Then find the ticket, because half the review is unusable without one.
+`--self-review T-NNN` names it, and there is nothing to search for; otherwise
+look for:
 
 - a `T-NNN` in the branch name (`claude/ticket-t-017-...`), the PR title, or the
   PR body;
@@ -152,9 +174,12 @@ contract with the ticket or the documents, then reuse and simplification.
 in prose when it does not. The shape is what matters; a review must never be
 blocked on a tool that may be absent.
 
-With `--comment` on a PR target, post the findings as inline PR comments as
-well; without it, report in the terminal only. Never post to a PR that was not
-the review target.
+**Comments.** On a pull request target under `--comment` — the default in
+review mode — post the findings as inline comments as well as reporting them
+here. Only findings that survived the bar above are posted: the comment thread
+is the author's working list, and padding it with maybes is worse there than in
+a terminal, because it outlives the session. Under `--no-comment`, report here
+only. Never post to a pull request that was not the review target.
 
 ## Phase 6 — Make the next review cheaper
 
@@ -222,11 +247,21 @@ be able to see what was reviewed, not just that it passed.
 
 ## Self-review mode
 
-`/ticket` phase 7 calls this skill with the ticket already known. Same method,
-same passes, three differences: the target is the ticket's own PR, the caller
-fixes the findings on the same branch rather than reporting them onward, and
-`--merge` defaults to `no`. Do not post inline comments on your own PR unless
-the user asked for them.
+`/ticket` phase 7 calls this skill as `/review <pr> --self-review T-NNN`. Same
+method, same passes; four differences:
+
+- **The ticket is given, not inferred.** Phase 1 skips the search and never
+  reports "no ticket id found".
+- **The findings are the output.** They go back to the caller, which fixes them
+  on the same branch and commits them. This skill still edits nothing.
+- **`--merge` defaults to `no`** — an author's own review is the last thing that
+  should merge unattended — and **`--comment` to `--no-comment`**: inline
+  comments on your own PR, which you are about to fix in the same session, are
+  notes to yourself in a public place.
+- **Ask the user nothing.** Anything the ticket, the documents or the diff can
+  settle, settle. The caller owns the conversation and will report once, at the
+  end of its own phase 7; a question from here interrupts that for something
+  the ticket already answers.
 
 ## Definition of done
 
@@ -237,4 +272,6 @@ the user asked for them.
 - Every reported finding quotes the rule it violates; everything else was
   dropped.
 - Nothing was edited: the review reports, and phase 6 proposes.
-- The merge policy was honoured, and a merge — if one happened — was stated.
+- The arguments in force were stated up front, and both policies were honoured —
+  comments posted or not, a merge performed or not — or reported as unavailable
+  with the reason.

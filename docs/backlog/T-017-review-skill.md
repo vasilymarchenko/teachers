@@ -58,11 +58,24 @@ run the same way.
       lint rule or convention test and states what that rule would flag in the
       repository today; turning the proposal into work is a ticket, because a
       change to the quality gate affects code the review never looked at.
+- [x] Every argument is defined in one place, with its values and its default
+      per mode: the target, `--merge`, `--comment`/`--no-comment` and
+      `--self-review T-NNN`. An explicit flag beats a mode default in both
+      directions, and the arguments in force are stated with the target.
 - [x] Merging a pull request is governed by `--merge=no|ask|auto`, defaulting to
       `ask` and to `no` in self-review mode. Any policy requires no findings, a
       gate that ran against the target and passed, and a pull request `gh`
       reports mergeable; `auto` decides who is asked, never whether those
       conditions hold.
+- [x] Inline PR comments are governed by `--comment`/`--no-comment`, posting by
+      default in review mode and not in self-review. Only findings that survived
+      the evidence bar are posted. Both policies apply to a pull request target
+      only, and both are reported as unavailable — never as honoured — when `gh`
+      is not authenticated.
+- [x] `/ticket` phase 7 invokes `/review <pr> --self-review T-NNN`. In that mode
+      the ticket is given rather than inferred, the findings are returned to the
+      caller to fix, nothing is merged or commented, and the user is asked
+      nothing the ticket or the documents already answer.
 - [x] `.claude/**` is English throughout, like the rest of the developer-facing
       tree (root `CLAUDE.md`).
 
@@ -102,6 +115,12 @@ context while it judges the diff. The reading pass is carried by the orchestrato
 for now. The trigger to split it out is the first ticket that touches
 `lib/domain` or `lib/db`, where there is something for it to find — this ticket's
 own diff had no such surface, so it proved nothing either way.
+
+Self-review is selected by a flag, not by prose. It was described as a "mode"
+the caller entered, with no argument carrying it — so the defaults that make it
+safe depended on the invoking session having read the sentence. `--comment` had
+the same shape of bug from the other end: phase 5 acted on it and no phase
+defined it.
 
 The skill can merge, and that is the only thing it can do to the repository —
 under `--merge`, defaulting to `ask`. Everything else it produces is a report.
