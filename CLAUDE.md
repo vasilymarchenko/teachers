@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), the auth boundary (T-006), the calendar read queries (T-008) and the application shell (T-014) are in place: the app builds and runs against a migrated Postgres, behind sign-in, with the navigation panel and the four screens of the first release still placeholders. The planning documents are:
+The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), the auth boundary (T-006), the calendar read queries (T-008), the application shell (T-014) and the deploy pipeline (T-015) are in place: the app builds and runs against a migrated Postgres, behind sign-in, with the navigation panel and the four screens of the first release still placeholders, and is deployable to a VPS via Docker Compose, GHCR and Caddy. The planning documents are:
 
 - `docs/specs/specification.md` — product specification (Ukrainian), the primary document
 - `docs/tech-stack.md` — stack and its rationale
@@ -32,7 +32,7 @@ npm run db:seed      # reset the demo teacher and re-insert the fixture scenario
 npm run db:studio    # Drizzle Studio
 ```
 
-Postgres runs from `docker-compose.yml` (`docker compose up -d`). Copy `.env.example` to `.env` first; `DATABASE_URL` must agree with the `POSTGRES_*` values in the same file.
+Postgres runs from `docker-compose.yml` (`docker compose up -d`). Copy `.env.example` to `.env` first; `DATABASE_URL` must agree with the `POSTGRES_*` values in the same file. `docker-compose.yml` is dev-only; the production stack (web, Postgres, Caddy) is `docker-compose.prod.yml`, deployed as described in `README.md` ("Deploying to the VPS").
 
 Before pushing, run `npm run lint && npm run typecheck && npm test`. A single test file: `npx vitest run lib/time/today.test.ts`. The integration suite is separate because it needs a live database — run it too when touching `lib/db`.
 

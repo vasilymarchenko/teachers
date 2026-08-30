@@ -64,8 +64,9 @@ npm run dev                   # http://localhost:3000
 
 `npm run db:migrate` (`drizzle-kit migrate`) is **an explicit deploy step**, not
 something the application does at start-up: the web process never migrates its
-own database. Deploying is `docker compose pull`, then `db:migrate`, then
-restart — see the deploy pipeline ticket, `docs/backlog/T-015-deploy-pipeline.md`.
+own database. That is true locally (`npm run db:migrate`, above) and on the VPS
+(the `migrate` Compose service) alike — see "Deploying to the VPS" below for
+the production procedure.
 
 Two of the migration files in `drizzle/` are written by hand rather than
 generated, because `drizzle-kit` cannot express what they contain:
@@ -102,6 +103,63 @@ semesters, holidays, bells, parity anchors, four template versions with 44 slots
 between them, and eight day overrides. It deletes that user and everything
 cascading from them first, so running it twice leaves the same database, and it
 refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=1`.
+
+## Deploying to the VPS
+
+Prerequisites on the VPS: Docker Engine with the Compose plugin (`docker compose`,
+not the standalone `docker-compose`), and a domain name pointed at the VPS's
+public IP — Caddy's automatic TLS needs that to request a certificate. Only
+ports 80 and 443 need to be open; Postgres stays on the Compose-internal
+network.
+
+```sh
+git clone git@github.com:vasilymarchenko/teachers.git && cd teachers
+cp .env.example .env    # set POSTGRES_*, BETTER_AUTH_SECRET, CADDY_DOMAIN, CADDY_EMAIL
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml run --rm migrate
+docker compose -f docker-compose.prod.yml up -d
+```
+
+`migrate` runs `drizzle-kit migrate` once and exits — it is not one of the
+services `up -d` starts. It is its own published image
+(`ghcr.io/vasilymarchenko/teachers-migrator`, ADR-003), pulled like `web` and
+never built on the VPS, and it always deploys at the same `IMAGE_TAG` as `web`
+so the schema a release expects and the code that runs against it can never
+drift apart.
+
+### Redeploying and rolling back
+
+`docker-compose.prod.yml`'s header comment holds the three-command sequence —
+repeat it for every redeploy: `git pull` first if `docker-compose.prod.yml` or
+`Caddyfile` changed (they are read from the checkout, not the image), then the
+three commands above, in the same order — `migrate` before `up -d`, every time,
+even when this deploy added no new migration.
+
+To roll back, set `IMAGE_TAG` in `.env` to a previous `sha-<short-sha>` (GitHub
+Actions publishes one for both images on every push to `main`, alongside
+`latest`) and repeat `pull` + `migrate` + `up -d`. A rollback across a migration
+that changed the schema also needs the matching down step run by hand — there
+is no automated down migration.
+
+### Backups
+
+```sh
+docker compose -f docker-compose.prod.yml exec -T db \
+  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > "teachers-$(date +%F).sql.gz"
+```
+
+`sh -c '...'` in single quotes, not a bare `pg_dump -U "$POSTGRES_USER" ...`:
+`POSTGRES_USER`/`POSTGRES_DB` are set inside the `db` container by Compose, not
+in the host shell that runs this command, so an unquoted `$POSTGRES_USER` here
+expands to an empty string on the host before Docker ever sees it.
+
+Copy the result off the VPS (`scp`/`rsync` to another host) — a backup that
+lives on the same disk as the database survives no disk failure. A daily cron
+entry on the VPS:
+
+```
+0 3 * * * cd /path/to/teachers && docker compose -f docker-compose.prod.yml exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > /var/backups/teachers/teachers-$(date +\%F).sql.gz
+```
 
 ## Layout
 

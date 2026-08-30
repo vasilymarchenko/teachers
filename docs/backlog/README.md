@@ -29,7 +29,7 @@ for reading. Order is priority; the ID number is not.
 | [T-011](T-011-day-override-editing.md) | Day overrides — edit, substitution, cancel a single lesson | todo | T-007 |
 | [T-013](T-013-print-views.md) | Print mechanism — the `/print` route and its page layout | todo | T-007 |
 | [T-016](T-016-sign-in-rate-limit.md) | Rate limiting on sign-in | todo | T-006 |
-| [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | todo | T-002, T-004 |
+| [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | done | T-002, T-004 |
 
 ## Open questions
 
