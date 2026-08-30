@@ -94,3 +94,12 @@ not match dot-directories. It caught two errors on its first run.
 The invariant list in `/ticket` phase 5 was replaced by a pointer to the rubric
 as well, not only phase 7's: the same rules stated at implementation time and at
 review time are the same two copies the ticket set out to remove.
+
+The review it built found six things in it, all fixed in the review commit. Two
+are worth carrying forward. The rubric had grown an explanation in its own §3.4
+check — the failure the file is written to prevent, appearing in the first draft
+of the file — so the check now asks the question and names the section instead of
+answering it. And `.claude/**` was cited as English "per root `CLAUDE.md`" when
+the root document's list did not mention it; the list now does. `/review` also
+learned what to do when a just-added agent has not registered yet, which is how
+the contract pass ran here.

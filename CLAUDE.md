@@ -19,6 +19,11 @@ or the first `todo` in `docs/backlog/README.md` order), plans it, implements it 
 a branch, opens a PR and then reviews that PR against the ticket and these
 conventions.
 
+`.claude/skills/review` — `/review [PR | branch]` reviews a pull request, a
+branch or the uncommitted tree against
+`.claude/skills/review/references/rubric.md`, which is the single copy of the
+review standard: `/ticket` phase 7 runs the same skill over its own PR.
+
 ## Commands
 
 Package manager: **npm** (`package-lock.json` is committed). Node.js 22+.
@@ -84,7 +89,7 @@ Language is chosen by **audience**, not by file type. If a teacher could read th
 
 **English (technical level — only developers read it):**
 - code, identifiers, code comments, commit messages, PR descriptions;
-- the backlog — `docs/backlog/**`;
+- the backlog — `docs/backlog/**`, and the agent tooling — `.claude/**`;
 - detailed design documents, ADRs, implementation plans, `docs/tech-stack.md`, `README.md`.
 
 **Architecture (the bridge between the two) — `docs/architecture/*.md`, i.e. `architect-overview.md` and `glossary.md`:**

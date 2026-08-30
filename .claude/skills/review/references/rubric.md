@@ -11,7 +11,8 @@ changes. A check that has grown an explanation has grown a second copy of the
 architecture, and the explanation is what rots.
 
 `§N` alone means `docs/architecture/architect-overview.md`. Other documents are
-named. `rubric.test.ts` asserts every reference below resolves.
+named. `.claude/skills/review/references/rubric.test.ts` asserts that every
+reference below resolves.
 
 ---
 
@@ -66,16 +67,15 @@ general-purpose reviewer can know.
   the `dateTo` of `AcademicYear`, `Semester`, `NonTeachingPeriod` and `Event` is
   compared inclusively? Is a symbolic boundary resolved to a date **at write
   time**, storing `boundaryKind` only for display?
-- **§3.4** — does a `DayOverride` still render on a non-teaching day?
-  `isNonTeaching` silences lessons with `origin = TEMPLATE` only, so a
-  `ResolvedDay` may legitimately have `isNonTeaching: true` and a non-empty
-  `lessons`.
+- **§3.4** — does a `DayOverride` still render on a non-teaching day, by the
+  `origin` rule §3.4 states? Is a `ResolvedDay` with `isNonTeaching: true` and a
+  non-empty `lessons` treated as legal?
 - **§3.4** — is `replacedOriginal` *absent* when there is no slot beneath a
   `SUBSTITUTION` — not `null`, not an empty payload? Is a `CLEARED` with no slot
   beneath it a no-op rather than an error?
-- **§3.5** — is parity read from the last `ParityAnchor` with `date ≤ d`, and
-  computed for every date including non-teaching ones? Is the week ISO, starting
-  Monday, everywhere — parity, weekly view, weekly template?
+- **§3.5** — is parity computed by the formula §3.5 gives, for every date
+  including non-teaching ones? Is the week ISO, starting Monday, everywhere —
+  parity, weekly view, weekly template?
 - **§4, §10.6** — does `isTaughtByMe` compare `lessonNumber` **and** `subject`,
   against the expanded OWN day rather than against `TemplateSlot`?
 - **§5** — is the three-source merge done once in the domain, rather than
@@ -138,11 +138,14 @@ than it returns.
 
 Rank by severity: a security or data-correctness defect, then a violated
 invariant, then a broken contract with the ticket or the documents, then
-reuse and simplification. Report through `ReportFindings`, most severe first,
-and an empty list when nothing survives — silence is a valid review result.
+reuse and simplification. Whoever runs the review reports through
+`ReportFindings`, most severe first, and an empty list when nothing survives —
+silence is a valid review result. A subagent has no such tool: it returns its
+findings in this shape and the caller merges them.
 
 ## F. Keeping this file honest
 
 A check that fires twice belongs in a lint rule or a convention test, not here —
-the pattern `lib/auth/queryDiscipline.test.ts` and `nav-items.test.ts` already
+the pattern `lib/auth/queryDiscipline.test.ts` and
+`components/navigation/nav-items.test.ts` already
 set. Promote it and delete it from this file. **This rubric is meant to shrink.**

@@ -61,9 +61,11 @@ acceptance criterion quoted, or a `§`, or a `CLAUDE.md` rule), and a concrete
 failure scenario — for a contract finding, what a reader or a later ticket will
 believe that is not true.
 
-Report through `ReportFindings`, most severe first: an unmet acceptance
+Return them as your final message, most severe first: an unmet acceptance
 criterion, then a document pair that now disagrees, then a language or glossary
-violation. An empty list is a valid result and a good one — say plainly that the
+violation. `ReportFindings` is the caller's tool, not yours — it is not in your
+tool set, and the caller merges your findings with the other pass before
+reporting. An empty list is a valid result and a good one — say plainly that the
 contract holds rather than inventing a finding to justify the pass.
 
 Close with a one-line verdict: every criterion met, or which are not.

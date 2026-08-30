@@ -65,6 +65,13 @@ Send both in one message so they run at once.
    efficiency. Do not reimplement it and do not narrow it; it is an independent
    reading, and the overlap with the rubric is worth its cost.
 
+A newly added agent takes a moment to register, so `review-contract` can be
+missing from the agent list in the session that created it. If it is, say so and
+run the same pass as a general-purpose agent told to read
+`.claude/agents/review-contract.md` and follow it. Do not skip the pass, and do
+not paraphrase the agent's instructions into the prompt instead of pointing at
+them: a second copy of the standard is exactly what this skill exists to avoid.
+
 Then take the checks the contract agent does not own — rubric §B (invariants)
 and §C (stack) — and walk them yourself against the diff. In this first cut they
 have no dedicated agent; carrying them here is deliberate, and they are the

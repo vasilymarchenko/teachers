@@ -167,11 +167,8 @@ push to a different branch than the one you were given.)
 
 While implementing, hold the rules that are easy to break silently — the
 invariants of rubric §B, the stack rules of §C and the language rule of §A.
-They are listed once, in `.claude/skills/review/references/rubric.md`, and phase
-7 will check exactly those. Two that no diff makes visible, so they are worth
-naming at the moment you write rather than at the moment you are reviewed: a new
-domain term goes into `glossary.md` before it goes into the code, and the tests
-for `lib/domain` are the point of that layer, not an extra.
+They are listed once, in `.claude/skills/review/references/rubric.md`, which
+phase 4 has already put in front of you, and phase 7 will check exactly those.
 
 Update the backlog in the same commit as the work it describes: the ticket's
 frontmatter `status`, the checkboxes under `## Acceptance criteria`, and the

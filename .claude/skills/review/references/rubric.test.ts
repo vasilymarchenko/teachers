@@ -51,4 +51,18 @@ describe("review rubric references", () => {
     const missing = [...new Set(paths)].filter((p) => !existsSync(p));
     expect(missing, `paths cited by ${RUBRIC} that do not exist`).toEqual([]);
   });
+
+  it("names a cited test file by its full path, so the check above sees it", () => {
+    // The filter above needs a slash to tell a path from prose, which leaves a
+    // hole: a bare `nav-items.test.ts` is checked by nothing and can name a
+    // file that has moved or never existed. Citing a test file at all is rare
+    // and always deliberate — §F cites two as the precedent to follow — so
+    // requiring the directory costs nothing and closes the hole.
+    const bare = [...rubric.matchAll(/`([\w.-]+\.test\.tsx?)`/g)].map(
+      (m) => m[1],
+    );
+    expect(bare, `test files cited by ${RUBRIC} without a directory`).toEqual(
+      [],
+    );
+  });
 });
