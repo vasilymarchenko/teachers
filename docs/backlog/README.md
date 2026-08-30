@@ -21,6 +21,7 @@ for reading. Order is priority; the ID number is not.
 | [T-017](T-017-review-skill.md) | Review skill that reads the documents | done | — |
 | [T-018](T-018-adr-practice.md) | ADR practice — record significant decisions where they can be found | done | — |
 | [T-019](T-019-findable-invariants.md) | Make the architecture's invariants findable in the document | todo | T-017 |
+| [T-020](T-020-skill-project-prefix.md) | Prefix project-specific skills and agents with teachers- | done | — |
 | [T-009](T-009-year-setup-screens.md) | Year setup — year, semesters, non-teaching periods, bells, parity | todo | T-006, T-014 |
 | [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | todo | T-005, T-008, T-014 |
 | [T-007](T-007-calendar-read-views.md) | Calendar read views — day, week, month, year | todo | T-005, T-008, T-014 |

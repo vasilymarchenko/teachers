@@ -1,6 +1,6 @@
 ---
-name: review
-description: Review a pull request, a branch, or the uncommitted working tree against this repository's own documents — the acceptance criteria of the ticket it implements, the architecture, and the conventions. It reviews only, never edits, and touches a pull request afterwards solely under its two policy flags — --merge=no|ask|auto, which defaults to asking, and --comment/--no-comment, which defaults to posting. Use when the user invokes /review (optionally with a PR number, a PR URL or a branch name), asks to "review PR NNN", "review my changes", "review this branch before I push", or when /ticket phase 7 reviews its own PR.
+name: teachers-review
+description: Review a pull request, a branch, or the uncommitted working tree against this repository's own documents — the acceptance criteria of the ticket it implements, the architecture, and the conventions. It reviews only, never edits, and touches a pull request afterwards solely under its two policy flags — --merge=no|ask|auto, which defaults to asking, and --comment/--no-comment, which defaults to posting. Use when the user invokes /teachers-review (optionally with a PR number, a PR URL or a branch name), asks to "review PR NNN", "review my changes", "review this branch before I push", or when /teachers-ticket phase 7 reviews its own PR.
 ---
 
 # Review
@@ -21,10 +21,10 @@ database, another language — should.
 
 | Invocation | Target |
 |---|---|
-| `/review 12`, `/review <url>` | that pull request |
-| `/review <branch>` | `origin/main...<branch>` |
-| `/review` with a dirty tree | the uncommitted diff |
-| `/review` with a clean tree on a feature branch | `origin/main...HEAD` |
+| `/teachers-review 12`, `/teachers-review <url>` | that pull request |
+| `/teachers-review <branch>` | `origin/main...<branch>` |
+| `/teachers-review` with a dirty tree | the uncommitted diff |
+| `/teachers-review` with a clean tree on a feature branch | `origin/main...HEAD` |
 
 **The arguments.** Resolve all of them before doing anything, and state the ones
 in force in the same line that states the target — a policy nobody saw applied
@@ -34,10 +34,10 @@ is a policy nobody agreed to.
 |---|---|---|---|
 | `--merge` | `no` \| `ask` \| `auto` | `ask` | `no` |
 | `--comment` / `--no-comment` | — | `--comment` | `--no-comment` |
-| `--self-review` | `T-NNN` | off | set by `/ticket` phase 7 |
+| `--self-review` | `T-NNN` | off | set by `/teachers-ticket` phase 7 |
 
 **An explicit flag always wins over a mode default**, in both directions: a
-`/ticket` run told `--comment` posts comments, and a standalone review told
+`/teachers-ticket` run told `--comment` posts comments, and a standalone review told
 `--merge=no` does not offer to merge.
 
 Both policies apply to a pull request target only. A branch or a working tree
@@ -118,7 +118,7 @@ with it than the error says.
 
 Send both in one message so they run at once.
 
-1. **`review-contract`** (the subagent) — the diff against the ticket and the
+1. **`teachers-review-contract`** (the subagent) — the diff against the ticket and the
    documents. Give it the diff or the command that produces it, the ticket id,
    and the ticket path. This is the pass a general-purpose reviewer cannot do,
    because it needs the ticket.
@@ -129,10 +129,10 @@ Send both in one message so they run at once.
    review disappears while the report still claims "both passes ran". Do not
    reimplement it and do not narrow it; it is an independent reading.
 
-A newly added agent takes a moment to register, so `review-contract` can be
+A newly added agent takes a moment to register, so `teachers-review-contract` can be
 missing from the agent list in the session that created it. If it is, say so and
 run the same pass as a general-purpose agent told to read
-`.claude/agents/review-contract.md` and follow it — point at the file, never
+`.claude/agents/teachers-review-contract.md` and follow it — point at the file, never
 paraphrase it into the prompt.
 
 Then judge the diff against what you read in phase 2 yourself. That is the
@@ -205,7 +205,7 @@ So the output is a proposal, and it carries its homework:
   how a reviewer starts producing confident nonsense.
 
 In self-review mode the caller turns an accepted proposal into a backlog ticket,
-as `/ticket` already requires of any real finding that is out of scope. On a
+as `/teachers-ticket` already requires of any real finding that is out of scope. On a
 standalone review, name it in the report and leave the filing to the user.
 
 The same applies to the documents: if a rule you enforced was hard to find, or
@@ -247,7 +247,7 @@ be able to see what was reviewed, not just that it passed.
 
 ## Self-review mode
 
-`/ticket` phase 7 calls this skill as `/review <pr> --self-review T-NNN`. Same
+`/teachers-ticket` phase 7 calls this skill as `/teachers-review <pr> --self-review T-NNN`. Same
 method, same passes; four differences:
 
 - **The ticket is given, not inferred.** Phase 1 skips the search and never

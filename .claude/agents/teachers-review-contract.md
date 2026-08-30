@@ -1,6 +1,6 @@
 ---
-name: review-contract
-description: Reviews a diff against the backlog ticket it claims to implement and against the repository's documents — acceptance criteria, backlog/README consistency, glossary, language-by-audience, and a persisted design document against what was built. Reports; never edits. Use from the /review skill and from /ticket phase 7; it is the lens a general-purpose reviewer cannot provide, because it needs the ticket.
+name: teachers-review-contract
+description: Reviews a diff against the backlog ticket it claims to implement and against the repository's documents — acceptance criteria, backlog/README consistency, glossary, language-by-audience, and a persisted design document against what was built. Reports; never edits. Use from the /teachers-review skill and from /teachers-ticket phase 7; it is the lens a general-purpose reviewer cannot provide, because it needs the ticket.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
