@@ -17,7 +17,8 @@ import type { IsoDate } from "@/lib/time/today";
  * that: a tombstone must never come back as a lesson. But specification §5.3
  * and §5.4 want the teacher to *see* that the lesson was cancelled, struck
  * through, not to find a silently shorter day — so the cancelled lesson is a
- * separate list, never mixed into `lessons`.
+ * separate list, never mixed into `lessons`. It never carries `isTaughtByMe`:
+ * see `withoutIsTaughtByMe()` below.
  *
  * `nonTeachingName` — the `NonTeachingPeriod` that shades the day (§6). Absent
  * when the day is non-teaching because of a `NonTeachingWeekdayRule`: a rule is
@@ -75,9 +76,9 @@ export function buildCalendarDays(
 
   return days.map((day) => {
     const kept = new Set(day.lessons.map((lesson) => lesson.lessonNumber));
-    const cancelled = (planned.get(day.date) ?? []).filter(
-      (lesson) => !kept.has(lesson.lessonNumber),
-    );
+    const cancelled = (planned.get(day.date) ?? [])
+      .filter((lesson) => !kept.has(lesson.lessonNumber))
+      .map(withoutIsTaughtByMe);
     const name = day.isNonTeaching
       ? nameOfPeriodOn(day.date, periods)
       : undefined;
@@ -88,6 +89,21 @@ export function buildCalendarDays(
       ...(name === undefined ? {} : { nonTeachingName: name }),
     };
   });
+}
+
+/**
+ * A cancelled lesson arrives from the override-free expansion, and in `CLASS`
+ * view that expansion resolved `isTaughtByMe` against the **planned** `OWN` day
+ * — not the resolved one the rule requires (`expand.ts`, fixtures §8.6). An
+ * override on the teacher's own day is exactly where the two answers diverge,
+ * so the flag would be wrong precisely in the case it exists for. It is dropped:
+ * «веду я» on a lesson that does not happen answers a question nobody asked.
+ */
+function withoutIsTaughtByMe(lesson: ResolvedLesson): ResolvedLesson {
+  if (lesson.isTaughtByMe === undefined) return lesson;
+  const rest = { ...lesson };
+  delete rest.isTaughtByMe;
+  return rest;
 }
 
 /**

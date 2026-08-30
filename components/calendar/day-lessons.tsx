@@ -1,4 +1,5 @@
 import type { CalendarDay } from "@/lib/domain/calendar/days";
+import { DAY_LABELS } from "./labels";
 import { LessonRow } from "./lesson-row";
 
 /**
@@ -30,13 +31,15 @@ export function DayLessons({ day }: { day: CalendarDay }) {
     <div className="space-y-2">
       {day.isNonTeaching && (
         <p className="text-muted-foreground text-sm">
-          {day.nonTeachingName ?? "День без уроків"}
+          {day.nonTeachingName ?? DAY_LABELS.unnamedNonTeaching}
         </p>
       )}
 
       {rows.length === 0 ? (
         !day.isNonTeaching && (
-          <p className="text-muted-foreground text-sm">Уроків немає</p>
+          <p className="text-muted-foreground text-sm">
+            {DAY_LABELS.noLessons}
+          </p>
         )
       ) : (
         <ul>

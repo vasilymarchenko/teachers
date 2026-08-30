@@ -3,7 +3,7 @@ id: T-012
 type: ticket
 title: Events — deadlines, info events and recurrence expansion
 status: todo
-depends_on: [T-005, T-008, T-014]
+depends_on: [T-005, T-007, T-008, T-014]
 refs:
   - docs/architecture/architect-overview.md §2
   - docs/architecture/architect-overview.md §4
@@ -40,3 +40,9 @@ and unused; the day components consume `CalendarDay`
 (`docs/architecture/design/T-007-calendar-views.md` §4), which is where the
 markers attach. T-007 stays `in-progress` until this ticket closes that
 criterion.
+
+That criterion is why `depends_on` names T-007: the recurrence core and the
+forms do not need the calendar screen, but the last criterion cannot be started
+without `CalendarDay` and the day components T-007 adds — and without the
+dependency declared, the index would show this ticket unblocked while T-007,
+T-011 and T-013 waited on it.

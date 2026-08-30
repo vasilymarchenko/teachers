@@ -1,6 +1,6 @@
 import type { CalendarDay } from "@/lib/domain/calendar/days";
 import { cn } from "@/lib/utils";
-import { PARITY_LABELS } from "./labels";
+import { DAY_LABELS, PARITY_LABELS } from "./labels";
 import { DayLessons } from "./day-lessons";
 
 /**
@@ -38,7 +38,7 @@ export function DayCard({
         <Heading className="text-base font-semibold">{title}</Heading>
         <p className="text-muted-foreground text-xs">
           {PARITY_LABELS[day.parity]}
-          {isToday && " · сьогодні"}
+          {isToday && ` · ${DAY_LABELS.today}`}
         </p>
       </div>
       <DayLessons day={day} />

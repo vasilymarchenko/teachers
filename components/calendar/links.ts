@@ -15,8 +15,18 @@ import type { IsoDate } from "@/lib/time/today";
 /** `?schedule=class`; anything else — absent included — means `OWN`. */
 export const CLASS_SEARCH_VALUE = "class";
 
-export function scheduleViewOf(value: string | undefined): ScheduleView {
-  return value === CLASS_SEARCH_VALUE ? "CLASS" : "OWN";
+/** What Next hands a page for one search parameter: `?a=1&a=2` is an array. */
+export type SearchParamValue = string | string[] | undefined;
+
+/**
+ * The first value wins on a repeated parameter (`?schedule=class&schedule=own`).
+ * Comparing the array itself would quietly answer `OWN` for a URL that says
+ * `class` — the switch of specification §6.2 would be off while the address bar
+ * claimed it was on.
+ */
+export function scheduleViewOf(value: SearchParamValue): ScheduleView {
+  const first = Array.isArray(value) ? value[0] : value;
+  return first === CLASS_SEARCH_VALUE ? "CLASS" : "OWN";
 }
 
 export function calendarHref(

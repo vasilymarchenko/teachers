@@ -155,4 +155,28 @@ describe("the window itself", () => {
       false,
     ]);
   });
+
+  it("never answers `isTaughtByMe` for a cancelled lesson (§8.6, 10-19)", () => {
+    // The override-free expansion resolves the flag against the **planned**
+    // OWN day, where O2 has not emptied 10-19 — so «Математика» at number 1
+    // would come back `isTaughtByMe: true` on a date where §8.6 says the
+    // answer is `false`. A cancelled lesson therefore carries no flag at all.
+    const cleared = {
+      ...FIXTURE,
+      overrides: [
+        ...FIXTURE.overrides,
+        {
+          date: "2026-10-19" as IsoDate,
+          view: "CLASS" as ScheduleView,
+          lessonNumber: 1,
+          kind: "CLEARED" as const,
+        },
+      ],
+    };
+    const days = buildCalendarDays(cleared, { ...WINDOW, view: "CLASS" });
+    const day = days.find((candidate) => candidate.date === "2026-10-19");
+
+    expect(day?.cancelled.map((lesson) => lesson.lessonNumber)).toEqual([1]);
+    expect(day?.cancelled[0]).not.toHaveProperty("isTaughtByMe");
+  });
 });

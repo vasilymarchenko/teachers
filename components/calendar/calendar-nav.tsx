@@ -9,6 +9,7 @@ import type { DateRange } from "@/lib/domain/schedule/types";
 import type { IsoDate } from "@/lib/time/today";
 import { cn } from "@/lib/utils";
 import {
+  NAV_LABELS,
   NEXT_LABELS,
   PREVIOUS_LABELS,
   SCHEDULE_LABELS,
@@ -48,13 +49,15 @@ export function CalendarNav({
           <span aria-hidden>←</span>
           <span className="sr-only">{PREVIOUS_LABELS[view]}</span>
         </NavLink>
-        <NavLink href={calendarHref(view, today, schedule)}>Сьогодні</NavLink>
+        <NavLink href={calendarHref(view, today, schedule)}>
+          {NAV_LABELS.today}
+        </NavLink>
         <NavLink href={calendarHref(view, stepBy(view, date, 1), schedule)}>
           <span aria-hidden>→</span>
           <span className="sr-only">{NEXT_LABELS[view]}</span>
         </NavLink>
 
-        <nav aria-label="Вид календаря" className="ml-auto flex gap-1">
+        <nav aria-label={NAV_LABELS.viewSwitch} className="ml-auto flex gap-1">
           {CALENDAR_VIEWS.map((name) => (
             <NavLink
               current={name === view}
@@ -68,7 +71,7 @@ export function CalendarNav({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <nav aria-label="Розклад" className="flex gap-1">
+        <nav aria-label={NAV_LABELS.scheduleSwitch} className="flex gap-1">
           {(["OWN", "CLASS"] as const).map((name) => (
             <NavLink
               current={name === schedule}
@@ -81,20 +84,17 @@ export function CalendarNav({
         </nav>
 
         {yearRange !== undefined && (
-          <nav aria-label="Швидкі переходи" className="flex flex-wrap gap-1">
+          <nav aria-label={NAV_LABELS.quickJumps} className="flex flex-wrap gap-1">
             <NavLink href={calendarHref("year", yearRange.from, schedule)}>
-              Весь навчальний рік
+              {NAV_LABELS.wholeYear}
             </NavLink>
             <NavLink href={calendarHref("month", yearRange.from, schedule)}>
-              {/* Specification §6.1 names this jump «до вересня», which is what
-                  a year beginning on 1 September is; a year set up otherwise
-                  gets the honest name of the same jump. */}
               {yearRange.from.slice(5, 7) === "09"
-                ? "До вересня"
-                : "На початок року"}
+                ? NAV_LABELS.toSeptember
+                : NAV_LABELS.toYearStart}
             </NavLink>
             <NavLink href={calendarHref("month", yearRange.to, schedule)}>
-              Кінець навчального року
+              {NAV_LABELS.yearEnd}
             </NavLink>
           </nav>
         )}

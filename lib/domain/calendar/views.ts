@@ -17,8 +17,8 @@ import type { DateRange } from "@/lib/domain/schedule/types";
  *
  * This is the whole difference between the views: each one is a different range
  * handed to the same `expand()` call. Nothing here knows about React, and
- * nothing in the components computes a date, so «тиждень починається з
- * понеділка» (overview §8.5) is asserted once, in `views.test.ts`, rather than
+ * nothing in the components computes a date, so the rule that a week starts on
+ * Monday (overview §8.5) is asserted once, in `views.test.ts`, rather than
  * being re-derived in a grid component.
  */
 

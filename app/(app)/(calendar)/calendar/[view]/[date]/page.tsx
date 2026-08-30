@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarNav } from "@/components/calendar/calendar-nav";
-import { periodTitle } from "@/components/calendar/labels";
-import { scheduleViewOf } from "@/components/calendar/links";
+import { periodTitle, YEAR_NOT_SET_UP } from "@/components/calendar/labels";
+import {
+  scheduleViewOf,
+  type SearchParamValue,
+} from "@/components/calendar/links";
 import {
   DayView,
   MonthView,
@@ -47,7 +50,7 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ view: string; date: string }>;
-  searchParams: Promise<{ schedule?: string }>;
+  searchParams: Promise<{ schedule?: SearchParamValue }>;
 }) {
   // The boundary first, before anything reads or answers (overview §8.3).
   const { id: userId } = await requireUser();
@@ -98,11 +101,11 @@ export default async function Page({
 
       {frame === null && (
         <p className="text-muted-foreground text-sm">
-          Навчальний рік ще не налаштований —{" "}
+          {YEAR_NOT_SET_UP.before}
           <Link className="underline underline-offset-2" href="/year">
-            задайте його межі, канікули та дзвінки
+            {YEAR_NOT_SET_UP.link}
           </Link>
-          .
+          {YEAR_NOT_SET_UP.after}
         </p>
       )}
 

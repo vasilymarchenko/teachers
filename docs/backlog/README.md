@@ -19,7 +19,7 @@ for reading. Order is priority; the ID number is not.
 | [T-008](T-008-calendar-read-queries.md) | Read queries for the calendar data path | done | T-004, T-006 |
 | [T-014](T-014-app-shell.md) | Application shell — navigation, layout and visual style | done | T-002 |
 | [T-009](T-009-year-setup-screens.md) | Year setup — year, semesters, non-teaching periods, bells, parity | todo | T-006, T-014 |
-| [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | todo | T-005, T-008, T-014 |
+| [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | todo | T-005, T-007, T-008, T-014 |
 | [T-007](T-007-calendar-read-views.md) | Calendar read views — day, week, month, year | in-progress | T-005, T-008, T-014 |
 | [T-010](T-010-weekly-template-editor.md) | Weekly template editor with copy-on-write versioning | todo | T-005, T-008, T-014 |
 | [T-011](T-011-day-override-editing.md) | Day overrides — edit, substitution, cancel a single lesson | todo | T-007 |
@@ -43,10 +43,10 @@ Each mirrors a section of `docs/architecture/architect-overview.md` §10.
 ## Dependency shape
 
 ```
-T-002 scaffold ──┬──> T-014 shell ─────────────────────┬──> T-009 year setup
-                 │                                     │
-                 ├──> T-005 domain ──┐                 ├──> T-012 events
-                 │                   │                 │
+T-002 scaffold ──┬──> T-014 shell ─────────────────────────> T-009 year setup
+                 │
+                 ├──> T-005 domain ──┐
+                 │                   │
 T-001 fixtures ──┴──> T-003 schema doc ──> T-004 schema+migration ──┬──> T-015 deploy
                                      │                              │
                                      │                 ┌──> T-016 sign-in rate limit
@@ -55,7 +55,8 @@ T-001 fixtures ──┴──> T-003 schema doc ──> T-004 schema+migration 
                                                               ├──> T-007 calendar views
                                                               │         │
                                                               │         ├──> T-011 overrides
-                                                              │         └──> T-013 print
+                                                              │         ├──> T-013 print
+                                                              │         └──> T-012 events
                                                               └──> T-010 template editor
 ```
 

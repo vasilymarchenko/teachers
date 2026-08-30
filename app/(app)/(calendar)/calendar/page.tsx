@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
-import { calendarHref, scheduleViewOf } from "@/components/calendar/links";
+import {
+  calendarHref,
+  scheduleViewOf,
+  type SearchParamValue,
+} from "@/components/calendar/links";
 import { today } from "@/lib/time/today";
 
 /**
@@ -13,7 +17,7 @@ import { today } from "@/lib/time/today";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ schedule?: string }>;
+  searchParams: Promise<{ schedule?: SearchParamValue }>;
 }) {
   const { schedule } = await searchParams;
   // `today()` and not `new Date()`: the container runs in UTC and Kyiv is

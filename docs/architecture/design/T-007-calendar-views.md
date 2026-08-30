@@ -107,7 +107,12 @@ stands, once with `overrides: []` — and takes the difference by `lessonNumber`
 - a tombstone over an absent slot is in neither expansion, so it produces
   nothing (fixture O8, 2026-11-12);
 - a non-teaching date has no template lessons in either expansion, so a break
-  week is not seven days of cancellations.
+  week is not seven days of cancellations;
+- **`isTaughtByMe` is stripped from a cancelled lesson.** The override-free
+  expansion resolves that flag against the *planned* `OWN` day, while the rule
+  (`expand.ts`, fixtures §8.6) is the *resolved* one — the two answers differ in
+  exactly the case an override on the teacher's own day creates, so the flag is
+  dropped rather than shown wrong. `days.test.ts` pins it.
 
 Reading the `CLEARED` rows directly would need a second copy of «which slot was
 in force on this date», which is exactly the rule `expand()` owns.
@@ -115,18 +120,38 @@ in force on this date», which is exactly the rule `expand()` owns.
 Cost: two expansions per window, and four for `CLASS` (each expansion resolves
 `OWN` as well, for `isTaughtByMe`). §5 below is the measurement.
 
+### 4.2 How each view shows a cancellation
+
+Specification §5.3 asks that the teacher *see* the cancellation, so no view may
+render a cancelled lesson as an absence:
+
+| View | What it shows |
+|---|---|
+| `day`, `week` | the `LessonRow` at its own `lessonNumber`, struck through, «скасовано» |
+| `month` | a struck-through line in the cell; on a phone the same `DayLessons` list |
+| `year` | the cell counts as a day with something on it (bold) and is underlined in the destructive colour; its tooltip adds «скасовано: N» |
+
+The year cell shows a number and nothing else, so the tooltip is most of what
+it can say — `dayTooltip()` in `labels.ts`, pinned by `labels.test.ts`.
+
 ## 5. Year-view measurement (overview §9 trigger: ~300 ms)
 
-Node 22.22.2, no database — the numbers are `buildCalendarDays()` plus
+Node 22.14.0, no database — the numbers are `buildCalendarDays()` plus
 `renderToStaticMarkup(<YearView/>)` over a synthetic full academic year
 (2026-09-01 … 2027-05-31): 273 days, 7 lessons × 5 weekdays × 2 parities per
 template version, three versions per view, 40 overrides, three breaks. That is
-~1 210 resolved lessons per view.
+1 215 resolved lessons in each view — **the same fixture for both**, and each
+view measured in its own process, so the second one does not inherit the first
+one's warm JIT. Twenty warm runs per view.
 
 | View | First run | Warm median | Warm max |
 |---|---|---|---|
-| `OWN` (2 expansions) | 64 ms | 28 ms | 44 ms |
-| `CLASS` (4 expansions) | 31 ms | 18 ms | 29 ms |
+| `OWN` (2 expansions) | 91 ms | 42 ms | 66 ms |
+| `CLASS` (4 expansions) | 112 ms | 51 ms | 76 ms |
+
+`CLASS` is the more expensive view, as §4.1's cost model says it must be; the
+gap is well under 2× because the day assembly and the React render are shared
+and do not double with the expansions.
 
 Well inside the trigger, so nothing in overview §9 fires and no caching is
 introduced. The database round trips are excluded — they are eight queries that

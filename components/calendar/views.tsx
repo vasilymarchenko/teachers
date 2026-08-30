@@ -11,6 +11,8 @@ import {
   capitalise,
   dayAndMonth,
   dayNumber,
+  dayTooltip,
+  LESSON_LABELS,
   monthName,
   shortWeekdayName,
   weekdayName,
@@ -132,7 +134,14 @@ export function YearView({ days, schedule, today }: ViewProps) {
                     day.isNonTeaching
                       ? "bg-muted text-muted-foreground"
                       : "bg-card border-border border",
-                    day.lessons.length > 0 && "font-semibold",
+                    // A day whose only lesson a `CLEARED` override removed is
+                    // still a day with something on it: counting `lessons`
+                    // alone would render it as a free day, which is the very
+                    // thing specification §5.3 refuses.
+                    day.lessons.length + day.cancelled.length > 0 &&
+                      "font-semibold",
+                    day.cancelled.length > 0 &&
+                      "decoration-destructive underline decoration-2",
                     day.date === today && "ring-primary ring-2",
                   )}
                   href={calendarHref("day", day.date, schedule)}
@@ -214,7 +223,8 @@ function MonthCell({
         {day.lessons.map((lesson) => (
           <li className="truncate" key={`lesson-${lesson.lessonNumber}`}>
             {lesson.lessonNumber} · {lesson.payload.subject}
-            {lesson.origin === "SUBSTITUTION" && " (заміна)"}
+            {lesson.origin === "SUBSTITUTION" &&
+              ` (${LESSON_LABELS.substitution})`}
           </li>
         ))}
         {day.cancelled.map((lesson) => (
@@ -239,17 +249,6 @@ function WeekdayHeadings({ dates }: { dates: IsoDate[] }) {
       ))}
     </div>
   );
-}
-
-/** What the year view's cell says on hover, since it shows only a number. */
-function dayTooltip(day: CalendarDay): string {
-  if (day.isNonTeaching && day.nonTeachingName !== undefined) {
-    return `${dayAndMonth(day.date)} — ${day.nonTeachingName}`;
-  }
-  const count = day.lessons.length;
-  return count === 0
-    ? `${dayAndMonth(day.date)} — уроків немає`
-    : `${dayAndMonth(day.date)} — уроків: ${count}`;
 }
 
 function groupByMonth(

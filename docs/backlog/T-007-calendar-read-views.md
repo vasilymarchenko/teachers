@@ -47,11 +47,13 @@ these notes when the work is done — not a committed benchmark.
 The screen is `/calendar/<view>/<date>` (`?schedule=class` for the `CLASS`
 side); `CalendarDay` (overview §5, glossary §7) is what the components consume.
 
-**Measurement.** A full academic year (273 days, ~1 210 resolved lessons per
+**Measurement.** A full academic year (273 days, 1 215 resolved lessons per
 view), `buildCalendarDays()` plus `renderToStaticMarkup(<YearView/>)` on Node
-22.22.2, without a database: `OWN` 64 ms first run and 28 ms warm median,
-`CLASS` 31 ms / 18 ms. The ~300 ms trigger of overview §9 does not fire, so no
-caching was added. Database round trips are excluded — no Postgres was available
+22.14.0, without a database: `OWN` 91 ms first run and 42 ms warm median,
+`CLASS` 112 ms / 51 ms. One fixture for both views, each measured in its own
+process, so `CLASS` — the more expensive view, as it must be — is not flattered
+by the warm-up of the run before it. The ~300 ms trigger of overview §9 does not
+fire, so no caching was added. Database round trips are excluded — no Postgres was available
 in the environment the work was done in, which is also why the integration suite
 did not run.
 

@@ -1,6 +1,7 @@
 import type { ResolvedLesson } from "@/lib/domain/schedule/types";
 import type { SlotPayload } from "@/lib/validation/slotPayload";
 import { cn } from "@/lib/utils";
+import { LESSON_LABELS } from "./labels";
 
 /**
  * One lesson, as specification §5.1 lists its fields and §5.4 wants a
@@ -68,7 +69,7 @@ function PayloadBody({ payload }: { payload: SlotPayload }) {
               rel="noreferrer noopener"
               target="_blank"
             >
-              Посилання на Zoom
+              {LESSON_LABELS.zoomLink}
             </a>
           </p>
         ) : (
@@ -128,10 +129,18 @@ export function LessonRow({
           >
             {lesson.payload.subject}
           </p>
-          {cancelled && <Badge tone="destructive">скасовано</Badge>}
-          {lesson.origin === "EDIT" && <Badge>правка</Badge>}
-          {lesson.origin === "SUBSTITUTION" && <Badge tone="accent">заміна</Badge>}
-          {lesson.isTaughtByMe === true && <Badge tone="accent">веду я</Badge>}
+          {cancelled && (
+            <Badge tone="destructive">{LESSON_LABELS.cancelled}</Badge>
+          )}
+          {lesson.origin === "EDIT" && <Badge>{LESSON_LABELS.edit}</Badge>}
+          {lesson.origin === "SUBSTITUTION" && (
+            <Badge tone="accent">{LESSON_LABELS.substitution}</Badge>
+          )}
+          {/* `isTaughtByMe` is absent on a cancelled row by construction
+              (`days.ts`), so this needs no `cancelled` guard of its own. */}
+          {lesson.isTaughtByMe === true && (
+            <Badge tone="accent">{LESSON_LABELS.taughtByMe}</Badge>
+          )}
         </div>
 
         <PayloadBody payload={lesson.payload} />
