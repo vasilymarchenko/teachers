@@ -1,17 +1,19 @@
 # Production stack for the VPS: web + Postgres + Caddy.
 #
-# Deploy: docker compose -f docker-compose.prod.yml pull
+# Deploy: git pull                                            # Compose/Caddy files only
+#         docker compose -f docker-compose.prod.yml pull
 #         docker compose -f docker-compose.prod.yml run --rm migrate
 #         docker compose -f docker-compose.prod.yml up -d
 #
 # `migrate` never starts on its own (profile "tools") — drizzle-kit migrate is
-# an explicit deploy step, never something the web process does at start-up
-# (README, "Migrations"). See README "Deploying to the VPS" for the full
-# procedure and rollback.
+# an explicit deploy step, never something the web process does at start-up.
+# It is a separately published image (ADR-003), not built on the VPS, and
+# always deployed at the same IMAGE_TAG as `web` so the two never drift apart.
+# See README "Deploying to the VPS" for the full procedure and rollback.
 
 services:
   web:
-    image: ${IMAGE:-ghcr.io/vasilymarchenko/teachers:latest}
+    image: ghcr.io/vasilymarchenko/teachers:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-teachers}:${POSTGRES_PASSWORD:-teachers}@db:5432/${POSTGRES_DB:-teachers}
@@ -21,18 +23,11 @@ services:
       db:
         condition: service_healthy
 
-  # Built locally, not pulled from GHCR: the published image is the `runner`
-  # stage, which has neither drizzle-kit nor drizzle.config.ts. `docker compose
-  # run --rm migrate` builds this the first time it is needed and reuses the
-  # layer cache after.
   migrate:
-    build:
-      context: .
-      target: builder
+    image: ghcr.io/vasilymarchenko/teachers-migrator:${IMAGE_TAG:-latest}
     profiles: ["tools"]
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-teachers}:${POSTGRES_PASSWORD:-teachers}@db:5432/${POSTGRES_DB:-teachers}
-    command: ["npx", "drizzle-kit", "migrate"]
     depends_on:
       db:
         condition: service_healthy

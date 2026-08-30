@@ -1,11 +1,20 @@
-# Multi-stage build. `runner` ships the app; `builder` is also the target the
-# one-shot `migrate` service in docker-compose.prod.yml runs against, since it
-# needs drizzle-kit and drizzle.config.ts — both dropped from `runner`.
+# Multi-stage build. `runner` ships the app; `migrator` ships the one-shot
+# `drizzle-kit migrate` deploy step (ADR-003) — it needs drizzle-kit and
+# drizzle.config.ts, both dropped from `runner`, but does not need `next
+# build`, so it does not go through `builder`.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+
+FROM node:22-alpine AS migrator
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json drizzle.config.ts ./
+COPY drizzle ./drizzle
+COPY lib/db/schema ./lib/db/schema
+CMD ["npx", "drizzle-kit", "migrate"]
 
 FROM node:22-alpine AS builder
 WORKDIR /app

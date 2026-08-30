@@ -64,8 +64,9 @@ npm run dev                   # http://localhost:3000
 
 `npm run db:migrate` (`drizzle-kit migrate`) is **an explicit deploy step**, not
 something the application does at start-up: the web process never migrates its
-own database. Deploying is `docker compose pull`, then `db:migrate`, then
-restart — see the deploy pipeline ticket, `docs/backlog/T-015-deploy-pipeline.md`.
+own database. That is true locally (`npm run db:migrate`, above) and on the VPS
+(the `migrate` Compose service) alike — see "Deploying to the VPS" below for
+the production procedure.
 
 Two of the migration files in `drizzle/` are written by hand rather than
 generated, because `drizzle-kit` cannot express what they contain:
@@ -120,37 +121,44 @@ docker compose -f docker-compose.prod.yml up -d
 ```
 
 `migrate` runs `drizzle-kit migrate` once and exits — it is not one of the
-services `up -d` starts (see "Migrations" above: the web process never migrates
-its own database). Run it again after every `pull` that includes a new
-migration, before `up -d` restarts `web`.
+services `up -d` starts. It is its own published image
+(`ghcr.io/vasilymarchenko/teachers-migrator`, ADR-003), pulled like `web` and
+never built on the VPS, and it always deploys at the same `IMAGE_TAG` as `web`
+so the schema a release expects and the code that runs against it can never
+drift apart.
 
 ### Redeploying and rolling back
 
-```sh
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml run --rm migrate
-docker compose -f docker-compose.prod.yml up -d
-```
+`docker-compose.prod.yml`'s header comment holds the three-command sequence —
+repeat it for every redeploy: `git pull` first if `docker-compose.prod.yml` or
+`Caddyfile` changed (they are read from the checkout, not the image), then the
+three commands above, in the same order — `migrate` before `up -d`, every time,
+even when this deploy added no new migration.
 
-To roll back, set `IMAGE` in `.env` to a previous `ghcr.io/vasilymarchenko/teachers:sha-<short-sha>`
-tag (GitHub Actions publishes one on every push to `main`, alongside `:latest`)
-and repeat `pull` + `up -d`. A rollback across a migration that changed the
-schema also needs the matching down step run by hand — there is no automated
-down migration.
+To roll back, set `IMAGE_TAG` in `.env` to a previous `sha-<short-sha>` (GitHub
+Actions publishes one for both images on every push to `main`, alongside
+`latest`) and repeat `pull` + `migrate` + `up -d`. A rollback across a migration
+that changed the schema also needs the matching down step run by hand — there
+is no automated down migration.
 
 ### Backups
 
 ```sh
 docker compose -f docker-compose.prod.yml exec -T db \
-  pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > "teachers-$(date +%F).sql.gz"
+  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > "teachers-$(date +%F).sql.gz"
 ```
+
+`sh -c '...'` in single quotes, not a bare `pg_dump -U "$POSTGRES_USER" ...`:
+`POSTGRES_USER`/`POSTGRES_DB` are set inside the `db` container by Compose, not
+in the host shell that runs this command, so an unquoted `$POSTGRES_USER` here
+expands to an empty string on the host before Docker ever sees it.
 
 Copy the result off the VPS (`scp`/`rsync` to another host) — a backup that
 lives on the same disk as the database survives no disk failure. A daily cron
 entry on the VPS:
 
 ```
-0 3 * * * cd /path/to/teachers && docker compose -f docker-compose.prod.yml exec -T db pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > /var/backups/teachers/teachers-$(date +\%F).sql.gz
+0 3 * * * cd /path/to/teachers && docker compose -f docker-compose.prod.yml exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > /var/backups/teachers/teachers-$(date +\%F).sql.gz
 ```
 
 ## Layout
