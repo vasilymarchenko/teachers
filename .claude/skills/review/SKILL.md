@@ -19,10 +19,16 @@ order, and how the passes fit together. Nothing here restates a check.
 | `/review` with a clean tree on a feature branch | `origin/main...HEAD` |
 
 ```sh
-gh pr diff <n>                      # a PR
-git fetch origin main && git diff origin/main...HEAD    # a branch
-git diff HEAD                       # the working tree
+gh pr checkout <n> && git diff origin/main...HEAD       # a PR
+git checkout <branch> && git diff origin/main...<branch>   # a branch
+git diff HEAD                                          # the working tree
 ```
+
+**Check the target out.** `gh pr diff` fetches a patch and changes nothing on
+disk, so a gate run after it tests whatever you were already sitting on — a
+clean `main` type-checks perfectly while the PR under review does not. Either
+check the target out, or say in the report that the gate did not run against it.
+Note where you started, and return there when the review is done.
 
 Then find the ticket, because §A of the rubric is unusable without one:
 
@@ -43,8 +49,12 @@ Run before any agent. Nothing an agent could deduce should cost agent attention,
 and a failing suite changes what the findings mean.
 
 ```sh
-npm run lint && npm run typecheck && npm test
+npm run lint; npm run typecheck; npm test
 ```
+
+Separated deliberately: `&&` stops at the first failure, and a review that
+reports a lint error while three tests are also red costs the author three
+round-trips instead of one.
 
 Add `npm run test:integration` when the diff touches `lib/db` — it needs a
 migrated Postgres (`docker compose up -d`, then `npm run db:migrate`). If it
@@ -61,9 +71,13 @@ Send both in one message so they run at once.
 1. **`review-contract`** (the subagent) — the diff against the ticket and the
    documents. Give it the diff or the command that produces it, the ticket id,
    and the ticket path. This is the pass a general-purpose reviewer cannot do.
-2. **`/code-review high`** — generic correctness, reuse, simplification,
-   efficiency. Do not reimplement it and do not narrow it; it is an independent
-   reading, and the overlap with the rubric is worth its cost.
+2. **`/code-review <target> high`** — generic correctness, reuse,
+   simplification, efficiency. **Pass the same target phase 1 resolved.** With
+   only an effort level it reviews the current diff, so on a PR target it reads
+   an empty working tree, finds nothing, and the whole generic half of the
+   review disappears while phase 4 still reports "both passes ran". Do not
+   reimplement it and do not narrow it; it is an independent reading, and the
+   overlap with the rubric is worth its cost.
 
 A newly added agent takes a moment to register, so `review-contract` can be
 missing from the agent list in the session that created it. If it is, say so and
@@ -85,7 +99,9 @@ checks most worth promoting into agents once real reviews show which ones fire.
 - **Merge** the same defect found by two passes into one finding. Two phrasings
   of one problem read as two problems.
 - **Rank** by severity, per §E.
-- **Report** through `ReportFindings`, most severe first. An empty list is a
+- **Report** most severe first, in the §E shape. Use `ReportFindings` when the
+  session has it and prose when it does not — the shape is what matters, and a
+  review must never be blocked on a tool that may be absent. An empty list is a
   valid and unremarkable result.
 
 With `--comment` on a PR target, post the findings as inline PR comments as

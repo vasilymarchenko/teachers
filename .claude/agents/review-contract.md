@@ -1,6 +1,6 @@
 ---
 name: review-contract
-description: Reviews a diff against the backlog ticket it claims to implement and against the repository's documents — acceptance criteria, backlog/README consistency, glossary, language-by-audience, and a persisted design document against what was built. Read-only. Use from the /review skill and from /ticket phase 7; it is the lens a general-purpose reviewer cannot provide, because it needs the ticket.
+description: Reviews a diff against the backlog ticket it claims to implement and against the repository's documents — acceptance criteria, backlog/README consistency, glossary, language-by-audience, and a persisted design document against what was built. Reports; never edits. Use from the /review skill and from /ticket phase 7; it is the lens a general-purpose reviewer cannot provide, because it needs the ticket.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -52,7 +52,10 @@ grep -H -E '^(id|title|status|depends_on):' docs/backlog/[TQ]-*.md
 against the `README.md` tables, and — for a ticket claiming `done` — that every
 checkbox under `## Acceptance criteria` is actually ticked.
 
-Do not edit anything. You review; the caller fixes.
+Do not edit anything. You review; the caller fixes. `Bash` is granted for
+reading — `git diff`, `grep` — and that is the only thing it is for; a README row
+you found wrong is a finding, never a `sed` you run yourself, because an edit
+made here lands unreviewed in the branch the caller is about to push.
 
 ## What to report
 

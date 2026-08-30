@@ -40,12 +40,15 @@ describe("review rubric references", () => {
   });
 
   it("cites only repository paths that exist", () => {
-    // Backticked tokens that look like a path: they contain a slash, they are
-    // not absolute (`/print` is a route, not a file), and they carry no glob
-    // (`docs/backlog/**` names a rule's scope, not a file).
+    // A slash alone does not make a token a path: `NUMERATOR/DENOMINATOR` is a
+    // domain term, and the rubric is full of those. Anchoring on the
+    // repository's top-level directories keeps a renamed term from failing an
+    // unrelated PR, at the cost of not checking a path outside them — of which
+    // there are none, because there is nowhere else to cite.
+    const ROOTS = ["lib/", "app/", "docs/", "components/", ".claude/", "drizzle/"];
     const paths = [...rubric.matchAll(/`([\w.@-][\w./@-]*)`/g)]
       .map((m) => m[1])
-      .filter((token) => token.includes("/") && !token.startsWith("/"));
+      .filter((token) => ROOTS.some((root) => token.startsWith(root)));
     expect(paths.length).toBeGreaterThan(0);
 
     const missing = [...new Set(paths)].filter((p) => !existsSync(p));
@@ -53,7 +56,7 @@ describe("review rubric references", () => {
   });
 
   it("names a cited test file by its full path, so the check above sees it", () => {
-    // The filter above needs a slash to tell a path from prose, which leaves a
+    // The filter above only sees tokens under a known directory, which leaves a
     // hole: a bare `nav-items.test.ts` is checked by nothing and can name a
     // file that has moved or never existed. Citing a test file at all is rare
     // and always deliberate — §F cites two as the precedent to follow — so

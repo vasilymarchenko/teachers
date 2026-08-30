@@ -47,14 +47,16 @@ reference below resolves.
 Each of these is invisible in a diff that looks reasonable, and none of them a
 general-purpose reviewer can know.
 
-- **§8.5, root `CLAUDE.md`** — is there a `new Date()` outside `lib/time`? Is
-  "today" taken from `lib/time/today.ts`? A `Date` reaching date arithmetic from
-  a naive parse counts.
-- **§8.4** — is `userId` the *first* parameter of every `lib/db/queries`
-  function and every mutation, and does it come only from `requireUser()`? Does
-  every query filter on `user_id`?
-- **§8.4** — does any Zod schema declare `userId`, or any code read it from form
-  or request input? Validating it does not make it trusted.
+- **§8.5, root `CLAUDE.md`** — is there a `new Date()` in *domain* code, or
+  anywhere a calendar date is derived? Is "today" taken from
+  `lib/time/today.ts`? A `Date` reaching date arithmetic from a naive parse
+  counts. A column default that stores a timestamp — Drizzle's `$onUpdate` in
+  `lib/db/schema` — is not a date derivation and is not a finding.
+- **§8.4** — does every query actually filter on `user_id`? The rest of the
+  rule — `userId` first, never read from form or request input, never declared
+  in a Zod schema — is enforced by `lib/auth/queryDiscipline.test.ts` and by
+  `eslint.config.mjs`, which the phase-2 gate has already run. Do not re-walk it
+  by hand; §F.
 - **§3.2 I1** — does any path `UPDATE` a `ScheduleTemplate` row whose
   `validFrom` is before `today()` instead of splitting it? Is the cut point
   `today()` and not a value from the form?
@@ -138,10 +140,10 @@ than it returns.
 
 Rank by severity: a security or data-correctness defect, then a violated
 invariant, then a broken contract with the ticket or the documents, then
-reuse and simplification. Whoever runs the review reports through
-`ReportFindings`, most severe first, and an empty list when nothing survives —
-silence is a valid review result. A subagent has no such tool: it returns its
-findings in this shape and the caller merges them.
+reuse and simplification. Report most severe first, and an empty list when
+nothing survives — silence is a valid review result. `ReportFindings` renders
+this shape when the session has that tool; prose carries it when not, and a
+subagent returns its findings for the caller to merge either way.
 
 ## F. Keeping this file honest
 

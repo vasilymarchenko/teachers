@@ -14,15 +14,9 @@ refs:
 
 ## Goal
 
-Make a review of a raised PR as strong as phase 7 of `/ticket`, and make both
-run off one copy of the standard. The standard is currently prose inside
-`.claude/skills/ticket/SKILL.md` phase 7: it cannot be reached from a bare PR
-review, and a second copy of it would drift from the first. Extract it into a
-rubric that a new `/review` skill and `/ticket` phase 7 both load.
-
-This ticket is tooling, not product code — the first item in this backlog that
-changes `.claude/` rather than the application. It is listed first among the
-`todo` tickets because every ticket after it is reviewed by what it builds.
+Extract the review standard out of `.claude/skills/ticket/SKILL.md` phase 7 into
+a rubric, and add a `/review` skill that reviews a raised PR against it, so that
+a bare PR review and phase 7 run off one copy.
 
 ## Acceptance criteria
 
@@ -103,3 +97,20 @@ answering it. And `.claude/**` was cited as English "per root `CLAUDE.md`" when
 the root document's list did not mention it; the list now does. `/review` also
 learned what to do when a just-added agent has not registered yet, which is how
 the contract pass ran here.
+
+The second pass, `/code-review`, found nine more, the two worst of them in
+`/review` itself: the mechanical gate ran against whatever was checked out
+rather than the target, so a clean `main` would have type-checked while the PR
+under review did not; and `/code-review` was invoked without the target, so on
+the bare-PR path — the one the ticket exists to enable — its half of the review
+would have read an empty tree and reported nothing, while the skill still
+claimed both passes ran. Both are fixed by checking the target out and passing
+it through.
+
+Three findings were the rubric being wider than the rule it cites: the
+`new Date()` check would have flagged five legitimate Drizzle `$onUpdate`
+defaults in `lib/db/schema`, and the `userId` check re-walked by hand what
+`queryDiscipline.test.ts` and `eslint.config.mjs` already prove — so §F's
+promote-and-delete applied on the rubric's first day, not later. `rubric.test.ts`
+no longer treats every slashed token as a path, because `NUMERATOR/DENOMINATOR`
+is not one.
