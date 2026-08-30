@@ -1,6 +1,6 @@
 ---
-name: ticket
-description: Take a backlog ticket from docs/backlog, plan it, implement it on a fresh branch, open a well-described PR, then re-review that PR against the ticket, the architecture documents and the repository conventions and push the fixes. Use when the user invokes /ticket (optionally with a ticket id such as /ticket T-005), or asks to "take the next ticket", "work the backlog", "implement T-NNN", or "pick up the next item from docs/backlog".
+name: teachers-ticket
+description: Take a backlog ticket from docs/backlog, plan it, implement it on a fresh branch, open a well-described PR, then re-review that PR against the ticket, the architecture documents and the repository conventions and push the fixes. Use when the user invokes /teachers-ticket (optionally with a ticket id such as /teachers-ticket T-005), or asks to "take the next ticket", "work the backlog", "implement T-NNN", or "pick up the next item from docs/backlog".
 ---
 
 # Work a backlog ticket
@@ -15,13 +15,13 @@ The repository's own rules win over anything below. Read the root `CLAUDE.md`
 `docs/backlog/CLAUDE.md` (backlog conventions) before phase 3.
 
 The standard phase 7 measures against is the repository's documents themselves,
-read at review time — `/review` holds the method, not a copy of the rules
+read at review time — `/teachers-review` holds the method, not a copy of the rules
 (`docs/architecture/decisions/ADR-001-review-reads-the-documents.md`). This file
 does not restate them either.
 
 ## Phase 1 — Choose the ticket
 
-If the invocation carries an id (`/ticket T-005`), that is the ticket. The
+If the invocation carries an id (`/teachers-ticket T-005`), that is the ticket. The
 invocation may also carry `--persist-plan` or `--no-persist-plan`, which decide
 phase 4's output; note the flag and carry it forward.
 
@@ -113,7 +113,7 @@ the PR body. Most tickets need nothing more, and a plan file per ticket would
 rot against the code it describes.
 
 **Persist it when the invocation says so or a trigger fires.** The user can force
-either way with a flag: `/ticket T-005 --persist-plan` or `--no-persist-plan`
+either way with a flag: `/teachers-ticket T-005 --persist-plan` or `--no-persist-plan`
 (the flag always wins, in both directions, and no trigger overrides it). With no
 flag, *offer* to persist — one `AskUserQuestion`, defaulting to yes — when any
 of these holds:
@@ -225,13 +225,13 @@ This phase is not optional and it is not a re-read of your own diff from memory.
 Invoke it on the PR you just opened, passing the ticket id:
 
 ```sh
-/review <pr> --self-review T-NNN
+/teachers-review <pr> --self-review T-NNN
 ```
 
 That flag is what selects self-review defaults — no merge, no inline comments,
 and no questions to the user about anything this ticket already answers. It
 fetches the diff, reads the documents that govern the code you changed, runs the
-`review-contract` agent and `/code-review`, and returns ranked findings for you
+`teachers-review-contract` agent and `/code-review`, and returns ranked findings for you
 to fix. The standard is those documents, not a checklist — so a rule you added
 to the architecture in this very ticket is one the review applies to it.
 
