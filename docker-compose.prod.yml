@@ -1,0 +1,74 @@
+# Production stack for the VPS: web + Postgres + Caddy.
+#
+# Deploy: docker compose -f docker-compose.prod.yml pull
+#         docker compose -f docker-compose.prod.yml run --rm migrate
+#         docker compose -f docker-compose.prod.yml up -d
+#
+# `migrate` never starts on its own (profile "tools") — drizzle-kit migrate is
+# an explicit deploy step, never something the web process does at start-up
+# (README, "Migrations"). See README "Deploying to the VPS" for the full
+# procedure and rollback.
+
+services:
+  web:
+    image: ${IMAGE:-ghcr.io/vasilymarchenko/teachers:latest}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-teachers}:${POSTGRES_PASSWORD:-teachers}@db:5432/${POSTGRES_DB:-teachers}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: https://${CADDY_DOMAIN}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Built locally, not pulled from GHCR: the published image is the `runner`
+  # stage, which has neither drizzle-kit nor drizzle.config.ts. `docker compose
+  # run --rm migrate` builds this the first time it is needed and reuses the
+  # layer cache after.
+  migrate:
+    build:
+      context: .
+      target: builder
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-teachers}:${POSTGRES_PASSWORD:-teachers}@db:5432/${POSTGRES_DB:-teachers}
+    command: ["npx", "drizzle-kit", "migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-teachers}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-teachers}
+      POSTGRES_DB: ${POSTGRES_DB:-teachers}
+    volumes:
+      - teachers-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-teachers} -d ${POSTGRES_DB:-teachers}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN}
+      CADDY_EMAIL: ${CADDY_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - teachers-caddy-data:/data
+      - teachers-caddy-config:/config
+    depends_on:
+      - web
+
+volumes:
+  teachers-pgdata:
+  teachers-caddy-data:
+  teachers-caddy-config:

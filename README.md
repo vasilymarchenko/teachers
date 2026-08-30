@@ -103,6 +103,56 @@ between them, and eight day overrides. It deletes that user and everything
 cascading from them first, so running it twice leaves the same database, and it
 refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=1`.
 
+## Deploying to the VPS
+
+Prerequisites on the VPS: Docker Engine with the Compose plugin (`docker compose`,
+not the standalone `docker-compose`), and a domain name pointed at the VPS's
+public IP — Caddy's automatic TLS needs that to request a certificate. Only
+ports 80 and 443 need to be open; Postgres stays on the Compose-internal
+network.
+
+```sh
+git clone git@github.com:vasilymarchenko/teachers.git && cd teachers
+cp .env.example .env    # set POSTGRES_*, BETTER_AUTH_SECRET, CADDY_DOMAIN, CADDY_EMAIL
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml run --rm migrate
+docker compose -f docker-compose.prod.yml up -d
+```
+
+`migrate` runs `drizzle-kit migrate` once and exits — it is not one of the
+services `up -d` starts (see "Migrations" above: the web process never migrates
+its own database). Run it again after every `pull` that includes a new
+migration, before `up -d` restarts `web`.
+
+### Redeploying and rolling back
+
+```sh
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml run --rm migrate
+docker compose -f docker-compose.prod.yml up -d
+```
+
+To roll back, set `IMAGE` in `.env` to a previous `ghcr.io/vasilymarchenko/teachers:sha-<short-sha>`
+tag (GitHub Actions publishes one on every push to `main`, alongside `:latest`)
+and repeat `pull` + `up -d`. A rollback across a migration that changed the
+schema also needs the matching down step run by hand — there is no automated
+down migration.
+
+### Backups
+
+```sh
+docker compose -f docker-compose.prod.yml exec -T db \
+  pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > "teachers-$(date +%F).sql.gz"
+```
+
+Copy the result off the VPS (`scp`/`rsync` to another host) — a backup that
+lives on the same disk as the database survives no disk failure. A daily cron
+entry on the VPS:
+
+```
+0 3 * * * cd /path/to/teachers && docker compose -f docker-compose.prod.yml exec -T db pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > /var/backups/teachers/teachers-$(date +\%F).sql.gz
+```
+
 ## Layout
 
 ```
