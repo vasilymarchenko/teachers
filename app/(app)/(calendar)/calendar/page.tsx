@@ -1,16 +1,26 @@
+import { redirect } from "next/navigation";
+import {
+  calendarHref,
+  scheduleViewOf,
+  type SearchParamValue,
+} from "@/components/calendar/links";
+import { today } from "@/lib/time/today";
+
 /**
- * Placeholder — the screen itself is T-007.
+ * `/calendar` — the menu item — opens today (specification §6, the calendar is
+ * the main screen).
  *
- * It exists so the menu item is not a dead link and so the route group of
- * overview §2 is real.
+ * The screen itself lives at `/calendar/<view>/<date>`, so this only chooses
+ * where «today» is: the day view, which is the one that fits a phone without a
+ * single decision from the teacher (overview §10.2).
  */
-export default function Page() {
-  return (
-    <div className="space-y-3">
-      <h1>Календар</h1>
-      <p className="text-muted-foreground">
-        Тут з’являться види календаря — рік, місяць, тиждень і день.
-      </p>
-    </div>
-  );
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ schedule?: SearchParamValue }>;
+}) {
+  const { schedule } = await searchParams;
+  // `today()` and not `new Date()`: the container runs in UTC and Kyiv is
+  // three hours ahead of it at night (overview §8.5).
+  redirect(calendarHref("day", today(), scheduleViewOf(schedule)));
 }

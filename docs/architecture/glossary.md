@@ -1,7 +1,7 @@
 # Глосарій: продуктовий термін → ідентифікатор у коді
 
-**Версія:** 1.2
-**Дата:** 29 серпня 2026 р. (T-005: `ScheduleInput` і `IsoDate` — терміни рівня коду)
+**Версія:** 1.3
+**Дата:** 29 серпня 2026 р. (T-007: `CalendarDay` — термін рівня коду)
 
 Це шов між українською продуктовою мовою (`docs/specs/specification.md`, UI) і англійськими іменами в коді. Правило одне: **новий доменний термін спершу з'являється тут, потім у схемі БД, домені та документах.** Якщо терміна немає в цій таблиці — його ще не існує, і вигадувати йому ім'я на місці не можна.
 
@@ -92,7 +92,9 @@
 
 ## 7. Терміни, що лишаються тільки в коді
 
-Не мають продуктового відповідника й **не повинні** з'являтися в українських продуктових текстах: `requireUser()`, `id`, `userId`, `createdAt`, `updatedAt`, `Server Action`, `Route Handler`, `payload`, `tombstone`, `copy-on-write`, `EXCLUDE USING gist`, `unstable_cache`, `ScheduleInput` (вхід `expand()`), `IsoDate`.
+Не мають продуктового відповідника й **не повинні** з'являтися в українських продуктових текстах: `requireUser()`, `id`, `userId`, `createdAt`, `updatedAt`, `Server Action`, `Route Handler`, `payload`, `tombstone`, `copy-on-write`, `EXCLUDE USING gist`, `unstable_cache`, `ScheduleInput` (вхід `expand()`), `IsoDate`, `CalendarDay`
+(`ResolvedDay` плюс те, що потрібно екрану календаря: скасовані уроки й назва
+`NonTeachingPeriod` — `architect-overview.md` §5).
 
 ## 8. Слова, які **не** є назвами сутностей
 
