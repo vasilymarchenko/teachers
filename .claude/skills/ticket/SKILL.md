@@ -12,8 +12,11 @@ no PR is called finished before phase 7 has run.
 
 The repository's own rules win over anything below. Read the root `CLAUDE.md`
 (layout, language rules, the `new Date()` and `userId` rules) and
-`docs/backlog/CLAUDE.md` (backlog conventions) before phase 3; they are the
-standard the final review measures against.
+`docs/backlog/CLAUDE.md` (backlog conventions) before phase 3.
+
+The standard phase 7 measures against is
+`.claude/skills/review/references/rubric.md` — one copy, shared with `/review`.
+This file does not restate it.
 
 ## Phase 1 — Choose the ticket
 
@@ -79,6 +82,10 @@ follow the conventions. Do everything that does not depend on the answer while
 you wait, and batch the questions into one round rather than trickling them.
 
 ## Phase 4 — Plan first
+
+Read `.claude/skills/review/references/rubric.md` before planning: it is what
+phase 7 will judge the result by, and a plan written against it costs nothing
+now and saves a rework commit later.
 
 Produce a written implementation plan **before any edit**. For a ticket that
 touches more than two or three files, delegate the exploration to the `Plan`
@@ -158,16 +165,13 @@ git fetch origin main && git checkout -b claude/ticket-t-NNN-<short-slug> origin
 (If the session was handed a designated branch, use that name instead — never
 push to a different branch than the one you were given.)
 
-While implementing, hold the rules that are easy to break silently:
-
-- **No `new Date()` in domain code.** "Today" comes from `lib/time/today.ts`.
-- **`userId` is the first argument** of every `lib/db/queries` function and every
-  mutation, and comes only from `requireUser()` — never from request input.
-- **Language by audience.** UI text, user-facing errors and seed data: Ukrainian.
-  Code, comments, commit messages, PR text, `docs/backlog/**`: English.
-  `docs/architecture/*.md`: Ukrainian prose, English identifiers verbatim.
-- **A new domain term goes into `glossary.md` first**, then into the code.
-- Tests for `lib/domain` are the point of that layer, not an extra.
+While implementing, hold the rules that are easy to break silently — the
+invariants of rubric §B, the stack rules of §C and the language rule of §A.
+They are listed once, in `.claude/skills/review/references/rubric.md`, and phase
+7 will check exactly those. Two that no diff makes visible, so they are worth
+naming at the moment you write rather than at the moment you are reviewed: a new
+domain term goes into `glossary.md` before it goes into the code, and the tests
+for `lib/domain` are the point of that layer, not an extra.
 
 Update the backlog in the same commit as the work it describes: the ticket's
 frontmatter `status`, the checkboxes under `## Acceptance criteria`, and the
@@ -211,25 +215,12 @@ Title: `T-NNN: <ticket title>`. English, like everything else developer-facing.
 ## Phase 7 — Review your own PR, then fix it
 
 This phase is not optional and it is not a re-read of your own diff from memory.
-Fetch the PR diff and review it cold, against three standards:
 
-1. **The ticket.** Walk each acceptance criterion and point at the code or test
-   that satisfies it. A criterion satisfied "in spirit" is not satisfied.
-2. **The documents.** `architect-overview.md` sections in `refs`, the glossary,
-   both `CLAUDE.md` files, the language rules. Check specifically for:
-   `new Date()` outside `lib/time`, a query or mutation without `userId` first,
-   Ukrainian in developer-facing text or English in teacher-facing text, a domain
-   term missing from the glossary, a `README.md` row that disagrees with the
-   frontmatter it mirrors, a fact now stated in two documents.
-3. **The code.** Correctness first — boundary dates, parity edges, timezone,
-   null and empty-range handling, N+1 queries, unvalidated input crossing a
-   Server Action boundary. Then reuse and simplification: something reimplemented
-   that already exists in `lib/`, a test that asserts the implementation instead
-   of the behaviour, an expectation that was clearly read off the output.
-
-Running `/code-review` on the branch is a good second pass, but it does not
-replace the ticket-and-documents check above — it does not know the acceptance
-criteria.
+Invoke `/review` in self-review mode on the PR you just opened, with the ticket
+id: it fetches the diff and reads it cold against the rubric, runs the
+`review-contract` agent and `/code-review`, and returns ranked findings. The
+checks themselves live in `.claude/skills/review/references/rubric.md`, not
+here — one copy, so a rule added there applies to this phase the same day.
 
 Apply every finding **in the same branch**, as a separate commit
 (`T-NNN review fixes: <what>`), re-run lint, typecheck and the test suites, push,
