@@ -12,8 +12,12 @@ no PR is called finished before phase 7 has run.
 
 The repository's own rules win over anything below. Read the root `CLAUDE.md`
 (layout, language rules, the `new Date()` and `userId` rules) and
-`docs/backlog/CLAUDE.md` (backlog conventions) before phase 3; they are the
-standard the final review measures against.
+`docs/backlog/CLAUDE.md` (backlog conventions) before phase 3.
+
+The standard phase 7 measures against is the repository's documents themselves,
+read at review time — `/review` holds the method, not a copy of the rules
+(`docs/architecture/decisions/ADR-001-review-reads-the-documents.md`). This file
+does not restate them either.
 
 ## Phase 1 — Choose the ticket
 
@@ -96,7 +100,8 @@ The plan must state:
   from. Expectations must be derived from the fixtures or the specification,
   **never obtained by running the code first**.
 - **Documentation impact**: which of `architect-overview.md`, `glossary.md`,
-  `docs/architecture/design/**` change, and the backlog status update.
+  `docs/architecture/design/**` change, whether the work carries a decision that
+  earns an ADR (phase 5), and the backlog status update.
 - **Risks and trade-offs**, including anything the plan deliberately leaves out.
 
 Present the plan and get the user's approval before implementing.
@@ -158,16 +163,21 @@ git fetch origin main && git checkout -b claude/ticket-t-NNN-<short-slug> origin
 (If the session was handed a designated branch, use that name instead — never
 push to a different branch than the one you were given.)
 
-While implementing, hold the rules that are easy to break silently:
+While implementing, hold the rules that are easy to break silently. They are
+stated once, in the documents phase 2 put in front of you — the root
+`CLAUDE.md`, the conventions file of each directory you write into, and the
+architecture sections in the ticket's `refs:`. Phase 7 will check the code
+against those same documents, not against a list kept in this file.
 
-- **No `new Date()` in domain code.** "Today" comes from `lib/time/today.ts`.
-- **`userId` is the first argument** of every `lib/db/queries` function and every
-  mutation, and comes only from `requireUser()` — never from request input.
-- **Language by audience.** UI text, user-facing errors and seed data: Ukrainian.
-  Code, comments, commit messages, PR text, `docs/backlog/**`: English.
-  `docs/architecture/*.md`: Ukrainian prose, English identifiers verbatim.
-- **A new domain term goes into `glossary.md` first**, then into the code.
-- Tests for `lib/domain` are the point of that layer, not an extra.
+**Write an ADR when the trigger fires.** A decision that changes the data model
+or a contract other tickets are written against, that chooses between real
+alternatives whose cost outlives the ticket, that would otherwise have to be
+reverse-engineered from the code, or that reverses an earlier decision, goes
+into `docs/architecture/decisions/` as `ADR-NNN`, committed with the work that
+implements it. `architect-overview.md` then states the outcome and links to the
+ADR rather than re-arguing it, and the ticket's `## Notes` names it. Conventions
+and the template: `docs/architecture/decisions/README.md`. Not every ticket
+produces one — see the trigger list there before writing.
 
 Update the backlog in the same commit as the work it describes: the ticket's
 frontmatter `status`, the checkboxes under `## Acceptance criteria`, and the
@@ -211,25 +221,19 @@ Title: `T-NNN: <ticket title>`. English, like everything else developer-facing.
 ## Phase 7 — Review your own PR, then fix it
 
 This phase is not optional and it is not a re-read of your own diff from memory.
-Fetch the PR diff and review it cold, against three standards:
 
-1. **The ticket.** Walk each acceptance criterion and point at the code or test
-   that satisfies it. A criterion satisfied "in spirit" is not satisfied.
-2. **The documents.** `architect-overview.md` sections in `refs`, the glossary,
-   both `CLAUDE.md` files, the language rules. Check specifically for:
-   `new Date()` outside `lib/time`, a query or mutation without `userId` first,
-   Ukrainian in developer-facing text or English in teacher-facing text, a domain
-   term missing from the glossary, a `README.md` row that disagrees with the
-   frontmatter it mirrors, a fact now stated in two documents.
-3. **The code.** Correctness first — boundary dates, parity edges, timezone,
-   null and empty-range handling, N+1 queries, unvalidated input crossing a
-   Server Action boundary. Then reuse and simplification: something reimplemented
-   that already exists in `lib/`, a test that asserts the implementation instead
-   of the behaviour, an expectation that was clearly read off the output.
+Invoke it on the PR you just opened, passing the ticket id:
 
-Running `/code-review` on the branch is a good second pass, but it does not
-replace the ticket-and-documents check above — it does not know the acceptance
-criteria.
+```sh
+/review <pr> --self-review T-NNN
+```
+
+That flag is what selects self-review defaults — no merge, no inline comments,
+and no questions to the user about anything this ticket already answers. It
+fetches the diff, reads the documents that govern the code you changed, runs the
+`review-contract` agent and `/code-review`, and returns ranked findings for you
+to fix. The standard is those documents, not a checklist — so a rule you added
+to the architecture in this very ticket is one the review applies to it.
 
 Apply every finding **in the same branch**, as a separate commit
 (`T-NNN review fixes: <what>`), re-run lint, typecheck and the test suites, push,

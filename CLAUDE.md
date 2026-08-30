@@ -10,14 +10,8 @@ The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), 
 - `docs/tech-stack.md` — stack and its rationale
 - `docs/architecture/architect-overview.md` — application architecture: data model, layers, trade-offs (§9) and open questions (§10)
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
+- `docs/architecture/decisions/` — ADRs: one file per significant decision, English, dated and immutable. An ADR records *why* a decision was taken, which alternatives were rejected and at what cost; `architect-overview.md` states what is true **now** and links to the ADR instead of re-arguing it. Write one when a decision changes the data model or a contract other tickets are written against, chooses between real alternatives with a lasting cost, or would otherwise have to be reverse-engineered from the code — not for every ticket. Conventions and the template: `docs/architecture/decisions/README.md`
 - `docs/backlog/` — the work tracker: one file per ticket (`T-NNN`) and per open question (`Q-NNN`), index in `docs/backlog/README.md`, conventions in `docs/backlog/CLAUDE.md`. There is no external tracker; a ticket states what to do and when it is done, and references the architecture document rather than restating it
-
-## Skills
-
-`.claude/skills/ticket` — `/ticket [T-NNN]` takes a backlog ticket (the named one,
-or the first `todo` in `docs/backlog/README.md` order), plans it, implements it on
-a branch, opens a PR and then reviews that PR against the ticket and these
-conventions.
 
 ## Commands
 
@@ -84,13 +78,13 @@ Language is chosen by **audience**, not by file type. If a teacher could read th
 
 **English (technical level — only developers read it):**
 - code, identifiers, code comments, commit messages, PR descriptions;
-- the backlog — `docs/backlog/**`;
+- the backlog — `docs/backlog/**`, and the agent tooling — `.claude/**`;
 - detailed design documents, ADRs, implementation plans, `docs/tech-stack.md`, `README.md`.
 
 **Architecture (the bridge between the two) — `docs/architecture/*.md`, i.e. `architect-overview.md` and `glossary.md`:**
 - written in **Ukrainian prose with English nouns**: the narrative, reasoning and trade-offs are Ukrainian, but every technical entity keeps its English name verbatim — table, type and field names, file paths, layer names, library names, code blocks. Never translate an identifier into Ukrainian; a translated term is exactly where the document loses its link to the code.
 - Rationale: these documents explain *why* the product requirements produce this structure, so they constantly reference the Ukrainian specification.
-- **Exception — `docs/architecture/design/**` is English.** That subtree holds the detailed design documents from the English list above (schema notes, ADRs, golden fixtures, implementation plans). It sits under `docs/architecture/` because it belongs to the same body of work, not because it follows the same language rule: it states mechanics for a developer, not reasoning for a reader of the specification. Ukrainian appears there only inside data a teacher would read — subject names, class names, demo payloads.
+- **Exception — `docs/architecture/design/**` and `docs/architecture/decisions/**` are English.** These two subtrees hold the detailed documents from the English list above: `design/` states mechanics (schema notes, golden fixtures, implementation plans), `decisions/` records why a choice was made and what was rejected. They sit under `docs/architecture/` because they belong to the same body of work, not because they follow the same language rule — the language rule follows the audience, and the audience for both is a developer, not a reader of the specification. Note that this puts *reasoning* in English in `decisions/` while `architect-overview.md` reasons in Ukrainian: the overview argues from the product requirements a teacher stated, an ADR argues between technical options only. Ukrainian appears in either subtree only inside data a teacher would read — subject names, class names, demo payloads.
 
 **Never keep the same document in two languages.** Documents are split by **level of detail, not by language**:
 - `docs/architecture/architect-overview.md` (Ukrainian) — decisions, module boundaries, trade-offs, open questions;
