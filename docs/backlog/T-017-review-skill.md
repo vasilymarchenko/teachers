@@ -54,6 +54,15 @@ run the same way.
 - [x] `/ticket` phase 7 invokes `/review` in self-review mode instead of
       restating the checks, and phases 4 and 5 point at the documents rather
       than listing rules. No rule exists in two files.
+- [x] `/review` never edits. Its "make the next review cheaper" phase proposes a
+      lint rule or convention test and states what that rule would flag in the
+      repository today; turning the proposal into work is a ticket, because a
+      change to the quality gate affects code the review never looked at.
+- [x] Merging a pull request is governed by `--merge=no|ask|auto`, defaulting to
+      `ask` and to `no` in self-review mode. Any policy requires no findings, a
+      gate that ran against the target and passed, and a pull request `gh`
+      reports mergeable; `auto` decides who is asked, never whether those
+      conditions hold.
 - [x] `.claude/**` is English throughout, like the rest of the developer-facing
       tree (root `CLAUDE.md`).
 
@@ -93,3 +102,11 @@ context while it judges the diff. The reading pass is carried by the orchestrato
 for now. The trigger to split it out is the first ticket that touches
 `lib/domain` or `lib/db`, where there is something for it to find — this ticket's
 own diff had no such surface, so it proved nothing either way.
+
+The skill can merge, and that is the only thing it can do to the repository —
+under `--merge`, defaulting to `ask`. Everything else it produces is a report.
+The phase that proposes promoting a repeated check into a lint rule was the
+tempting place to break that: applying the rule mid-review would change the diff
+under review and fail code nobody in the review had looked at. It proposes, with
+the evidence and with what the rule would flag today — that last part is what
+would have caught the `new Date()` rule this branch nearly shipped.

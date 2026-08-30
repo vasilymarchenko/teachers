@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review a pull request, a branch, or the uncommitted working tree against this repository's own documents — the acceptance criteria of the ticket it implements, the architecture, and the conventions. Use when the user invokes /review (optionally with a PR number, a PR URL or a branch name), asks to "review PR NNN", "review my changes", "review this branch before I push", or when /ticket phase 7 reviews its own PR.
+description: Review a pull request, a branch, or the uncommitted working tree against this repository's own documents — the acceptance criteria of the ticket it implements, the architecture, and the conventions. Reviews only: it reports and proposes, and merges a pull request afterwards solely under --merge=no|ask|auto, which defaults to asking. Use when the user invokes /review (optionally with a PR number, a PR URL or a branch name), asks to "review PR NNN", "review my changes", "review this branch before I push", or when /ticket phase 7 reviews its own PR.
 ---
 
 # Review
@@ -15,7 +15,12 @@ A decision the project makes must not require an edit to this skill. Only a
 change in the *kind* of thing being reviewed — another framework, another
 database, another language — should.
 
-## Phase 1 — Resolve the target
+## Phase 1 — Resolve the target and the merge policy
+
+`--merge=no|ask|auto` decides what may happen to a pull request once the review
+is done. **The default is `ask`**, and in self-review mode (`/ticket` phase 7)
+the default is `no` — an author's own review is the last thing that should be
+allowed to merge unattended. See phase 7.
 
 | Invocation | Target |
 |---|---|
@@ -99,7 +104,7 @@ Send both in one message so they run at once.
    simplification, efficiency. **Pass the same target phase 1 resolved.** With
    only an effort level it reviews the current diff, so on a PR target it reads
    an empty working tree, finds nothing, and the whole generic half of the
-   review disappears while phase 5 still reports "both passes ran". Do not
+   review disappears while the report still claims "both passes ran". Do not
    reimplement it and do not narrow it; it is an independent reading.
 
 A newly added agent takes a moment to register, so `review-contract` can be
@@ -113,7 +118,7 @@ architecture pass, and it is yours: the contract agent owns the ticket and the
 documents' consistency with each other, `/code-review` owns generic correctness,
 and neither knows whether this diff obeys the invariants the architecture states.
 
-## Phase 5 — Merge, drop, rank, report
+## Phase 5 — Reconcile, drop, rank, report
 
 **A finding carries three things, or it is dropped:**
 
@@ -139,8 +144,8 @@ having reached the condition under which that decision said it should be
 revisited, and code that contradicts a recorded default or implements it in a
 second place. Read the decision before you report against it.
 
-**Merge** the same defect found by two passes into one finding; two phrasings of
-one problem read as two problems. **Rank** by severity: a security or
+**Reconcile** the two passes: one defect found by both is one finding, not two —
+two phrasings of one problem read as two problems. **Rank** by severity: a security or
 data-correctness defect, then a violated architectural invariant, then a broken
 contract with the ticket or the documents, then reuse and simplification.
 **Report** most severe first — through `ReportFindings` when the session has it,
@@ -155,20 +160,73 @@ the review target.
 
 A check that has now fired twice belongs in a lint rule or a convention test,
 not in a reviewer's attention — this repository already keeps several, and the
-gate in phase 3 runs them for free on every future review. Say so when you see
-one, and name the rule or test that would replace it.
+gate in phase 3 runs them for free on every future review.
+
+**This phase proposes; it never edits.** A new lint rule or convention test
+changes the quality gate for every future change in the repository, including
+code nobody in this review has looked at. That is a change of its own, and it
+gets a ticket, a plan and a review like any other — writing it into the working
+tree mid-review would also mix the reviewer's edits into the diff under review,
+which is how a review stops being one.
+
+So the output is a proposal, and it carries its homework:
+
+- **the evidence** — the two occasions the check fired, not a guess that it
+  might;
+- **the rule or test, sketched** concretely enough to implement;
+- **what it would flag in the repository today.** Run it. A rule that fails
+  existing correct code is not ready, and the real finding is that it needs
+  narrowing — a check phrased more widely than the rule it comes from is exactly
+  how a reviewer starts producing confident nonsense.
+
+In self-review mode the caller turns an accepted proposal into a backlog ticket,
+as `/ticket` already requires of any real finding that is out of scope. On a
+standalone review, name it in the report and leave the filing to the user.
 
 The same applies to the documents: if a rule you enforced was hard to find, or
 you had to infer it from prose that also carries reasoning, that is a finding
 against the document, and it is worth more than the code finding that exposed
 it.
 
+## Phase 7 — Merge, only under the policy
+
+Only a pull request target can be merged; a branch or a working tree cannot, and
+the policy is ignored there. **Never merge a pull request that was not the
+review target.**
+
+Whatever the policy, merging requires all of:
+
+- the review reported **no findings** — not "none serious", none;
+- the mechanical gate ran **against the target** and passed, and any required
+  checks on the pull request are green;
+- `gh` reports the pull request mergeable, with no conflict and no block.
+
+If any of those is unmet, say which and stop. `auto` is not an override: it
+decides who is asked, never whether the conditions hold.
+
+| `--merge` | Behaviour |
+|---|---|
+| `no` | Report and stop. The default in self-review mode. |
+| `ask` | **Default.** If every condition above holds, say so and ask once — `AskUserQuestion`, with the merge method named. Otherwise report why it cannot merge, and do not ask. |
+| `auto` | Merge when every condition holds, and say plainly that it was merged and by which method. Otherwise report and stop. |
+
+Use the merge method this repository's history shows unless the user says
+otherwise, and name the method in the ask rather than assuming it is understood:
+
+```sh
+gh pr merge <n> --merge      # this repository's existing history uses merge commits
+```
+
+A review that ends in a merge still prints its report first. The reader has to
+be able to see what was reviewed, not just that it passed.
+
 ## Self-review mode
 
 `/ticket` phase 7 calls this skill with the ticket already known. Same method,
-same passes, two differences: the target is the ticket's own PR, and the caller
-fixes the findings on the same branch rather than reporting them onward. Do not
-post inline comments on your own PR unless the user asked for them.
+same passes, three differences: the target is the ticket's own PR, the caller
+fixes the findings on the same branch rather than reporting them onward, and
+`--merge` defaults to `no`. Do not post inline comments on your own PR unless
+the user asked for them.
 
 ## Definition of done
 
@@ -178,3 +236,5 @@ post inline comments on your own PR unless the user asked for them.
 - Both passes ran, plus your own reading of the diff against the architecture.
 - Every reported finding quotes the rule it violates; everything else was
   dropped.
+- Nothing was edited: the review reports, and phase 6 proposes.
+- The merge policy was honoured, and a merge — if one happened — was stated.
