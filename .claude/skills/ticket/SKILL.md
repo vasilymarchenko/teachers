@@ -14,9 +14,10 @@ The repository's own rules win over anything below. Read the root `CLAUDE.md`
 (layout, language rules, the `new Date()` and `userId` rules) and
 `docs/backlog/CLAUDE.md` (backlog conventions) before phase 3.
 
-The standard phase 7 measures against is
-`.claude/skills/review/references/rubric.md` — one copy, shared with `/review`.
-This file does not restate it.
+The standard phase 7 measures against is the repository's documents themselves,
+read at review time — `/review` holds the method, not a copy of the rules
+(`docs/architecture/decisions/ADR-001-review-reads-the-documents.md`). This file
+does not restate them either.
 
 ## Phase 1 — Choose the ticket
 
@@ -83,10 +84,6 @@ you wait, and batch the questions into one round rather than trickling them.
 
 ## Phase 4 — Plan first
 
-Read `.claude/skills/review/references/rubric.md` before planning: it is what
-phase 7 will judge the result by, and a plan written against it costs nothing
-now and saves a rework commit later.
-
 Produce a written implementation plan **before any edit**. For a ticket that
 touches more than two or three files, delegate the exploration to the `Plan`
 subagent — give it the ticket text, the `refs` sections and the two `CLAUDE.md`
@@ -103,7 +100,8 @@ The plan must state:
   from. Expectations must be derived from the fixtures or the specification,
   **never obtained by running the code first**.
 - **Documentation impact**: which of `architect-overview.md`, `glossary.md`,
-  `docs/architecture/design/**` change, and the backlog status update.
+  `docs/architecture/design/**` change, whether the work carries a decision that
+  earns an ADR (phase 5), and the backlog status update.
 - **Risks and trade-offs**, including anything the plan deliberately leaves out.
 
 Present the plan and get the user's approval before implementing.
@@ -165,10 +163,21 @@ git fetch origin main && git checkout -b claude/ticket-t-NNN-<short-slug> origin
 (If the session was handed a designated branch, use that name instead — never
 push to a different branch than the one you were given.)
 
-While implementing, hold the rules that are easy to break silently — the
-invariants of rubric §B, the stack rules of §C and the language rule of §A.
-They are listed once, in `.claude/skills/review/references/rubric.md`, which
-phase 4 has already put in front of you, and phase 7 will check exactly those.
+While implementing, hold the rules that are easy to break silently. They are
+stated once, in the documents phase 2 put in front of you — the root
+`CLAUDE.md`, the conventions file of each directory you write into, and the
+architecture sections in the ticket's `refs:`. Phase 7 will check the code
+against those same documents, not against a list kept in this file.
+
+**Write an ADR when the trigger fires.** A decision that changes the data model
+or a contract other tickets are written against, that chooses between real
+alternatives whose cost outlives the ticket, that would otherwise have to be
+reverse-engineered from the code, or that reverses an earlier decision, goes
+into `docs/architecture/decisions/` as `ADR-NNN`, committed with the work that
+implements it. `architect-overview.md` then states the outcome and links to the
+ADR rather than re-arguing it, and the ticket's `## Notes` names it. Conventions
+and the template: `docs/architecture/decisions/README.md`. Not every ticket
+produces one — see the trigger list there before writing.
 
 Update the backlog in the same commit as the work it describes: the ticket's
 frontmatter `status`, the checkboxes under `## Acceptance criteria`, and the
@@ -214,10 +223,10 @@ Title: `T-NNN: <ticket title>`. English, like everything else developer-facing.
 This phase is not optional and it is not a re-read of your own diff from memory.
 
 Invoke `/review` in self-review mode on the PR you just opened, with the ticket
-id: it fetches the diff and reads it cold against the rubric, runs the
-`review-contract` agent and `/code-review`, and returns ranked findings. The
-checks themselves live in `.claude/skills/review/references/rubric.md`, not
-here — one copy, so a rule added there applies to this phase the same day.
+id: it fetches the diff, reads the documents that govern the code you changed,
+runs the `review-contract` agent and `/code-review`, and returns ranked
+findings. The standard is those documents, not a checklist — so a rule you added
+to the architecture in this very ticket is one the review applies to it.
 
 Apply every finding **in the same branch**, as a separate commit
 (`T-NNN review fixes: <what>`), re-run lint, typecheck and the test suites, push,

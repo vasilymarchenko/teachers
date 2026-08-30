@@ -18,7 +18,9 @@ for reading. Order is priority; the ID number is not.
 | [T-006](T-006-auth-and-query-discipline.md) | Auth boundary and `user_id` query discipline | done | T-004 |
 | [T-008](T-008-calendar-read-queries.md) | Read queries for the calendar data path | done | T-004, T-006 |
 | [T-014](T-014-app-shell.md) | Application shell — navigation, layout and visual style | done | T-002 |
-| [T-017](T-017-review-skill-and-rubric.md) | Review skill and the shared review rubric | done | — |
+| [T-017](T-017-review-skill.md) | Review skill that reads the documents | done | — |
+| [T-018](T-018-adr-practice.md) | ADR practice — record significant decisions where they can be found | done | — |
+| [T-019](T-019-findable-invariants.md) | Make the architecture's invariants findable in the document | todo | T-017 |
 | [T-009](T-009-year-setup-screens.md) | Year setup — year, semesters, non-teaching periods, bells, parity | todo | T-006, T-014 |
 | [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | todo | T-005, T-008, T-014 |
 | [T-007](T-007-calendar-read-views.md) | Calendar read views — day, week, month, year | todo | T-005, T-008, T-014 |
@@ -64,8 +66,10 @@ T-001 and T-002 had no dependencies and were two parallel tracks — the paper
 track and the code track — rather than a ranked pair; T-002 is listed first only
 because nothing is runnable before it. T-001 is done: its output,
 `docs/architecture/design/expand-fixtures.md`, is the input T-003 and T-005 read.
-T-017 is absent from the diagram: it depends on nothing and nothing depends on
-it, because it changes the review tooling rather than the application.
+T-017 and T-018 are absent from the diagram: they change the review tooling and
+the documentation practice rather than the application, and nothing in the
+diagram waits on either. T-019 follows from T-017 and touches only
+`architect-overview.md`.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010, T-012 — have every dependency satisfied.
@@ -74,7 +78,8 @@ the shell — T-007, T-009, T-010, T-012 — have every dependency satisfied.
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md` and, in T-017, the review tooling those tickets are checked
-by. Second- and third-phase work (class list and birthdays §9,
+`docs/tech-stack.md`. T-017, T-018 and T-019 are not product scope: they are the
+review tooling those tickets are checked by, and the documents that tooling
+reads. Second- and third-phase work (class list and birthdays §9,
 import §10, AI) has no tickets by design; `architect-overview.md` §7 records the
 extension points those will use.
