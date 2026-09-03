@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), the auth boundary (T-006), the calendar read queries (T-008), the application shell (T-014) and the deploy pipeline (T-015) are in place: the app builds and runs against a migrated Postgres, behind sign-in, with the navigation panel and the four screens of the first release still placeholders, and is deployable to a VPS via Docker Compose, GHCR and Caddy. The planning documents are:
+The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), the auth boundary (T-006), the calendar read queries (T-008), the calendar read views (T-007), the application shell (T-014) and the deploy pipeline (T-015) are in place: the app builds and runs against a migrated Postgres, behind sign-in, with the navigation panel and a working calendar — day, week, month and year over real schedule data — while the other three screens of the first release are still placeholders, and is deployable to a VPS via Docker Compose, GHCR and Caddy. Nothing is writable yet: `lib/db/queries` is read-only and `lib/actions` holds sign-in and sign-out alone. The planning documents are:
 
 - `docs/specs/specification.md` — product specification (Ukrainian), the primary document
 - `docs/tech-stack.md` — stack and its rationale

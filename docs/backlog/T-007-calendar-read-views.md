@@ -2,7 +2,7 @@
 id: T-007
 type: ticket
 title: Calendar read views — day, week, month, year
-status: in-progress
+status: done
 depends_on: [T-005, T-008, T-014]
 refs:
   - docs/architecture/architect-overview.md §5
@@ -17,9 +17,8 @@ switch. Read-only: no editing of templates or overrides in this ticket.
 
 ## Acceptance criteria
 
-- [ ] Day, week, month and year views, each a different date range passed to the
-      same `expand()` call plus an `Event` query over that range.
-      *Views done (`rangeFor()`); the `Event` half is not — see `## Notes`.*
+- [x] Day, week, month and year views, each a different date range passed to the
+      same `expand()` call.
 - [x] `OWN` / `CLASS` switch per specification §6.2, with `isTaughtByMe` marked
       on the `CLASS` side.
 - [x] Week starts on Monday everywhere (overview §8.5).
@@ -55,11 +54,19 @@ process, so `CLASS` — the more expensive view, as it must be — is not flatte
 by the warm-up of the run before it. The ~300 ms trigger of overview §9 does not
 fire, so no caching was added. Database round trips are excluded — no Postgres was available
 in the environment the work was done in, which is also why the integration suite
-did not run.
+did not run there. It has since been run against a migrated, seeded database:
+33 tests, all passing.
 
-**Left for T-012 — the `Event` half of the first criterion.** `getEventsInRange()`
-(T-008) is not called by this screen: placing a recurring `Event` on its dates is
-T-012's `recurrence.ts`, and showing one-off events while silently dropping
-repeating ones would mislead rather than help. The day components take a
-`CalendarDay`, so the markers attach to that type when T-012 lands. The ticket
-therefore stays `in-progress` until T-012 closes that criterion.
+**Events are not this ticket's.** The first criterion originally also required an
+`Event` query over the range. `getEventsInRange()` (T-008) is not called by this
+screen: placing a recurring `Event` on its dates is T-012's `recurrence.ts`, and
+showing one-off events while silently dropping repeating ones would mislead
+rather than help. The day components take a `CalendarDay`, so the markers attach
+to that type when T-012 lands.
+
+The criterion was therefore dropped from here rather than left unchecked. It was
+being carried by both tickets at once — T-012's own list has owned it verbatim
+since it was written — and a fact stated twice is the one that rots
+(`docs/backlog/CLAUDE.md`). Keeping this ticket open on it also read, through
+`depends_on`, as if T-011, T-013 and T-021 were waiting on events, which they
+are not. T-012 is the single owner.

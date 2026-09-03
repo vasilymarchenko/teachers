@@ -27,7 +27,8 @@ that create both kinds, so the calendar has events to render.
 - [ ] Marking a deadline done and undone from the calendar.
 - [ ] CRUD forms for both kinds, one Zod schema each, shared client and server.
 - [ ] The calendar views show events on their dates, overdue deadlines marked
-      (specification §6.3) — the half of T-007's first criterion T-007 left open.
+      (specification §6.3) — this ticket alone owns putting events on the
+      calendar; T-007 built the views without them.
 - [ ] All UI text in Ukrainian.
 
 ## Notes
@@ -38,11 +39,11 @@ deliberately, because a calendar that showed one-off events while silently
 dropping repeating ones would mislead. `getEventsInRange()` (T-008) is written
 and unused; the day components consume `CalendarDay`
 (`docs/architecture/design/T-007-calendar-views.md` §4), which is where the
-markers attach. T-007 stays `in-progress` until this ticket closes that
-criterion.
+markers attach.
 
 That criterion is why `depends_on` names T-007: the recurrence core and the
 forms do not need the calendar screen, but the last criterion cannot be started
-without `CalendarDay` and the day components T-007 adds — and without the
-dependency declared, the index would show this ticket unblocked while T-007,
-T-011 and T-013 waited on it.
+without `CalendarDay` and the day components T-007 adds. T-007 is `done` and
+does not wait on this ticket — it carried the same criterion unchecked until
+closing time, which stated one fact in two places; the criterion above is now
+its only home.
