@@ -1,18 +1,22 @@
 "use server";
 
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gt, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { constraintMessage } from "@/lib/db/constraintViolation";
-import { getAcademicYear } from "@/lib/db/queries/yearSetup";
+import {
+  getAcademicYear,
+  listParityAnchors,
+  listWeekdayRules,
+  type AcademicYearRow,
+} from "@/lib/db/queries/yearSetup";
 import {
   academicYear,
   nonTeachingWeekdayRule,
   parityAnchor,
 } from "@/lib/db/schema";
-import { nextIsoDate } from "@/lib/domain/schedule/dates";
 import { academicYearInput } from "@/lib/validation/academicYear";
 import {
   invalidInput,
@@ -89,6 +93,52 @@ export async function createAcademicYearAction(
   redirect(`${YEAR_SETUP_PATH}?year=${createdId}`);
 }
 
+/**
+ * What narrowing the year's dates would leave behind, or `undefined`.
+ *
+ * The screen shows a parity anchor or a weekday rule under the year whose dates
+ * reach it (`listParityAnchors()`, `listWeekdayRules()`). Shrinking the year can
+ * therefore push a row out of every screen while it goes on being read by the
+ * calendar — an anchor still flipping parity in April, a weekday still blank —
+ * which is the "row nothing can reach" the delete action goes out of its way to
+ * avoid. So the edit is refused and the teacher removes the row first: shrinking
+ * a year must not silently delete what was entered under it.
+ *
+ * The anchor on the old first day is exempt — the caller moves that one.
+ */
+async function strandedByNarrowing(
+  userId: string,
+  previous: AcademicYearRow,
+  next: { dateFrom: string; dateTo: string },
+): Promise<string | undefined> {
+  const window = { from: previous.dateFrom, to: previous.dateTo };
+  const [anchors, rules] = await Promise.all([
+    listParityAnchors(userId, window),
+    listWeekdayRules(userId, window),
+  ]);
+
+  const strandedAnchors = anchors.filter(
+    (anchor) =>
+      anchor.date !== previous.dateFrom &&
+      (anchor.date < next.dateFrom || anchor.date > next.dateTo),
+  );
+  if (strandedAnchors.length > 0) {
+    return "Спершу приберіть точки відліку парності, які опиняться поза новими межами року";
+  }
+
+  // The list predicate, negated: a rule is shown under a year when it starts no
+  // later than the year ends and ends after the year begins.
+  const strandedRules = rules.filter(
+    (rule) =>
+      !(rule.validFrom <= next.dateTo && rule.boundaryDate > next.dateFrom),
+  );
+  if (strandedRules.length > 0) {
+    return "Спершу приберіть правила днів тижня, які опиняться поза новими межами року";
+  }
+
+  return undefined;
+}
+
 export async function updateAcademicYearAction(
   academicYearId: string,
   _prevState: FormState,
@@ -107,6 +157,12 @@ export async function updateAcademicYearAction(
   if (existing === null) return rejected(YEAR_NOT_FOUND, formData);
 
   const { dateFrom, dateTo, initialParity } = parsed.data;
+
+  const stranded = await strandedByNarrowing(userId, existing, {
+    dateFrom,
+    dateTo,
+  });
+  if (stranded !== undefined) return rejected(stranded, formData);
 
   try {
     await getDb().transaction(async (tx) => {
@@ -160,11 +216,12 @@ export async function updateAcademicYearAction(
  * `semester` and `non_teaching_period` go with it through
  * `ON DELETE CASCADE` (schema §8). `parity_anchor` and
  * `non_teaching_weekday_rule` do not — neither has an `academic_year_id`, they
- * are keyed by date and by weekday — so the rows that lie inside the deleted
- * year are removed here. Leaving them would leave the teacher rows no screen
- * can reach and a parity anchor still shifting a year that no longer exists.
- * A rule that outlives the year (its `boundary_date` falls after the year's
- * last day) is kept, because it is not this year's to delete.
+ * are keyed by date and by weekday — so they are deleted here, by **the same
+ * predicates the screen listed them under** (`listParityAnchors()`,
+ * `listWeekdayRules()`): what the teacher saw under this year is what goes with
+ * it. Any narrower rule leaves rows that no screen can reach and that the
+ * calendar goes on reading — an anchor still shifting the parity of a year that
+ * no longer exists, a weekday still blank.
  */
 export async function deleteAcademicYearAction(
   academicYearId: string,
@@ -173,10 +230,6 @@ export async function deleteAcademicYearAction(
 
   const existing = await getAcademicYear(userId, academicYearId);
   if (existing !== null) {
-    // The boundary is exclusive, so a rule contained by the year ends no later
-    // than the day after its last day (schema §6).
-    const endsBy = nextIsoDate(existing.dateTo);
-
     await getDb().transaction(async (tx) => {
       await tx
         .delete(parityAnchor)
@@ -202,8 +255,8 @@ export async function deleteAcademicYearAction(
         .where(
           and(
             eq(nonTeachingWeekdayRule.userId, userId),
-            gte(nonTeachingWeekdayRule.validFrom, existing.dateFrom),
-            lte(nonTeachingWeekdayRule.boundaryDate, endsBy),
+            lte(nonTeachingWeekdayRule.validFrom, existing.dateTo),
+            gt(nonTeachingWeekdayRule.boundaryDate, existing.dateFrom),
           ),
         );
     });

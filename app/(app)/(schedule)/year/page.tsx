@@ -91,11 +91,20 @@ export default async function Page({
             {years.length > 1 ? (
               <YearSwitcher selectedId={selected.id} years={years} />
             ) : null}
+            {/*
+              `key` is what makes switching years safe. The switcher navigates
+              softly, so React would otherwise reconcile these forms in place:
+              `useActionState` would keep the previous year's state and the
+              uncontrolled inputs would keep its typed values, while the actions
+              below them are already bound to the new year's id — half-typed
+              dates for one year, saved onto another. The key remounts them.
+            */}
             <YearForm
               initialParity={
                 frame?.[3].find((anchor) => anchor.date === selected.dateFrom)
                   ?.parity
               }
+              key={selected.id}
               year={selected}
             />
           </>
@@ -109,12 +118,22 @@ export default async function Page({
 
       {selected !== null && frame !== null ? (
         <>
+          {/* Keyed for the same reason as the year form above. */}
           <SemestersSection
             academicYearId={selected.id}
+            key={selected.id}
             semesters={frame[0]}
           />
-          <PeriodsSection academicYearId={selected.id} periods={frame[1]} />
-          <RulesSection academicYearId={selected.id} rules={frame[2]} />
+          <PeriodsSection
+            academicYearId={selected.id}
+            key={selected.id}
+            periods={frame[1]}
+          />
+          <RulesSection
+            academicYearId={selected.id}
+            key={selected.id}
+            rules={frame[2]}
+          />
         </>
       ) : null}
 
@@ -124,6 +143,7 @@ export default async function Page({
         <ParitySection
           academicYearId={selected.id}
           anchors={frame[3]}
+          key={selected.id}
           yearStart={selected.dateFrom}
         />
       ) : null}

@@ -128,12 +128,19 @@ error. On update, a changed `date_from` deletes the anchor on the old first day
 before writing the new one: the initial value *is* the anchor on the year's
 first day, so it moves with it. Resets on other dates are untouched.
 
+An update that **narrows** the year is refused when it would leave an anchor or
+a rule outside the new dates (`strandedByNarrowing()`): those rows are shown
+under the year whose dates reach them, so shrinking the year would push them off
+every screen while the calendar goes on reading them. The teacher removes the
+row first; shrinking a year never deletes what was entered under it.
+
 **`deleteAcademicYearAction`.** `semester` and `non_teaching_period` cascade
 (schema §8). `parity_anchor` and `non_teaching_weekday_rule` have no
-`academic_year_id`, so the rows *contained* by the year are deleted here — an
-anchor with `date` in `[date_from, date_to]`, a rule with
-`valid_from >= date_from` and `boundary_date <= date_to + 1 day`. A rule that
-outlives the year is kept.
+`academic_year_id`, so they are deleted here **by the predicates the screen
+listed them under** — an anchor with `date` in `[date_from, date_to]`, a rule
+with `valid_from <= date_to` and `boundary_date > date_from`. What the teacher
+saw under this year goes with it; a narrower condition leaves rows nothing can
+reach and the calendar still reads.
 
 **`saveBellScheduleAction`.** Reads all ten numbers whether or not they were
 filled in, deletes the rows for the cleared ones and upserts the rest through
@@ -158,6 +165,10 @@ boundaryDate = resolveBoundary({ kind: boundaryKind,
 that has already passed. Each returns a message on the field that has to change
 (`boundaryKind`, or `lastDay` for `DATE`).
 
+A year that has already ended is refused before any of that: `validFrom` is
+today once the year has started, so `validFrom > year.dateTo` would write a rule
+that no year's screen lists and the calendar still applies.
+
 **`createParityAnchorAction`.** Refuses a date equal to `year.dateFrom` — that
 row belongs to the year form — and a date outside the year.
 
@@ -167,6 +178,8 @@ row belongs to the year form — and a date outside the year.
 |---|---|---|
 | shape, required fields, `dateFrom <= dateTo`, `timeFrom < timeTo`, `HH:MM`, `DATE` needs a `lastDay` | the Zod schema | it is the boundary the browser and the action share |
 | a child range inside its year | the action | needs the year row; no constraint expresses it |
+| an UPDATE that matched no row (deleted in another tab) | the action, via `.returning()` | Drizzle reports success for an UPDATE that matched nothing |
+| a year narrowed past a row that hangs off it | the action | needs both the old and the new range |
 | two years / two semesters overlapping | `*_no_overlap_ex` | checking it in the action is a race: two submissions can both read "no overlap" and both insert |
 | a year's second semester 1 | `semester_year_index_uq` | same race |
 | an anchor already on that date | `parity_anchor_user_date_uq` | same race |
@@ -205,9 +218,9 @@ sees or types is inclusive; only the stored bound is not (schema §6).
 - **No re-resolution when a break moves.** Overview §8.1 records it as an
   accepted cost; the period edit form carries the warning and nothing chases the
   rules.
-- **No dedupe of overlapping weekday rules.** Schema §4.4 says the UI dedupes;
-  overlapping rows are an OR and change no answer, so the section lists them and
-  leaves them.
+- **No dedupe of overlapping weekday rules.** Overlapping rows are an OR and
+  change no answer, so the section lists them as they are. Schema §4.4 said the
+  UI would collapse them; it has been corrected to say what is true.
 - **No edit form for a parity reset.** A reset is a date and one of two values;
   removing and adding is the same number of gestures.
 - **No semesters generated from the year's dates**, and no holiday import.

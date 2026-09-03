@@ -17,11 +17,11 @@ import {
  * literal text of their own, exactly as the calendar's components hold none:
  * a word is reworded here and changes everywhere it appears.
  *
- * `fullDate` and `PARITY_LABELS` are imported from the calendar's labels rather
- * than written again: «чисельник» has to be the same word on both screens, and
- * a date the teacher reads has to have one format in the whole application.
+ * `fullDate` is re-exported from the calendar's labels rather than written
+ * again: a date the teacher reads has to have one format in the whole
+ * application.
  */
-export { fullDate, PARITY_LABELS } from "@/components/calendar/labels";
+export { fullDate } from "@/components/calendar/labels";
 
 /** An option of a `<select>` — the value stored, the word shown. */
 export type Option<Value extends string> = { value: Value; label: string };
@@ -31,11 +31,17 @@ const optionsFor = <Value extends string>(
   labels: Record<Value, string>,
 ): Option<Value>[] => values.map((value) => ({ value, label: labels[value] }));
 
-/** Glossary §1 — the three kinds of non-teaching period. */
+/**
+ * Glossary §1 — the three kinds of non-teaching period, in the words the
+ * glossary binds them to. Not a shorter wording invented here: the glossary is
+ * where a product term is decided, and a screen that abbreviates «державне
+ * свято» to «Свято» gives the teacher two names for one row as soon as the next
+ * screen is written from the glossary instead of from this file.
+ */
 export const NON_TEACHING_KIND_LABELS: Record<NonTeachingKind, string> = {
   BREAK: "Канікули",
-  PUBLIC_HOLIDAY: "Свято",
-  OTHER: "Інший вихідний",
+  PUBLIC_HOLIDAY: "Державне свято",
+  OTHER: "Позаплановий вихідний",
 };
 
 /** Glossary §1 — `MON` … `SUN`, in the order a week runs (overview §8.5). */
@@ -150,8 +156,6 @@ export const RULES_SECTION = {
   until: "Діє до",
   empty: "Правил ще немає — уроки є всі сім днів тижня, зокрема в суботу й неділю.",
   removeConfirm: "Видалити це правило?",
-  /** `boundary_date` is exclusive; the teacher is shown the last day it covers. */
-  boundaryNote: "Дата нижче — останній день, коли правило ще діє.",
 };
 
 export const BELLS_SECTION = {

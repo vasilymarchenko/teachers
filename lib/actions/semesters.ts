@@ -30,6 +30,8 @@ import {
  * submissions that both read "no overlap" before either wrote.
  */
 
+const SEMESTER_NOT_FOUND = "Семестр не знайдено. Оновіть сторінку";
+
 const CONSTRAINT_MESSAGES = {
   semester_year_index_uq: "Такий семестр у цьому році вже є",
   semester_no_overlap_ex: "Ці дати перетинаються з іншим семестром",
@@ -96,10 +98,15 @@ export async function updateSemesterAction(
   }
 
   try {
-    await getDb()
+    const updated = await getDb()
       .update(semester)
       .set({ index, dateFrom, dateTo })
-      .where(and(eq(semester.userId, userId), eq(semester.id, semesterId)));
+      .where(and(eq(semester.userId, userId), eq(semester.id, semesterId)))
+      // A row deleted in another tab must not come back as a clean save: the
+      // UPDATE matches nothing and Drizzle reports success either way.
+      .returning({ id: semester.id });
+
+    if (updated.length === 0) return rejected(SEMESTER_NOT_FOUND, formData);
   } catch (error) {
     const message = constraintMessage(error, CONSTRAINT_MESSAGES, SAVE_REFUSED);
     if (message === undefined) throw error;

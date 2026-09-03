@@ -45,6 +45,16 @@ const CONSTRAINT_MESSAGES = {
 };
 
 /**
+ * A rule is shown under the year whose dates reach it, and `validFrom` is
+ * today once the year has started (ADR-004). For a year that has already
+ * ended, today is after its last day, so the rule would be written and then
+ * listed under no year at all — invisible on this screen and still blanking a
+ * weekday in the calendar. Refused rather than written.
+ */
+const YEAR_ALREADY_ENDED =
+  "Цей навчальний рік уже завершився — правило не належатиме до нього. Виберіть рік, який ще триває";
+
+/**
  * A symbol that resolves to nothing usable is not an error but a question the
  * teacher has to answer: there are no breaks entered yet, no semester still
  * running, or the chosen last day has already passed. The message says which,
@@ -124,6 +134,8 @@ export async function createWeekdayRuleAction(
   // ADR-004: the year's first day when the year has not started, today when it
   // has — so a rule entered in March does not reach back over March's Fridays.
   const validFrom = ruleValidFrom(year.dateFrom, today());
+  if (validFrom > year.dateTo) return rejected(YEAR_ALREADY_ENDED, formData);
+
   const boundaryDate = await resolveFor(
     userId,
     academicYearId,

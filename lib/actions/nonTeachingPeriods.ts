@@ -34,6 +34,8 @@ import {
  * form is for — this action does not chase them.
  */
 
+const PERIOD_NOT_FOUND = "Неробочий період не знайдено. Оновіть сторінку";
+
 const CONSTRAINT_MESSAGES = {
   non_teaching_period_dates_ck:
     "Період не може завершуватися раніше, ніж починається",
@@ -101,7 +103,7 @@ export async function updateNonTeachingPeriodAction(
   }
 
   try {
-    await getDb()
+    const updated = await getDb()
       .update(nonTeachingPeriod)
       .set({ kind, name, dateFrom, dateTo })
       .where(
@@ -109,7 +111,12 @@ export async function updateNonTeachingPeriodAction(
           eq(nonTeachingPeriod.userId, userId),
           eq(nonTeachingPeriod.id, periodId),
         ),
-      );
+      )
+      // A row deleted in another tab must not come back as a clean save: the
+      // UPDATE matches nothing and Drizzle reports success either way.
+      .returning({ id: nonTeachingPeriod.id });
+
+    if (updated.length === 0) return rejected(PERIOD_NOT_FOUND, formData);
   } catch (error) {
     const message = constraintMessage(error, CONSTRAINT_MESSAGES, SAVE_REFUSED);
     if (message === undefined) throw error;

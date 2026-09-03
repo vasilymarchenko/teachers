@@ -245,8 +245,11 @@ OR over rows, so a second rule covering a Friday already covered changes no
 answer — the rows are redundant, never contradictory. A non-overlap exclusion
 would buy nothing and would break the ordinary «extend the methodical day past
 the winter break» edit, which writes a new rule whose range starts inside the
-old one's. The cost is a rule list that can contain duplicates; T-009 dedupes in
-the UI, not in the schema.
+old one's. The cost is a rule list that can contain duplicates, and it is a cost
+that was accepted rather than paid off: T-009 lists the rows as they are and
+collapses nothing (`design/T-009-year-setup.md` §8). A reader of this list must
+therefore expect the same weekday twice, with the older row's range starting
+inside the newer one's.
 
 **There is no implicit weekend.** Saturday and Sunday are non-teaching only
 because rows say so (fixtures §9, F-3, "Related"). Year setup creates R2/R3.
