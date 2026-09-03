@@ -95,3 +95,13 @@ A detailed document does not restate the overview — it references the relevant
 **Glossary.** `docs/architecture/glossary.md` is the single place binding a Ukrainian product term to its English identifier (`заміна → DayOverride.kind = SUBSTITUTION`, `розгорнутий урок → ResolvedLesson`). A new domain term goes there first, then into the code and the documents.
 
 **Chat replies:** Ukrainian if the user's prompt is in Ukrainian or Russian; English if the prompt is in English.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
