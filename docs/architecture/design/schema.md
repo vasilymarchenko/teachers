@@ -231,12 +231,14 @@ CONSTRAINT ntwr_range_ck CHECK (valid_from < boundary_date)
 **The rule applies to a date `d` when `valid_from <= d < boundary_date`.**
 `valid_from` exists because of fixtures §9 F-3: without it a rule entered in
 October reaches back over every past Friday and silently rewrites history,
-contradicting specification §5.2. It is resolved at write time exactly as
-`ScheduleTemplate.valid_from` is — the write sets it to `today()`
-(`lib/time/today.ts`), never to a caller-supplied date. Year setup (T-009) is the
-one exception: it writes `valid_from = academic_year.date_from` for the rules it
-creates as part of the year frame, which is what makes the fixture's R1–R3 legal
-from 2026-09-01.
+contradicting specification §5.2. It is resolved at write time and never taken
+from caller input: the year-setup screens set it to the **later of
+`academic_year.date_from` and `today()`** (`lib/time/today.ts`), through
+`ruleValidFrom()` in `lib/domain/schedule/boundaries.ts`. Setting a year up
+before it starts therefore gives the year's first day, which is what makes the
+fixture's R1–R3 legal from 2026-09-01; adding a rule mid-year gives today. An
+edit keeps the row's existing `valid_from`. `ADR-004` records why, and what a
+plain `academic_year.date_from` would have cost.
 
 **Overlapping rules for the same weekday are allowed.** `isNonTeaching` is an
 OR over rows, so a second rule covering a Friday already covered changes no

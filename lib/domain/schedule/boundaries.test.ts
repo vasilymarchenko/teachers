@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveBoundary } from "./boundaries";
+import { resolveBoundary, ruleValidFrom } from "./boundaries";
 import { BREAKS, SEMESTERS, YEAR } from "./fixtures/scenario";
 
 /**
@@ -98,5 +98,28 @@ describe("resolveBoundary()", () => {
         lastDay: "2026-10-20",
       }),
     ).toBeUndefined();
+  });
+});
+
+/**
+ * ADR-004 — where a rule written during year setup starts.
+ *
+ * The fixture's R1–R3 are the "set the year up in advance" case and pin the
+ * year's first day; the mid-year case is the one the ADR exists for.
+ */
+describe("ruleValidFrom()", () => {
+  it("starts at the year's first day when the year has not begun", () => {
+    // Fixtures §3.3 — R1–R3 are dated 2026-09-01, entered before term.
+    expect(ruleValidFrom(YEAR.dateFrom, "2026-08-20")).toBe("2026-09-01");
+  });
+
+  it("starts at the year's first day on the first day itself", () => {
+    expect(ruleValidFrom(YEAR.dateFrom, "2026-09-01")).toBe("2026-09-01");
+  });
+
+  it("starts today for a rule added mid-year", () => {
+    // Not 2026-09-01: every Friday since September has already been taught, and
+    // a rule reaching back over them rewrites history (specification §5.2).
+    expect(ruleValidFrom(YEAR.dateFrom, "2027-03-15")).toBe("2027-03-15");
   });
 });
