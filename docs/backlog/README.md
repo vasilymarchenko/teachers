@@ -33,6 +33,7 @@ for reading. Order is priority; the ID number is not.
 | [T-022](T-022-mutation-returning-convention-test.md) | Convention test — every UPDATE in `lib/actions` checks the rows it matched | todo | T-009 |
 | [T-023](T-023-unrendered-field-errors.md) | A field error whose field is not on the screen must still be shown | todo | T-009, T-010 |
 | [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | done | T-002, T-004 |
+| [T-024](T-024-ci-checks-on-pull-requests.md) | CI — run the full gate on pull requests, and gate the image publish on it | todo | T-015 |
 
 ## Open questions
 
@@ -55,7 +56,7 @@ T-002 scaffold ──┬──> T-014 shell ────────────
                  │
                  ├──> T-005 domain ──┐
                  │                   │
-T-001 fixtures ──┴──> T-003 schema doc ──> T-004 schema+migration ──┬──> T-015 deploy
+T-001 fixtures ──┴──> T-003 schema doc ──> T-004 schema+migration ──┬──> T-015 deploy ──> T-024 CI gate
                                      │                              │
                                      │                 ┌──> T-016 sign-in rate limit
                                      └──> T-006 auth ──┴──> T-008 queries
@@ -91,8 +92,10 @@ dependency satisfied.
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019, T-022 and T-023 are not product scope: they are the
-review tooling those tickets are checked by, and the documents that tooling
-reads. Second- and third-phase work (class list and birthdays §9,
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022 and T-023 are not product scope:
+they are the review tooling those tickets are checked by, and the documents that
+tooling reads. T-024 is not product scope either, and is not review tooling: it
+is the deployment path checking itself, which is why it hangs off T-015 rather
+than off a ticket a review found something in. Second- and third-phase work (class list and birthdays §9,
 import §10, AI) has no tickets by design; `architect-overview.md` §7 records the
 extension points those will use.
