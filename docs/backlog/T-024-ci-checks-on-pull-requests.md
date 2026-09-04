@@ -29,6 +29,11 @@ have no database. T-010 shipped with four unexecuted tests for that reason.
 - [ ] The checks are defined **once** and run from two entry points: a pull
       request against `main`, and a push to `main`. Neither entry point restates
       a step the other has.
+- [ ] The pull-request entry point fires on the pull request being opened, on
+      **every push to its branch** and on it being reopened — the three default
+      activity types, named explicitly rather than left to a default that can be
+      read as "on creation only". Whether a draft pull request runs the gate is
+      decided rather than inherited.
 - [ ] The gate covers `npm run lint`, `npm run typecheck`, `npm test`,
       `npm run build` and `npm run test:integration` — the five commands the root
       `CLAUDE.md` names, no fewer.
@@ -72,7 +77,7 @@ review environment, so `getUpcomingYearFrame()`'s four cases were merged
 unexecuted. That is not a property of that review — no environment runs them
 automatically today.
 
-Three things the implementation has to decide, none settled here:
+Four things the implementation has to decide, none settled here:
 
 - **Where the Postgres version is pinned once.** Three files name
   `postgres:16-alpine` after this ticket. Either one of them becomes the source
@@ -84,6 +89,11 @@ Three things the implementation has to decide, none settled here:
   nearly free by the `type=gha` cache already configured, and a permission
   boundary that stays where it is. The second is the recommendation and the
   reason is the boundary, not the cache.
+- **What a green check on a pull request actually covers.** `pull_request` runs
+  against a merge of the branch into its base, not the branch itself, so the
+  result goes stale the moment the base moves. Requiring the branch to be up to
+  date before a merge is the setting that closes that, and it belongs with the
+  branch-protection criterion above rather than in the workflow.
 - **Whether the migrator smoke test and the integration suite share one
   database.** They want opposite things — the suite wants the schema already
   applied, the smoke test wants to apply it — so a shared service makes the two
