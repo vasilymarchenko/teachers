@@ -10,7 +10,10 @@ import {
   getTemplateVersionInForce,
 } from "@/lib/db/queries/templateEditor";
 import { listNonTeachingPeriods } from "@/lib/db/queries/yearSetup";
-import { getYearFrame } from "@/lib/db/queries/yearFrame";
+import {
+  getUpcomingYearFrame,
+  getYearFrame,
+} from "@/lib/db/queries/yearFrame";
 import { scheduleTemplate, templateSlot } from "@/lib/db/schema";
 import type {
   BoundaryKind,
@@ -18,10 +21,14 @@ import type {
   ScheduleView,
   Weekday,
 } from "@/lib/db/schema/enums";
-import { resolveBoundary } from "@/lib/domain/schedule/boundaries";
+import {
+  resolveBoundary,
+  ruleValidFrom,
+} from "@/lib/domain/schedule/boundaries";
 import {
   capToNextVersion,
   planTemplateEdit,
+  type TemplateBoundary,
 } from "@/lib/domain/schedule/copyOnWrite";
 import { copyParity, replaceDaySlots } from "@/lib/domain/schedule/templateSlots";
 import type { TemplateSlotInput } from "@/lib/domain/schedule/types";
@@ -80,7 +87,11 @@ const CONSTRAINT_MESSAGES = {
 class VersionChanged extends Error {}
 
 /** How the new version's `[validFrom, validTo)` upper bound was arrived at. */
-type Boundary = { validTo: IsoDate; boundaryKind: BoundaryKind };
+/**
+ * The stored pair of §8.1. Declared in `lib/domain/schedule/copyOnWrite.ts`
+ * because `capToNextVersion()` may change both halves of it at once.
+ */
+type Boundary = TemplateBoundary;
 
 /** What the teacher chose in the «доки діє» form, before it is resolved. */
 type BoundaryChoice = { kind: BoundaryKind; lastDay?: IsoDate };
@@ -121,13 +132,22 @@ async function boundaryFor(
   // A symbol resolves against the year the cut date falls in — its breaks and
   // its semesters — which is exactly what makes it a symbol the teacher can
   // read back («до зимових канікул») rather than a date they had to look up.
-  const frame = await getYearFrame(userId, cutAt);
+  //
+  // Before the year begins there is no such year, and that is not an error but
+  // the setup order ADR-004 calls the ordinary case: September is entered in
+  // August. The symbol then means the year about to start, resolved from its
+  // first day. `ruleValidFrom()` is the expression ADR-004 settled on — the
+  // later of the year's first day and today — so the mid-year case still
+  // resolves against `cutAt` and nothing about it changes.
+  const frame =
+    (await getYearFrame(userId, cutAt)) ??
+    (await getUpcomingYearFrame(userId, cutAt));
   if (frame === null) return { error: "noYear", kind };
 
   const periods = await listNonTeachingPeriods(userId, frame.id);
   const validTo = resolveBoundary({
     kind,
-    referenceDate: cutAt,
+    referenceDate: ruleValidFrom(frame.dateFrom, cutAt),
     breaks: periods.filter((period) => period.kind === "BREAK"),
     semesters: frame.semesters,
   });
@@ -235,8 +255,12 @@ async function applyTemplateEdit(
   }
 
   // The new version stops where a later one starts, rather than running into it
-  // and being refused by I3 with nothing the teacher can act on.
-  const validTo = capToNextVersion(boundary.validTo, nextStart);
+  // and being refused by I3 with nothing the teacher can act on. The whole pair
+  // is capped: a date taken from the next version is a `DATE` boundary, and
+  // storing it under the symbol it replaced would make the screen say something
+  // untrue about it (§8.1).
+  const capped = capToNextVersion(boundary, nextStart);
+  const validTo = capped.validTo;
 
   // A version in force always ends after today, a resolved boundary is always
   // after the date it was resolved against, and a later version always starts
@@ -309,7 +333,7 @@ async function applyTemplateEdit(
           view,
           validFrom: plan.create.validFrom,
           validTo: plan.create.validTo,
-          boundaryKind: boundary.boundaryKind,
+          boundaryKind: capped.boundaryKind,
         })
         .returning({ id: scheduleTemplate.id });
 

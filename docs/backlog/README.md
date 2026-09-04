@@ -50,7 +50,8 @@ Each mirrors a section of `docs/architecture/architect-overview.md` §10.
 ## Dependency shape
 
 ```
-T-002 scaffold ──┬──> T-014 shell ─────────────────────────> T-009 year setup ──> T-022 UPDATE test
+T-002 scaffold ──┬──> T-014 shell ─────────────────────────> T-009 year setup ──┬──> T-022 UPDATE test
+                 │                                                              └──> T-023 field errors *
                  │
                  ├──> T-005 domain ──┐
                  │                   │
@@ -79,7 +80,8 @@ diagram waits on either. T-019 follows from T-017 and touches only
 code: it turns a rule that ticket's review had to enforce by hand into one the
 test suite enforces, so it is review tooling in the same sense as T-017. T-023
 is the same shape and hangs off both T-009 and T-010, because one defect turned
-up in both reviews and was fixed by hand each time.
+up in both reviews and was fixed by hand each time — the `*` in the diagram
+marks that second edge, which the tree has no room to draw.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009 and T-010 are done, T-012 is next — have every
@@ -89,7 +91,7 @@ dependency satisfied.
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019 and T-022 are not product scope: they are the
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022 and T-023 are not product scope: they are the
 review tooling those tickets are checked by, and the documents that tooling
 reads. Second- and third-phase work (class list and birthdays §9,
 import §10, AI) has no tickets by design; `architect-overview.md` §7 records the

@@ -1,3 +1,4 @@
+import type { BoundaryKind } from "@/lib/db/schema/enums";
 import { today, type IsoDate } from "@/lib/time/today";
 
 /**
@@ -12,6 +13,22 @@ import { today, type IsoDate } from "@/lib/time/today";
  * *instant*, the same parameter `today()` itself takes, so a test can pin the
  * clock without being able to pin the date.
  */
+
+/**
+ * The upper bound of a `schedule_template` version as it is stored — the pair
+ * of overview §8.1: the resolved date all the logic works with, and the symbol
+ * it was resolved from, kept **only** so the UI can say «до кінця семестру».
+ *
+ * They travel together because the pair has to stay true of itself: a date
+ * arrived at some other way is a `DATE` boundary, whatever symbol produced the
+ * date it replaced. `capToNextVersion()` below is the one place that happens.
+ */
+export type TemplateBoundary = {
+  /** Exclusive. */
+  validTo: IsoDate;
+  /** How `validTo` was arrived at — for display only (§8.1). */
+  boundaryKind: BoundaryKind;
+};
 
 /** The interval half of a `schedule_template` row. */
 export type TemplateVersionRange = {
@@ -65,14 +82,22 @@ export type TemplateEditRequest = {
  * `nextValidFrom` is the earliest `validFrom` after the cut, or `undefined`
  * when there is no later version. It is always after the cut, so the capped
  * bound is too, and the `valid_from < valid_to` check cannot be reached.
+ *
+ * **A capped bound is a `DATE` boundary.** The whole pair moves, not just the
+ * date: §8.1 stores `boundaryKind` to say how `validTo` was arrived at, and a
+ * capped date was arrived at from the next version's `validFrom`, not from the
+ * symbol the teacher chose. Keeping the old symbol would leave the screen
+ * saying «з 15.10 до 01.11 (до кінця семестру)» about a semester that ends in
+ * January — and `boundaryFor()` inherits the stored pair verbatim, so the
+ * untrue half would outlive the version that acquired it.
  */
 export function capToNextVersion(
-  validTo: IsoDate,
+  boundary: TemplateBoundary,
   nextValidFrom: IsoDate | undefined,
-): IsoDate {
-  return nextValidFrom !== undefined && nextValidFrom < validTo
-    ? nextValidFrom
-    : validTo;
+): TemplateBoundary {
+  return nextValidFrom !== undefined && nextValidFrom < boundary.validTo
+    ? { validTo: nextValidFrom, boundaryKind: "DATE" }
+    : boundary;
 }
 
 /**

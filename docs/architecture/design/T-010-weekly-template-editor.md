@@ -21,7 +21,7 @@ copy-on-write before it was `planTemplateEdit()` and the constraints
 | File | Exports |
 |---|---|
 | `lib/domain/schedule/templateSlots.ts` | `replaceDaySlots()`, `copyParity()`, `SlotCell` |
-| `lib/domain/schedule/copyOnWrite.ts` | `planTemplateEdit()` (T-005), `capToNextVersion()` (added here) |
+| `lib/domain/schedule/copyOnWrite.ts` | `planTemplateEdit()` (T-005), `capToNextVersion()` and `TemplateBoundary` (added here) |
 
 Both `templateSlots.ts` functions take the **whole** slot set of the version in
 force and return the set the new version will hold. They are the only thing that
@@ -65,6 +65,10 @@ Separate from T-008's `getTemplateVersions()`: that one feeds `expand()` and
 carries no `id` and no `boundary_kind`, which an editing screen needs and the
 domain must not see.
 
+`lib/db/queries/yearFrame.ts` gains `getUpcomingYearFrame(userId, date)` — the
+earliest year beginning after `date`, same shape as `getYearFrame()`. §3 below
+is the only caller and says why.
+
 ### Writes — `lib/actions/scheduleTemplate.ts`
 
 | Action | Bound arguments |
@@ -104,15 +108,16 @@ applyTemplateEdit(userId, view, mutate, formData, choice?)
  2. current = getTemplateVersionInForce(userId, view, cutAt)      ┐ in parallel
     next    = getNextTemplateVersionStart(userId, view, cutAt)    ┘
  3. boundary = boundaryFor(...)          ← §3 below
- 4. validTo  = capToNextVersion(boundary.validTo, next)
- 5. plan     = planTemplateEdit({ current, validTo, now })
+ 4. capped   = capToNextVersion(boundary, next)      ← the pair; a cap ⇒ DATE
+ 5. plan     = planTemplateEdit({ current, validTo: capped.validTo, now })
  6. slots    = mutate(current?.slots ?? [])
  7. one transaction, in this order:
         plan.trim    → UPDATE schedule_template SET valid_to = cutAt WHERE id, user_id
                        … 0 rows matched → roll back, answer VERSION_CHANGED
         plan.replace → DELETE schedule_template WHERE id, user_id   (slots cascade)
                        … 0 rows matched → roll back, answer VERSION_CHANGED
-        always       → INSERT schedule_template (valid_from = cutAt, valid_to, boundary_kind)
+        always       → INSERT schedule_template (valid_from = cutAt, capped.validTo,
+                                                 capped.boundaryKind)
         slots ≠ ∅    → INSERT template_slot × n
  8. revalidatePath("/schedule")
 ```
@@ -145,17 +150,32 @@ different slots — and this shape keeps step 7 to a single way of writing slots
 `boundaryFor()`, in this order:
 
 1. **the teacher named one** («доки діє» was submitted) → `resolveBoundary()`
-   against `cutAt`;
+   against the reference date below;
 2. **a version is in force** → its `valid_to` and `boundary_kind` verbatim. Not
    re-resolved: overview §8.1 forbids resolving a symbol at any time but the
    write, so the stored pair moves across as it stands;
 3. **neither** → `END_OF_SEMESTER`, the default of specification §5.1, resolved
    now.
 
-`DATE` needs no rows. `NEXT_BREAK` and `END_OF_SEMESTER` resolve against
-`getYearFrame(userId, cutAt)` (semesters) and `listNonTeachingPeriods()`
-filtered to `kind = 'BREAK'`. No year covering today → the save is refused with
-`NO_YEAR`; a symbol that resolves to nothing → `boundaryRefusal()`.
+`DATE` needs no rows. `NEXT_BREAK` and `END_OF_SEMESTER` resolve against a year
+frame (semesters) and `listNonTeachingPeriods()` filtered to `kind = 'BREAK'`.
+A symbol that resolves to nothing → `boundaryRefusal()`.
+
+**Which frame, and from which date.** `getYearFrame(userId, cutAt)` when today
+falls inside a year — the reference date is then `cutAt` and this is the whole
+of the mid-year case. When it falls in none, `getUpcomingYearFrame(userId,
+cutAt)`: the year about to begin, resolved **from its first day**. That is not a
+special case bolted on, it is ADR-004's, and the expression is literally
+`ruleValidFrom(frame.dateFrom, cutAt)` — the later of the year's first day and
+today. Without it the first save of a template entered in August is refused with
+`NO_YEAR`, which tells the teacher to set up the year she has just set up; the
+day form renders no boundary control, so she has no way to answer it. Only when
+neither read finds a year is `NO_YEAR` the truth, and the save is refused.
+
+The version itself still starts at `cutAt`, in August, before the year: I1
+allows nothing else, and a `schedule_template` row belongs to no year (below),
+so a version that begins outside one is a schedule with nothing to show for its
+first days, not an illegal row.
 
 That refusal reaches a day save and a parity copy too — case 3 above is the
 default `END_OF_SEMESTER`, and a year with no semesters resolves to nothing.
@@ -173,6 +193,15 @@ applying, not a row listed under two years.
 `capToNextVersion()` then caps the result at the next version's `valid_from`.
 Without it «до кінця семестру» chosen while a later version exists produces an
 overlap, and the teacher gets I3's refusal instead of a schedule.
+
+**The cap moves the whole pair, not the date alone.** A capped `valid_to` came
+from the next version's `valid_from`, so its `boundary_kind` is `DATE` —
+whatever symbol produced the date it replaced. §8.1 stores the kind to say how
+the date was arrived at and the screen renders it as such, so a capped date left
+under `END_OF_SEMESTER` makes `VersionNotice` say «з 15.10 до 01.11 (до кінця
+семестру)» about a semester ending on 25.12. It would also outlive the version:
+case 2 above inherits the stored pair verbatim into every later version of the
+view. `capToNextVersion()` therefore takes and returns the pair.
 
 ---
 

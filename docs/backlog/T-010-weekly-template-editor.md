@@ -37,7 +37,9 @@ silently broken.
       covers the concurrent-save case that would hit it.
 - [x] Usable on a 390 px viewport following the day-centric flow Q-002 settled
       on (overview §10.2): one day at a time below the tablet breakpoint, the
-      6 × 10 grid above it.
+      whole week above it. The week is all seven weekdays, and its rows are the
+      `BellSchedule` numbers plus any number that already has a slot — not the
+      6 × 10 table §10.2 first sketched; see `## Notes`.
 - [x] All UI text in Ukrainian.
 
 ## Notes

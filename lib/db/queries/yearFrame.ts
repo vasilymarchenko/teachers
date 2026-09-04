@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lte } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { academicYear, semester } from "@/lib/db/schema";
 import type { SemesterRange } from "@/lib/domain/schedule/boundaries";
@@ -28,9 +28,7 @@ export async function getYearFrame(
   userId: string,
   date: IsoDate,
 ): Promise<YearFrame | null> {
-  const db = getDb();
-
-  const [year] = await db
+  const [year] = await getDb()
     .select({
       id: academicYear.id,
       dateFrom: academicYear.dateFrom,
@@ -46,16 +44,52 @@ export async function getYearFrame(
     )
     .limit(1);
 
-  if (year === undefined) return null;
+  return year === undefined ? null : withSemesters(userId, year);
+}
 
-  const semesters = await db
+/**
+ * The earliest year that begins **after** `date` — the frame a symbolic
+ * boundary resolves against when `date` falls in no year at all.
+ *
+ * That is the setup order ADR-004 calls the ordinary case: the teacher enters
+ * next September in August, so on the day she writes «до кінця семестру» there
+ * is no year around her and the symbol has nothing to point at. The year about
+ * to begin is what she means, and `ruleValidFrom()` at the call site is what
+ * turns it into a reference date — the same expression ADR-004 settled on.
+ *
+ * `null` when there is no such year either: nothing has been set up yet, which
+ * is the one case that really is «спершу задайте навчальний рік».
+ */
+export async function getUpcomingYearFrame(
+  userId: string,
+  date: IsoDate,
+): Promise<YearFrame | null> {
+  const [year] = await getDb()
+    .select({
+      id: academicYear.id,
+      dateFrom: academicYear.dateFrom,
+      dateTo: academicYear.dateTo,
+    })
+    .from(academicYear)
+    .where(
+      and(eq(academicYear.userId, userId), gt(academicYear.dateFrom, date)),
+    )
+    .orderBy(asc(academicYear.dateFrom))
+    .limit(1);
+
+  return year === undefined ? null : withSemesters(userId, year);
+}
+
+/** The second half of both reads: a year without its semesters is not a frame. */
+async function withSemesters(
+  userId: string,
+  year: Omit<YearFrame, "semesters">,
+): Promise<YearFrame> {
+  const semesters = await getDb()
     .select({ dateFrom: semester.dateFrom, dateTo: semester.dateTo })
     .from(semester)
     .where(
-      and(
-        eq(semester.userId, userId),
-        eq(semester.academicYearId, year.id),
-      ),
+      and(eq(semester.userId, userId), eq(semester.academicYearId, year.id)),
     )
     .orderBy(asc(semester.index));
 

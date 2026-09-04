@@ -102,9 +102,10 @@ export const BOUNDARY_SECTION = {
  * The version strip — what is in force, what it replaced and until when.
  *
  * The warning of invariant I2 is the one text on this screen that has to name
- * **two** dates: the day the schedule in force will now end on, and the day it
- * was going to end on. After the save only the first of them still exists
- * anywhere, so this is said before the teacher saves, not after.
+ * **three** dates: the last day the schedule in force will still cover, the day
+ * it was going to run to, and the day the new one starts. After the save the
+ * middle one no longer exists anywhere, so this is said before the teacher
+ * saves, not after.
  */
 export const VERSION_SECTION = {
   title: "Дія розкладу",

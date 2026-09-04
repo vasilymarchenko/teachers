@@ -13,10 +13,12 @@ import {
  * overview §3.2, and the reason the teacher is not offered a date to edit
  * backwards from.
  *
- * The warning names **two** dates: the day the schedule in force will now end
- * on, and the day it was going to end on. It is shown *before* the save because
- * that is the only moment both exist — once the version is trimmed, its
- * original `validTo` is not stored anywhere and cannot be named afterwards.
+ * The warning names **three** dates: the last day the schedule in force will
+ * still cover, the day it was going to run to, and the day the new one starts —
+ * the cut of I1, and the whole point of saying any of this. It is shown
+ * *before* the save because that is the only moment the middle one exists —
+ * once the version is trimmed, its original `validTo` is not stored anywhere
+ * and cannot be named afterwards.
  *
  * The past is not hidden, it is listed: the versions that have already ended
  * are what «історія не переписується» looks like on a screen, and the line
