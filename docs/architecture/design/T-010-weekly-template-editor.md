@@ -85,7 +85,7 @@ holds the constants and carries no `"use server"` directive, for the reason
 
 | File | What it is |
 |---|---|
-| `labels.ts` | every Ukrainian word; re-exports the ones the calendar and the year setup already own |
+| `labels.ts` | every Ukrainian word of this screen; re-exports the ones the calendar and the year setup already own. The words for a lesson's own fields moved to `components/forms/slot-labels.ts` in T-011, shared with the override editor |
 | `selection.ts` | `pickTemplateSelection()`, `templateHref()` — the `?view=&parity=&day=` switches |
 | `lessonRows.ts` | `lessonRows()` — which lesson numbers are rows |
 | `day-form.tsx` | one day: the unit of saving |

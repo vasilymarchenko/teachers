@@ -119,14 +119,31 @@ describe("the day-override form", () => {
   });
 
   it("rejects a Zoom link that is not a link, and text that is too long", () => {
+    // The message promises «http:// або https://», so the check enforces it: a
+    // URL parser accepts schemes an `href` must not carry, and a saved
+    // `mailto:` would render as inert text with nothing to explain why
+    // (`components/calendar/lesson-row.tsx`).
+    for (const zoomLink of [
+      "кабінет 12",
+      "mailto:teacher@example.test",
+      "javascript:alert(1)",
+      "data:text/html,hi",
+      "ftp://files.example.test/room",
+    ]) {
+      expect(
+        fieldsOf(
+          dayOverrideInputFor("CLASS").safeParse({ ...FILLED_CLASS, zoomLink }),
+        ),
+        zoomLink,
+      ).toEqual(["zoomLink"]);
+    }
+
     expect(
-      fieldsOf(
-        dayOverrideInputFor("CLASS").safeParse({
-          ...FILLED_CLASS,
-          zoomLink: "кабінет 12",
-        }),
-      ),
-    ).toEqual(["zoomLink"]);
+      dayOverrideInputFor("CLASS").safeParse({
+        ...FILLED_CLASS,
+        zoomLink: "HTTPS://zoom.us/j/7a-phys",
+      }).success,
+    ).toBe(true);
 
     expect(
       fieldsOf(

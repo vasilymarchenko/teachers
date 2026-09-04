@@ -3,8 +3,8 @@
  *
  * Constants only, and **no `"use server"` directive**, for the reason
  * `yearSetup.ts` states: a module with that directive may export nothing but
- * async functions. This file is imported by an action module and by the screen;
- * it is not one.
+ * async functions. `dayOverride.ts` is that module; this one is not, which is
+ * what lets the messages live beside it instead of inside it.
  *
  * The messages are Ukrainian because a teacher reads them.
  */

@@ -33,18 +33,12 @@ three `kind`s, without touching the template.
 ## Notes
 
 Mechanics: `docs/architecture/design/T-011-day-overrides.md`. The editor is a
-route of its own rather than a form inside the calendar cell —
-`docs/architecture/decisions/ADR-008-calendar-edits-have-their-own-route.md`,
-summarised in `architect-overview.md` §5.
+route of its own — `decisions/ADR-008-calendar-edits-have-their-own-route.md`,
+outcome in `architect-overview.md` §5.
 
-Two things the work settled that the criteria did not name:
+Two things settled while doing the work, neither named by a criterion:
 
-- an all-blank save is refused rather than written as an empty payload.
-  «Прибрати правку» deletes the override and «Скасувати урок» writes the
-  tombstone, so an empty payload would be a third state the model has no room
-  for (schema §4.9);
-- the fields of a lesson — which ones each view has, how long they may be and
-  what they may not be left as — moved to `lib/validation/slotFields.ts`, shared
-  with the weekly template editor. An `EDIT` or a `SUBSTITUTION` renders as a
-  lesson, so it carries a lesson's fields (overview §3.4), and one wording of
-  «Вкажіть предмет» is one product.
+- an all-blank save is refused rather than written — design doc §5;
+- the fields of a lesson are shared with the weekly template editor
+  (`lib/validation/slotFields.ts`, `components/forms/slot-labels.ts`) — design
+  doc §1.

@@ -245,6 +245,29 @@ describe("the planned day", () => {
     expect(dayOn("2026-10-17", "OWN").lessons).toHaveLength(1);
   });
 
+  it("never carries `isTaughtByMe`, in either view (§8.6)", () => {
+    // The flag would be resolved against the **planned** `OWN` day, and an
+    // override on the teacher's own day is exactly where that differs from the
+    // resolved one the rule requires: on 10-19 the planned `CLASS` lesson 1
+    // would say «веду я», while O2 cancelled the teacher's own lesson that
+    // hour. Both consumers — the cancelled lessons of `buildCalendarDays()`
+    // and the override editor's «за тижневим розкладом» — would show it.
+    const planned = plannedOn("2026-10-19", "CLASS").lessons;
+
+    expect(planned.length).toBeGreaterThan(0);
+    for (const lesson of planned) {
+      expect(lesson.isTaughtByMe, `#${lesson.lessonNumber}`).toBeUndefined();
+      expect("isTaughtByMe" in lesson).toBe(false);
+    }
+
+    // …and the resolved day still answers the question, so nothing was lost.
+    expect(
+      dayOn("2026-10-19", "CLASS").lessons.every(
+        (lesson) => lesson.isTaughtByMe !== undefined,
+      ),
+    ).toBe(true);
+  });
+
   it("ignores every override, in both views", () => {
     for (const view of ["OWN", "CLASS"] as const) {
       const days = buildPlannedDays(FIXTURE, { ...WINDOW, view });

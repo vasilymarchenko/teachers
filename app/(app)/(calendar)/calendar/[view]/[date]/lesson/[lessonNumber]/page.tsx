@@ -132,7 +132,7 @@ export default async function Page({
 
       <Section
         title={OVERRIDE_LABELS.plannedTitle}
-        description={OVERRIDE_LABELS.formTitle}
+        description={OVERRIDE_LABELS.plannedDescription}
       >
         {plannedLesson === undefined ? (
           <p className="text-muted-foreground text-sm">
@@ -143,7 +143,12 @@ export default async function Page({
             <LessonRow lesson={plannedLesson} />
           </ul>
         )}
+      </Section>
 
+      <Section
+        title={OVERRIDE_LABELS.formTitle}
+        description={OVERRIDE_LABELS.formDescription}
+      >
         <OverrideForm
           date={date}
           kind={override?.kind}
@@ -155,10 +160,13 @@ export default async function Page({
       </Section>
 
       <div className="flex flex-wrap gap-6">
-        {/* Cancelling is offered only where there is a lesson to cancel: a
-            tombstone over an empty slot is a no-op (fixtures §8.8), and a
-            button that does nothing visible is worse than no button. */}
-        {current !== undefined && (
+        {/* Cancelling needs **both**: a lesson on the screen to cancel, and a
+            template lesson under it to be left struck through. Over an `EDIT`
+            with no slot beneath, a tombstone resolves to nothing at all
+            (fixtures §8.8) — the lesson would vanish, which is the opposite of
+            what `clearHint` and specification §5.3 promise. That case is what
+            «Прибрати правку» is for, and it is already on the screen. */}
+        {current !== undefined && plannedLesson !== undefined && (
           <ClearLessonForm
             slot={{ date, view: schedule, lessonNumber }}
           />

@@ -20,7 +20,7 @@ what each screen state is computed from.
 | `lib/db/queries/overrides.ts` | gains `getDayOverride(userId, date, view, lessonNumber)` |
 | `lib/actions/calendar.ts` | **new**, constants only (no `"use server"`): `CALENDAR_PATH`, `SAVE_REFUSED`, `OVERRIDE_NOT_FOUND` |
 | `lib/actions/dayOverride.ts` | **new**: `saveDayOverrideAction()`, `clearLessonAction()`, `removeDayOverrideAction()` |
-| `lib/domain/calendar/days.ts` | gains `buildPlannedDays()` — the override-free expansion `buildCalendarDays()` already computed internally |
+| `lib/domain/calendar/days.ts` | gains `buildPlannedDays()` — the override-free expansion `buildCalendarDays()` already computed internally, now with `isTaughtByMe` stripped for **both** callers (§3.1) |
 | `components/forms/slot-labels.ts` | **new**: `SLOT_FIELD_LABELS`, `slotFieldLabel()` — moved out of `components/schedule/labels.ts`, now shared by both screens that write a lesson |
 | `components/calendar/links.ts` | gains `lessonHref()` |
 | `components/calendar/lessonNumbers.ts` | **new**: `addableLessonNumbers()` |
@@ -68,6 +68,18 @@ value `expand()` puts in `replacedOriginal`, recomputed from the version and the
 parity in force on the date (§8.4, pinned on 2026-11-05 as `Математика · 5-В`)
 — and what removing an override restores.
 
+### 3.1 No planned lesson carries `isTaughtByMe`
+
+The override-free expansion resolves that flag against the **planned** `OWN`
+day, while the rule is the resolved one (`expand.ts`, `expand-fixtures.md`
+§8.6) — and the two differ in exactly the case an override creates: on
+2026-10-19 the planned `CLASS` lesson 1 says «веду я» while the teacher's own
+lesson that hour was cancelled. `buildCalendarDays()` already dropped it from
+`cancelled` (T-007 §4.1); it is now dropped inside `buildPlannedDays()` instead,
+so the editor's «за тижневим розкладом» block cannot contradict the row above
+it. `days.test.ts` pins both halves: the planned lessons carry no flag, the
+resolved ones still do.
+
 State table, for `n` on one date:
 
 | `getDayOverride()` | `day.lessons` | `day.cancelled` | Screen |
@@ -75,7 +87,14 @@ State table, for `n` on one date:
 | `null` | the template's lesson | — | form prefilled from the planned lesson; «Скасувати урок» |
 | `EDIT` / `SUBSTITUTION` | the override's lesson | — | form prefilled from the stored payload; «Скасувати урок»; «Прибрати правку» / «Прибрати заміну» |
 | `CLEARED` | — | the planned lesson | form prefilled from the planned lesson; «Повернути урок». No «Скасувати урок»: there is nothing left to cancel |
+| `EDIT` / `SUBSTITUTION`, no slot | the override's lesson | — | as above, **without** «Скасувати урок» |
 | `null`, no slot | — | — | empty form; no «Скасувати урок» — a tombstone over nothing is a no-op (§8.8) |
+
+«Скасувати урок» needs both a lesson on the screen and a template lesson under
+it: over an override with no slot beneath, a tombstone resolves to nothing at
+all and the lesson would **vanish** rather than stand struck through, which is
+what specification §5.3 and the button's own hint promise. Removing the override
+is what that state needs, and that button is already there.
 
 ## 4. The three writes
 
@@ -109,7 +128,11 @@ five raw fields and the `kind`, and yields `{ kind, payload }`; the **parsed**
 payload is stored, so unknown keys never reach the `jsonb` (schema §7).
 
 - the fields, their limits and their messages are `slotFields.ts`, shared with
-  the template editor — an override *is* a lesson (overview §3.4);
+  the template editor — an override *is* a lesson (overview §3.4). `zoomLink`
+  must be an `http(s)` URL, which is what its message has always said and what
+  `LessonRow` requires before it will render an `<a href>`; `z.url()` alone
+  accepts `mailto:`, `data:` and `javascript:`. The renderer's own guard stays
+  for rows written before this check;
 - `kind` accepts `EDIT` and `SUBSTITUTION` only. `CLEARED` carries no payload at
   all, so it is written by its own action and cannot arrive through this form;
 - an all-blank submission is **refused**, on `subject`. This is where the

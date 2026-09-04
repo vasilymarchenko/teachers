@@ -109,7 +109,15 @@ export function checkSlotFields(
       ctx.addIssue({ code: "custom", path: [field], message: tooLong(limit) });
     }
 
-    if (field === "zoomLink" && !z.url().safeParse(value).success) {
+    // `z.url()` alone accepts `mailto:`, `data:` and `javascript:`, so the
+    // message would promise a rule nothing enforced and the teacher would save
+    // a link the calendar then refuses to make clickable — `LessonRow` renders
+    // anything but `http(s)` as plain text, and that guard stays for rows
+    // written before this check existed.
+    if (
+      field === "zoomLink" &&
+      !(z.url().safeParse(value).success && /^https?:\/\//i.test(value))
+    ) {
       ctx.addIssue({ code: "custom", path: [field], message: BAD_ZOOM_LINK });
     }
   }

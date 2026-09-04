@@ -86,8 +86,8 @@ up in both reviews and was fixed by hand each time — the `*` in the diagram
 marks that second edge, which the tree has no room to draw.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
-the shell — T-007, T-009, T-010 and T-011 are done, T-012 is next — have every
-dependency satisfied.
+the shell — T-007, T-009 and T-010 are done, T-012 is next — have every
+dependency satisfied. T-011, which hangs off T-007 alone, is done too.
 
 ## Coverage
 
