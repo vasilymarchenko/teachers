@@ -26,10 +26,10 @@
 |Tests|Vitest — unit tests for `lib/domain` (`expand`, `parity`, recurrence)|
 |Printing|`@media print` on a dedicated `/print/...` route; server-side PDF deferred|
 |Reverse proxy|Caddy (automatic TLS)|
-|Deploy|Docker Compose + GitHub Actions → GHCR → `docker compose pull`|
+|Deploy|Docker Compose + GitHub Actions → GHCR → `docker compose pull`; the publish runs only after the gate below is green on that same commit, and only from `main` (ADR-007)|
 |Migrations|`drizzle-kit migrate` as an explicit deploy step (one-shot service in Compose)|
 |Backups|`pg_dump` on a schedule + off-site copy|
-|Quality gate|ESLint + Prettier, run in CI alongside `vitest run`|
+|Quality gate|`lint`, `typecheck`, `test`, `build` and `test:integration` — on every pushed commit, on any branch (ADR-007)|
 
 ## Deliberately not in the first release
 

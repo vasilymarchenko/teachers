@@ -1,0 +1,252 @@
+# The gate. One workflow, so there is one definition of what "checked" means
+# and one entry point — ADR-007.
+#
+# It runs on `push`, on every branch, and checks the commit that was pushed.
+# There is deliberately no `pull_request` trigger: that one checks a preview of
+# the commit merged into `main`, which is a different tree, and it would give a
+# second answer for the same commit. A status attaches to a commit, so a pull
+# request already shows the run its head has — opening, reopening or retargeting
+# one re-runs nothing.
+#
+# What makes a green branch a statement about `main` is branch protection
+# requiring *"Require branches to be up to date before merging"* alongside these
+# checks; without it the gate is a claim about the branch alone. README's
+# "Deploying to the VPS" holds the settings.
+#
+# `pull_request_target` is not used anywhere here and must not be: it runs with
+# the base branch's permissions and a writable token, which is the one trigger
+# that could turn an unreviewed commit into a registry push.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+
+# A superseded push abandons the run it superseded. Not on `main`: that run is
+# the one that publishes `sha-<short-sha>`, and README's rollback instructions
+# promise such a tag for every commit on `main` (ADR-007, Consequences).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  # The one place CI names a Postgres image. `lib/db/postgresImage.test.ts`
+  # holds this line and the two compose files to the same major version.
+  POSTGRES_IMAGE: postgres:16-alpine
+
+# Read-only by default. Only `publish` widens this, and only to `packages:
+# write` — the gate never holds a registry credential.
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: lint, typecheck, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      # `next build` reads the environment through `lib/db/client.ts` and
+      # better-auth. It connects to nothing at build time — every route that
+      # touches the database is dynamic — but the variables must parse, so they
+      # are set to values that are syntactically real and deliberately useless.
+      - run: npm run build
+        env:
+          DATABASE_URL: postgres://teachers:teachers@127.0.0.1:5432/teachers
+          BETTER_AUTH_SECRET: build-only-secret-not-used-to-sign-anything
+          BETTER_AUTH_URL: http://localhost:3000
+
+  integration:
+    name: integration suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The database belongs to the run and dies with it. `docker-compose.yml` is
+    # not reused: it is dev-only by its own documentation — a named volume,
+    # `restart: unless-stopped` and a published host port, none of which is
+    # wanted here (ADR-007).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: teachers
+          POSTGRES_PASSWORD: teachers
+          POSTGRES_DB: teachers
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U teachers -d teachers"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://teachers:teachers@127.0.0.1:5432/teachers
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run db:migrate
+
+      # Between the migration and the suite, because the suite cannot tell a
+      # database that rejects overlaps from one that has no constraint to reject
+      # them with — it would pass with fewer assertions actually exercised.
+      - name: Verify the migration applied
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/verify-schema.sql
+
+      - run: npm run test:integration
+
+  images:
+    name: docker images and migrator smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Built, never pushed. This job holds no registry credential; publishing
+      # is `publish`'s alone, and only from `main`. The `type=gha` scopes are
+      # the ones `publish` writes, so the second build reuses this one's layers.
+      - name: Build runner
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          push: false
+          cache-from: type=gha,scope=runner
+          cache-to: type=gha,mode=max,scope=runner
+
+      - name: Build migrator
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: migrator
+          push: false
+          load: true
+          tags: teachers-migrator:ci
+          cache-from: type=gha,scope=migrator
+          cache-to: type=gha,mode=max,scope=migrator
+
+      # ADR-003 publishes the migrator image so the VPS never builds it. Nothing
+      # ran it before a deploy did. This does: a throwaway database of its own —
+      # separate from the integration suite's, because that one wants the schema
+      # already applied and this one wants to apply it.
+      - name: Start a throwaway Postgres
+        run: |
+          docker run -d --name migrator-smoke-db \
+            -e POSTGRES_USER=teachers \
+            -e POSTGRES_PASSWORD=teachers \
+            -e POSTGRES_DB=teachers \
+            -p 5433:5432 \
+            --health-cmd "pg_isready -U teachers -d teachers" \
+            --health-interval 5s --health-timeout 5s --health-retries 20 \
+            "$POSTGRES_IMAGE"
+          for _ in $(seq 1 30); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' migrator-smoke-db)" = healthy ] && exit 0
+            sleep 2
+          done
+          echo "Postgres did not become healthy." >&2
+          docker logs migrator-smoke-db >&2
+          exit 1
+
+      - name: The migrator image migrates
+        run: |
+          docker run --rm --network host \
+            -e DATABASE_URL=postgres://teachers:teachers@127.0.0.1:5433/teachers \
+            teachers-migrator:ci
+
+      # Exit 0 is not the assertion — `drizzle-kit migrate` reports success on
+      # work it did not do. The schema is.
+      - name: The schema it left is the schema
+        run: |
+          docker run --rm --network host -v "$PWD/scripts:/scripts:ro" \
+            -e PGPASSWORD=teachers "$POSTGRES_IMAGE" \
+            psql -h 127.0.0.1 -p 5433 -U teachers -d teachers \
+            -v ON_ERROR_STOP=1 -f /scripts/verify-schema.sql
+
+      - name: Stop the throwaway Postgres
+        if: always()
+        run: docker rm -f migrator-smoke-db
+
+  publish:
+    name: publish to GHCR
+    needs: [checks, integration, images]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The only job in this file that can write anything anywhere, and it runs
+    # only after all three gate jobs are green, only on `main`.
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # web and migrate always deploy from the same commit (ADR-003), so both
+      # images are built here and tagged with the same scheme — `latest` and
+      # `sha-<short-sha>` — from a single metadata step shared between them.
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+
+      - uses: docker/metadata-action@v5
+        id: meta-migrator
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-migrator
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=runner
+          cache-to: type=gha,mode=max,scope=runner
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: migrator
+          push: true
+          tags: ${{ steps.meta-migrator.outputs.tags }}
+          labels: ${{ steps.meta-migrator.outputs.labels }}
+          cache-from: type=gha,scope=migrator
+          cache-to: type=gha,mode=max,scope=migrator
