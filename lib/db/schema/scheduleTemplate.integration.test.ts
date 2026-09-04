@@ -259,3 +259,77 @@ describe("a slot cannot be attached to another user's template", () => {
     await db.delete(user).where(eq(user.id, otherUserId));
   });
 });
+
+describe("two teachers' windows saving the same view at once", () => {
+  /**
+   * The concurrent-save case T-010 requires a test for.
+   *
+   * Both windows planned their edit against the same version in force, so both
+   * do the copy-on-write of overview §3.2 — trim that version at the cut, then
+   * insert a new one covering the rest. Nothing in the application can tell
+   * them apart: each read a live version and each is writing a legal pair of
+   * statements. `schedule_template_no_overlap_ex` (I3) is what decides, and it
+   * is the reason the constraint is in the schema rather than in a check the
+   * action performs before writing — a check would let both pass and then let
+   * both insert.
+   *
+   * The loser's message is `VERSION_CHANGED` in
+   * `lib/actions/scheduleTemplate.ts`, mapped from this constraint name.
+   */
+  const cut = "2027-02-15";
+
+  const copyOnWrite = (
+    database: typeof db,
+    versionId: string,
+  ): Promise<unknown> =>
+    database.transaction(async (tx) => {
+      await tx
+        .update(scheduleTemplate)
+        .set({ validTo: cut })
+        .where(eq(scheduleTemplate.id, versionId));
+
+      await tx
+        .insert(scheduleTemplate)
+        .values(version("OWN", cut, "2027-06-01"));
+    });
+
+  it("lets one through and refuses the other by the exclusion constraint", async () => {
+    const [inForce] = await db
+      .insert(scheduleTemplate)
+      .values(version("OWN", "2027-01-11", "2027-06-01"))
+      .returning();
+
+    // Two connections, because two transactions on one connection are not
+    // concurrent — the second would simply run after the first.
+    const other = createTestDatabase();
+    try {
+      const results = await Promise.allSettled([
+        copyOnWrite(db, inForce.id),
+        copyOnWrite(other.db, inForce.id),
+      ]);
+
+      const rejected = results.filter((result) => result.status === "rejected");
+      expect(rejected).toHaveLength(1);
+      expect(
+        ((rejected[0] as PromiseRejectedResult).reason as {
+          cause?: { constraint_name?: string };
+        }).cause?.constraint_name,
+      ).toBe("schedule_template_no_overlap_ex");
+    } finally {
+      await other.close();
+    }
+
+    // The winner's write is whole: the old version is trimmed and exactly one
+    // version covers the days after the cut.
+    const rows = await db
+      .select()
+      .from(scheduleTemplate)
+      .where(
+        and(eq(scheduleTemplate.userId, userId), eq(scheduleTemplate.view, "OWN")),
+      );
+
+    expect(rows).toHaveLength(2);
+    expect(rows.filter((row) => row.validFrom === cut)).toHaveLength(1);
+    expect(rows.find((row) => row.validFrom === "2027-01-11")?.validTo).toBe(cut);
+  });
+});

@@ -3,6 +3,7 @@ import {
   boundaryKindEnum,
   nonTeachingKindEnum,
   parityEnum,
+  scheduleViewEnum,
   weekdayEnum,
 } from "@/lib/db/schema/enums";
 import {
@@ -10,6 +11,7 @@ import {
   LESSON_NUMBERS,
   NON_TEACHING_KIND_VALUES,
   PARITY_VALUES,
+  SCHEDULE_VIEW_VALUES,
   SEMESTER_INDEXES,
   WEEKDAY_VALUES,
 } from "./enums";
@@ -29,6 +31,7 @@ describe("the form enum tuples", () => {
     ["weekday", WEEKDAY_VALUES, weekdayEnum],
     ["non_teaching_kind", NON_TEACHING_KIND_VALUES, nonTeachingKindEnum],
     ["boundary_kind", BOUNDARY_KIND_VALUES, boundaryKindEnum],
+    ["schedule_view", SCHEDULE_VIEW_VALUES, scheduleViewEnum],
   ] as const;
 
   for (const [name, values, pgEnum] of cases) {

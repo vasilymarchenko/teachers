@@ -374,11 +374,18 @@ never transiently violated. The cut point is always `today()` from
 version in force already has `valid_from = today()` — it was created by an
 earlier edit today — cutting it would set `valid_to = valid_from`, which
 `schedule_template_range_ck` rejects, and rightly: a zero-length version is not
-a thing. The write is then an `UPDATE` of that version's slots, not a new
-version. This is not a weakening of I1: nothing before today is being rewritten,
-because that version has never been in force on a day that has passed. `lib/actions`
-therefore branches on `current.valid_from = today()` before choosing between
-copy-on-write and an in-place edit; T-004's constraint test covers both paths.
+a thing. That version is replaced instead, leaving one version over the same
+range with different slots. This is not a weakening of I1: nothing before today
+is being rewritten, because that version has never been in force on a day that
+has passed. `lib/actions` therefore branches on `current.valid_from = today()`
+before choosing between copy-on-write and replacement; T-004's constraint test
+covers both paths.
+
+T-010 implements the replacement as a `DELETE` of the version — its slots go
+with it by cascade — followed by the same `INSERT` the other branch performs,
+inside the one transaction. An `UPDATE` of the slots reaches the same state; the
+delete keeps the writing of slots to a single statement shared by all three
+branches (`design/T-010-weekly-template-editor.md` §2).
 
 **Gaps are legal.** Nothing forbids `[A, B)` followed by `[C, D)` with `B < C`;
 fixtures §3.6 requires the `CLASS` gap `[2026-10-21, 2026-11-02)` to survive.

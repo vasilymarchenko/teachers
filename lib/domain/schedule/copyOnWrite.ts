@@ -48,6 +48,34 @@ export type TemplateEditRequest = {
 };
 
 /**
+ * The upper bound an edit may actually claim, given the version that starts
+ * after it.
+ *
+ * `planTemplateEdit()` deliberately plans against the one version in force and
+ * says so; this is the other half it names — what the editor does about a
+ * version that begins **after** the cut and that the new one would otherwise
+ * run into. The answer is that the new version stops where the later one
+ * starts: two versions may sit end to end (§3.2), and «діє до кінця семестру»
+ * cannot mean "over the top of the schedule that takes over in November".
+ *
+ * Without this the overlap reaches the database and `EXCLUDE USING gist`
+ * refuses the save — correctly, but with nothing the teacher can act on. I3
+ * stays the backstop; this is the editor doing its part.
+ *
+ * `nextValidFrom` is the earliest `validFrom` after the cut, or `undefined`
+ * when there is no later version. It is always after the cut, so the capped
+ * bound is too, and the `valid_from < valid_to` check cannot be reached.
+ */
+export function capToNextVersion(
+  validTo: IsoDate,
+  nextValidFrom: IsoDate | undefined,
+): IsoDate {
+  return nextValidFrom !== undefined && nextValidFrom < validTo
+    ? nextValidFrom
+    : validTo;
+}
+
+/**
  * What the edit does to the stored rows.
  *
  * Out of scope by design: versions that begin **after** the cut date. This plans

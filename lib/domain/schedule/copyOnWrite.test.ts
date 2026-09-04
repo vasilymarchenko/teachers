@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planTemplateEdit } from "./copyOnWrite";
+import { capToNextVersion, planTemplateEdit } from "./copyOnWrite";
 
 /**
  * The two template writes of `docs/architecture/design/expand-fixtures.md` §3.8,
@@ -105,5 +105,28 @@ describe("planTemplateEdit()", () => {
     expect(() =>
       planTemplateEdit({ validTo: "2026-10-21", now: ON_2026_10_21 }),
     ).toThrow(/not after the cut/);
+  });
+});
+
+describe("capToNextVersion", () => {
+  // The half of overview §3.2 `planTemplateEdit()` leaves to the editor: a
+  // version that starts after the cut is not planned against, but the new
+  // version may not run over it either.
+  it("stops the new version where the later one starts", () => {
+    expect(capToNextVersion("2026-12-25", "2026-11-02")).toBe("2026-11-02");
+  });
+
+  it("leaves the bound alone when the later version starts after it", () => {
+    // Two versions with a gap between them — legal, and not this function's to
+    // close (§3.2).
+    expect(capToNextVersion("2026-10-21", "2026-11-02")).toBe("2026-10-21");
+  });
+
+  it("leaves the bound alone when there is no later version", () => {
+    expect(capToNextVersion("2026-12-25", undefined)).toBe("2026-12-25");
+  });
+
+  it("keeps the two ends apart when they would meet exactly", () => {
+    expect(capToNextVersion("2026-11-02", "2026-11-02")).toBe("2026-11-02");
   });
 });

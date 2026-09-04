@@ -1,10 +1,11 @@
 /**
- * One block of the year-setup page: a heading, a line saying what it is for,
- * and the rows.
+ * One block of a setup screen: a heading, a line saying what it is for, and the
+ * rows.
  *
- * The page is a sequence of these, in the order specification §3 introduces
- * them, so a teacher setting the year up for the first time can work down the
- * screen.
+ * The year-setup page is a sequence of these, in the order specification §3
+ * introduces them, so a teacher setting the year up for the first time can work
+ * down the screen; the weekly template editor (T-010) reuses them so that the
+ * two screens a teacher fills in read as one thing.
  */
 export function Section({
   title,
