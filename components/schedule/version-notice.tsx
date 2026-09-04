@@ -61,6 +61,7 @@ export function VersionNotice({
           ) : (
             <p className="border-border bg-muted/40 rounded-md border p-3 text-sm">
               {VERSION_SECTION.cutWarning(
+                today,
                 addIsoDays(today, -1),
                 addIsoDays(inForce.validTo, -1),
               )}

@@ -12,9 +12,11 @@ import { COPY_LABELS, COPY_SECTION } from "./labels";
 /**
  * «Скопіювати з чисельника» and its opposite — specification §5.1.
  *
- * Two forms, one per direction, so each is a single button that says which way
- * it goes: a select plus a «Виконати» would make the teacher read the sentence
- * twice to see what is about to be overwritten.
+ * One button, and it says which way it goes: it copies **from** the parity week
+ * the screen is showing into the other one, so the direction follows the parity
+ * switch and both directions of specification §5.1 are one switch apart. A
+ * select plus a «Виконати» would make the teacher read the sentence twice to
+ * see what is about to be overwritten.
  *
  * The confirmation is a `confirm()` because the action is destructive in a way
  * nothing else on this screen is — it replaces a whole week — and unlike the

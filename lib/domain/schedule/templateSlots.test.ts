@@ -36,7 +36,7 @@ describe("replaceDaySlots", () => {
     const next = [slot("MON", 1, "NUMERATOR", "Алгебра")];
 
     expect(
-      replaceDaySlots(before, { weekday: "MON", parity: "NUMERATOR" }, next),
+      replaceDaySlots(before, { weekday: "MON", parity: "NUMERATOR" }, next, [1, 2]),
     ).toEqual([monDenominator1, tueNumerator1, ...next]);
   });
 
@@ -47,6 +47,7 @@ describe("replaceDaySlots", () => {
       before,
       { weekday: "MON", parity: "NUMERATOR" },
       [],
+      [1, 2],
     );
 
     expect(result).toContainEqual(monDenominator1);
@@ -60,22 +61,40 @@ describe("replaceDaySlots", () => {
       before,
       { weekday: "MON", parity: "NUMERATOR" },
       [monNumerator1],
+      [1, 2],
     );
 
     expect(result).not.toContainEqual(monNumerator2);
+  });
+
+  it("keeps a slot at a lesson number the form never showed", () => {
+    // Another window added lesson 6 after this page rendered rows 1 and 2, or
+    // the bell row for it was deleted since. An input that does not exist is
+    // not the teacher clearing a cell, and deleting the slot would be a lesson
+    // that silently stops existing.
+    const late = slot("MON", 6, "NUMERATOR", "Факультатив");
+
+    expect(
+      replaceDaySlots(
+        [...before, late],
+        { weekday: "MON", parity: "NUMERATOR" },
+        [],
+        [1, 2],
+      ),
+    ).toContainEqual(late);
   });
 
   it("adds a day that had no slots at all", () => {
     const next = [slot("SAT", 1, "NUMERATOR", "Відпрацювання")];
 
     expect(
-      replaceDaySlots(before, { weekday: "SAT", parity: "NUMERATOR" }, next),
+      replaceDaySlots(before, { weekday: "SAT", parity: "NUMERATOR" }, next, [1]),
     ).toEqual([...before, ...next]);
   });
 
   it("does not mutate the slots it was given", () => {
     const original = [...before];
-    replaceDaySlots(before, { weekday: "MON", parity: "NUMERATOR" }, []);
+    replaceDaySlots(before, { weekday: "MON", parity: "NUMERATOR" }, [], [1, 2]);
 
     expect(before).toEqual(original);
   });

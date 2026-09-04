@@ -27,6 +27,12 @@ Both `templateSlots.ts` functions take the **whole** slot set of the version in
 force and return the set the new version will hold. They are the only thing that
 differs between the screen's three writes.
 
+`replaceDaySlots()` takes a fourth argument, `covered` — the lesson numbers the
+form rendered. It replaces the day only at those numbers: an empty input is the
+teacher clearing a cell, but a number the form never showed has no input to be
+empty, and a slot there (added in another window, or left behind by a deleted
+bell row) is carried into the new version rather than deleted.
+
 ### Validation — one schema per form (overview §8.2)
 
 | File | Exports |
@@ -94,12 +100,12 @@ One function, three callers. `mutate` is the only thing that varies.
 ```
 applyTemplateEdit(userId, view, mutate, formData, choice?)
 
- 1. cutAt   = today()                                   ← never from a form (I1)
+ 1. now     = new Date();  cutAt = today(now)           ← never from a form (I1)
  2. current = getTemplateVersionInForce(userId, view, cutAt)      ┐ in parallel
     next    = getNextTemplateVersionStart(userId, view, cutAt)    ┘
  3. boundary = boundaryFor(...)          ← §3 below
  4. validTo  = capToNextVersion(boundary.validTo, next)
- 5. plan     = planTemplateEdit({ current, validTo })
+ 5. plan     = planTemplateEdit({ current, validTo, now })
  6. slots    = mutate(current?.slots ?? [])
  7. one transaction, in this order:
         plan.trim    → UPDATE schedule_template SET valid_to = cutAt WHERE id, user_id
@@ -114,6 +120,12 @@ applyTemplateEdit(userId, view, mutate, formData, choice?)
 The trim happens **before** the insert so the two never overlap, not even for
 the length of a statement — `schema.md` §4.7 states the same order.
 
+The instant is read **once** and passed to `planTemplateEdit()` as its `now`.
+The clock is otherwise consulted twice — here and inside the plan — and across a
+Kyiv midnight those are two different dates, so the reads and the guards would
+be about yesterday and the plan about today. `now` stays an instant, never a
+date: the cut is still `today()`'s and cannot arrive from a form.
+
 `plan.replace` is `DELETE` + `INSERT` rather than an `UPDATE` of the version's
 slots. The outcome is the one §4.7 describes — one version, the same range,
 different slots — and this shape keeps step 7 to a single way of writing slots.
@@ -122,7 +134,7 @@ different slots — and this shape keeps step 7 to a single way of writing slots
 
 | Action | `mutate` |
 |---|---|
-| day | `replaceDaySlots(slots, { weekday, parity }, submitted)` |
+| day | `replaceDaySlots(slots, { weekday, parity }, submitted, lessonNumbers)` |
 | copy | `copyParity(slots, from, to)` |
 | boundary | `(slots) => [...slots]` |
 
@@ -143,8 +155,15 @@ different slots — and this shape keeps step 7 to a single way of writing slots
 `DATE` needs no rows. `NEXT_BREAK` and `END_OF_SEMESTER` resolve against
 `getYearFrame(userId, cutAt)` (semesters) and `listNonTeachingPeriods()`
 filtered to `kind = 'BREAK'`. No year covering today → the save is refused with
-`NO_YEAR`; a symbol that resolves to nothing → a message on the field that has
-to change, as `weekdayRules.ts` does it.
+`NO_YEAR`; a symbol that resolves to nothing → `boundaryRefusal()`.
+
+That refusal reaches a day save and a parity copy too — case 3 above is the
+default `END_OF_SEMESTER`, and a year with no semesters resolves to nothing.
+Those forms carry no boundary inputs, so the message goes on the **form** there
+(`rejected()`) and on the field only when the submission came from the boundary
+form (`rejectedField()`, as `weekdayRules.ts` does it). On a field the form does
+not render it would appear nowhere, and the teacher would press «Зберегти» and
+watch nothing happen.
 
 There is no "inside the year" check, unlike `non_teaching_weekday_rule`: a
 `schedule_template` row is found by date overlap alone and belongs to no year,
@@ -185,9 +204,11 @@ edited, so the seven day cards line up on the same rows.
 
 No bells and no slots → the screen is an empty state pointing at `/year`.
 
-The layout is one day below `md` (selected by `?day=`) and all seven from `md`
-up; all seven are always rendered and six are hidden with CSS, which is what
-keeps the day switcher a set of plain links.
+The layout is one day below `md` (selected by `?day=`) and the whole week from
+`md` up; all seven are always rendered and six are hidden with CSS, which is
+what keeps the day switcher a set of plain links. The week's columns depend on
+the view — seven across for `OWN` at `xl`, wrapping over two or three for
+`CLASS`, whose cell has four fields (overview §10.2).
 
 ---
 
@@ -196,10 +217,11 @@ keeps the day switcher a set of plain links.
 `VersionNotice` is rendered from `listTemplateVersions()` and `today()`:
 
 - **the version in force**, with its dates and the symbol it was entered under;
-- **the I2 warning**, before the save and naming **two** dates — the day the
-  schedule in force will now end on and the day it was going to end on. It is
-  said before, because after the trim the original `valid_to` is stored nowhere
-  and cannot be named;
+- **the I2 warning**, before the save and naming **three** dates — the last day
+  the schedule in force will still cover (`today − 1`), the day it was going to
+  run to, and the day the new one starts (`today`, the cut). It is said before,
+  because after the trim the original `valid_to` is stored nowhere and cannot be
+  named;
 - **«почав діяти сьогодні»** instead of that warning when `valid_from = today`:
   nothing is being frozen, the edit lands in that version;
 - **the versions that have ended**, listed — «історія не переписується» is a

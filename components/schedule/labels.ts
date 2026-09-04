@@ -114,8 +114,14 @@ export const VERSION_SECTION = {
   /** No full stop: the screen appends the boundary kind in brackets after it. */
   inForce: (validFrom: IsoDate, lastDay: IsoDate) =>
     `Чинний розклад: з ${fullDate(validFrom)} до ${fullDate(lastDay)}`,
-  cutWarning: (cutAt: IsoDate, lastDay: IsoDate) =>
-    `Якщо зберегти зміну сьогодні, чинний розклад діятиме до ${fullDate(cutAt)} замість ${fullDate(lastDay)}, а від ${fullDate(cutAt)} почне діяти новий. Уже проведені дні залишаться такими, якими були.`,
+  /**
+   * Three dates, and they are three: the last day the schedule in force will
+   * still cover (today − 1), the day it was going to run to, and the day the
+   * new one starts (today, the cut of I1). Naming the cut as the start of the
+   * new version is the whole claim — «зміни діють від сьогодні».
+   */
+  cutWarning: (cutAt: IsoDate, lastCoveredDay: IsoDate, lastDay: IsoDate) =>
+    `Якщо зберегти зміну сьогодні, чинний розклад діятиме до ${fullDate(lastCoveredDay)} замість ${fullDate(lastDay)}, а від ${fullDate(cutAt)} почне діяти новий. Уже проведені дні залишаться такими, якими були.`,
   sameDay:
     "Чинний розклад почав діяти сьогодні — зміни ввійдуть у нього, нової версії не з’явиться.",
   historyTitle: "Попередні розклади",
@@ -127,7 +133,7 @@ export const VERSION_SECTION = {
    * warning above, because it changes what «до кінця семестру» will mean.
    */
   cappedBy: (nextStart: IsoDate) =>
-    `Наступний розклад починає діяти з ${fullDate(nextStart)}, тому новий діятиме лише до цієї дати.`,
+    `З ${fullDate(nextStart)} починає діяти наступний розклад, тому новий не діятиме довше, ніж до цієї дати.`,
 };
 
 /**

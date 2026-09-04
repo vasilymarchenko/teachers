@@ -109,14 +109,12 @@ export default async function Page({
             title={COPY_SECTION.title}
             description={COPY_SECTION.description}
           >
-            <div className="flex flex-wrap gap-2">
-              <CopyParityForm
-                from={selection.parity}
-                key={`copy-${selection.view}-${selection.parity}`}
-                to={otherParity}
-                view={selection.view}
-              />
-            </div>
+            <CopyParityForm
+              from={selection.parity}
+              key={`copy-${selection.view}-${selection.parity}`}
+              to={otherParity}
+              view={selection.view}
+            />
           </Section>
         </>
       )}

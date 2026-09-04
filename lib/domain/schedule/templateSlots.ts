@@ -23,19 +23,33 @@ export type SlotCell = { weekday: Weekday; parity: Parity };
 /**
  * The slot set with one day of one parity week replaced by `next`.
  *
- * "Replaced", not merged: `next` is the whole day as the form submitted it, so
- * a lesson the teacher cleared is a slot that is simply not in `next` and
+ * "Replaced", not merged: `next` is the day as the form submitted it, so a
+ * lesson the teacher cleared is a slot that is simply not in `next` and
  * therefore not in the result. Slots of every other weekday and of the other
  * parity are carried through untouched — the other parity is a separate set of
  * rows with no link to this one (schema §4.8, «There is no “both weeks” value»).
+ *
+ * **The replacement is limited to `covered`** — the lesson numbers the form
+ * actually rendered. Those are the rows the teacher could see and clear, and
+ * they are the only ones an empty input speaks for. A slot at a number the form
+ * never showed is carried through: it may have been added in another window
+ * after this page was rendered, or sit on a lesson number whose bell row was
+ * deleted since. Without this the save would delete it while reporting success,
+ * which is the one failure `expand()` cannot show the teacher — a lesson that
+ * quietly stops existing.
  */
 export function replaceDaySlots(
   slots: readonly TemplateSlotInput[],
   cell: SlotCell,
   next: readonly TemplateSlotInput[],
+  covered: readonly number[],
 ): TemplateSlotInput[] {
+  const rows = new Set(covered);
   const kept = slots.filter(
-    (slot) => slot.weekday !== cell.weekday || slot.parity !== cell.parity,
+    (slot) =>
+      slot.weekday !== cell.weekday ||
+      slot.parity !== cell.parity ||
+      !rows.has(slot.lessonNumber),
   );
   return [...kept, ...next];
 }

@@ -50,17 +50,14 @@ The day is the unit of saving and every write — including the boundary — goe
 through `planTemplateEdit()`: `decisions/ADR-006-template-day-is-the-save-unit.md`.
 Mechanics: `docs/architecture/design/T-010-weekly-template-editor.md`.
 
-Two decisions taken while doing the work, both recorded in the overview §3.2 and
-the design document rather than here:
+Decisions taken while doing the work, each recorded where it belongs rather than
+here:
 
 - a new version stops where a later one starts (`capToNextVersion()`), so that
   «до кінця семестру» over an existing future version is a schedule and not an
-  I3 refusal;
+  I3 refusal — overview §3.2;
+- all seven weekdays are editable, and the `CLASS` week wraps instead of forming
+  a seven-column table — overview §10.2, which said six days and a table;
 - the rows of the grid are the `BellSchedule` numbers plus any number that
-  already has a slot, with gaps in the numbering kept — bells on 1, 2 and 5 give
-  rows 1, 2 and 5. With no bells at all the screen points at `/year` instead of
-  showing ten nameless rows.
-
-All seven weekdays are editable, not six: `NonTeachingWeekdayRule` is what makes
-a Saturday or a Sunday non-teaching (schema §4.4), so the template has no
-implicit weekend to leave out.
+  already has a slot, with gaps in the numbering kept — design §5. A screen
+  mechanic, not a change to the model, so it is not in the overview.

@@ -137,28 +137,58 @@ async function boundaryFor(
     : { validTo, boundaryKind: kind };
 }
 
-/** A symbol that resolved to nothing usable, phrased for the field it belongs to. */
-function unresolvableBoundary(kind: BoundaryKind, formData: FormData): FormState {
+/**
+ * A symbol that resolved to nothing usable, as a message and the field it
+ * belongs to.
+ *
+ * The field only helps on the form that has it. A day save and a parity copy
+ * carry no boundary inputs, and they reach this too — the default
+ * `END_OF_SEMESTER` of specification §5.1 has nothing to resolve against until
+ * the year has semesters. Putting the message on `boundaryKind` there would
+ * render it nowhere at all, and the teacher would press «Зберегти» and watch
+ * nothing happen. `boundaryRefusal()` below is what decides.
+ */
+function unresolvableBoundary(kind: BoundaryKind): {
+  field: string;
+  message: string;
+} {
   switch (kind) {
     case "NEXT_BREAK":
-      return rejectedField(
-        TEMPLATE_BOUNDARY_FIELD.boundaryKind,
-        "Попереду немає канікул. Додайте канікули в налаштуваннях року або виберіть дату",
-        formData,
-      );
+      return {
+        field: TEMPLATE_BOUNDARY_FIELD.boundaryKind,
+        message:
+          "Попереду немає канікул. Додайте канікули в налаштуваннях року або виберіть дату",
+      };
     case "END_OF_SEMESTER":
-      return rejectedField(
-        TEMPLATE_BOUNDARY_FIELD.boundaryKind,
-        "Немає семестру, який ще триває. Додайте семестри в налаштуваннях року або виберіть дату",
-        formData,
-      );
+      return {
+        field: TEMPLATE_BOUNDARY_FIELD.boundaryKind,
+        message:
+          "Немає семестру, який ще триває. Додайте семестри в налаштуваннях року або виберіть дату",
+      };
     case "DATE":
-      return rejectedField(
-        TEMPLATE_BOUNDARY_FIELD.lastDay,
-        "Останній день має бути пізніше за сьогодні",
-        formData,
-      );
+      return {
+        field: TEMPLATE_BOUNDARY_FIELD.lastDay,
+        message: "Останній день має бути пізніше за сьогодні",
+      };
   }
+}
+
+/**
+ * The refusal, on the field that shows it when there is one and on the form as
+ * a whole when there is not.
+ *
+ * `fromBoundaryForm` is whether this submission carried the boundary inputs —
+ * i.e. whether the teacher is looking at the control the message names.
+ */
+function boundaryRefusal(
+  kind: BoundaryKind,
+  fromBoundaryForm: boolean,
+  formData: FormData,
+): FormState {
+  const { field, message } = unresolvableBoundary(kind);
+  return fromBoundaryForm
+    ? rejectedField(field, message, formData)
+    : rejected(message, formData);
 }
 
 /**
@@ -177,7 +207,14 @@ async function applyTemplateEdit(
   formData: FormData,
   choice?: BoundaryChoice,
 ): Promise<FormState> {
-  const cutAt = today();
+  // One instant for the whole edit. `today()` is read here and again inside
+  // `planTemplateEdit()`, and across a Kyiv midnight two readings are two
+  // different dates — the reads and the guards would be about yesterday and the
+  // plan about today. `now` is the parameter `planTemplateEdit()` documents for
+  // exactly this: an instant, never a date, so the cut still comes from
+  // `lib/time/today.ts` and never from a form (overview §8.5, §3.2 I1).
+  const now = new Date();
+  const cutAt = today(now);
   const [current, nextStart] = await Promise.all([
     getTemplateVersionInForce(userId, view, cutAt),
     getNextTemplateVersionStart(userId, view, cutAt),
@@ -194,7 +231,7 @@ async function applyTemplateEdit(
   if ("error" in boundary) {
     return boundary.error === "noYear"
       ? rejected(NO_YEAR, formData)
-      : unresolvableBoundary(boundary.kind, formData);
+      : boundaryRefusal(boundary.kind, choice !== undefined, formData);
   }
 
   // The new version stops where a later one starts, rather than running into it
@@ -206,11 +243,7 @@ async function applyTemplateEdit(
   // after the cut — so this holds for every path above, and `planTemplateEdit()`
   // would throw rather than write a range the check constraint rejects.
   if (validTo <= cutAt) {
-    return rejectedField(
-      TEMPLATE_BOUNDARY_FIELD.lastDay,
-      "Останній день має бути пізніше за сьогодні",
-      formData,
-    );
+    return boundaryRefusal("DATE", choice !== undefined, formData);
   }
 
   const plan = planTemplateEdit({
@@ -223,6 +256,7 @@ async function applyTemplateEdit(
             validTo: current.validTo,
           },
     validTo,
+    now,
   });
 
   const slots = mutate(current?.slots ?? []);
@@ -353,7 +387,7 @@ export async function saveTemplateDayAction(
   return applyTemplateEdit(
     userId,
     view,
-    (slots) => replaceDaySlots(slots, { weekday, parity }, next),
+    (slots) => replaceDaySlots(slots, { weekday, parity }, next, lessonNumbers),
     formData,
   );
 }

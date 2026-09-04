@@ -135,7 +135,7 @@ describe("a second template edit on the same day", () => {
   // `docs/architecture/design/schema.md` §4.7. The first edit of a day cuts the
   // version in force at `today()` and inserts a new one. A second edit the same
   // day cannot cut again — the version in force now starts today, so the cut
-  // would give it zero length — so it updates that version's slots in place.
+  // would give it zero length — so that version is replaced instead.
   const today = "2027-04-12";
 
   it("cannot be done by cutting: the cut would make the version zero-length", async () => {
@@ -154,29 +154,42 @@ describe("a second template edit on the same day", () => {
     ).toBe("schedule_template_range_ck");
   });
 
-  it("updates the version in force in place, leaving one version and no hole", async () => {
+  it("replaces that version, leaving one version and no hole", async () => {
     const [created] = await db
       .insert(scheduleTemplate)
       .values(version("OWN", today, "2027-06-01"))
       .returning();
 
-    const [slot] = await db
-      .insert(templateSlot)
-      .values({
+    await db.insert(templateSlot).values({
+      userId,
+      templateId: created.id,
+      weekday: "MON",
+      lessonNumber: 1,
+      parity: "NUMERATOR",
+      payload: { subject: "Математика", className: "7-А" },
+    });
+
+    // The `replace` branch of `planTemplateEdit()`, as `applyTemplateEdit()`
+    // performs it: the version goes, its slots with it by cascade, and the new
+    // one takes the same range. Both statements are in one transaction, so the
+    // exclusion constraint never sees the two ranges at once.
+    await db.transaction(async (tx) => {
+      await tx.delete(scheduleTemplate).where(eq(scheduleTemplate.id, created.id));
+
+      const [replacement] = await tx
+        .insert(scheduleTemplate)
+        .values(version("OWN", today, "2027-06-01"))
+        .returning();
+
+      await tx.insert(templateSlot).values({
         userId,
-        templateId: created.id,
+        templateId: replacement.id,
         weekday: "MON",
         lessonNumber: 1,
         parity: "NUMERATOR",
-        payload: { subject: "Математика", className: "7-А" },
-      })
-      .returning();
-
-    // The in-place path: same version, edited slots.
-    await db
-      .update(templateSlot)
-      .set({ payload: { subject: "Алгебра", className: "9-А" } })
-      .where(eq(templateSlot.id, slot.id));
+        payload: { subject: "Алгебра", className: "9-А" },
+      });
+    });
 
     const versions = await db
       .select()
@@ -192,12 +205,19 @@ describe("a second template edit on the same day", () => {
     expect(versions[0].validFrom).toBe(today);
     expect(versions[0].validTo).toBe("2027-06-01");
 
+    // The old version's slots went with it: no orphan row survives the cascade.
     const slots = await db
       .select()
       .from(templateSlot)
-      .where(eq(templateSlot.templateId, created.id));
+      .where(eq(templateSlot.templateId, versions[0].id));
     expect(slots).toHaveLength(1);
     expect(slots[0].payload).toEqual({ subject: "Алгебра", className: "9-А" });
+
+    const orphans = await db
+      .select()
+      .from(templateSlot)
+      .where(eq(templateSlot.templateId, created.id));
+    expect(orphans).toHaveLength(0);
   });
 });
 
@@ -260,7 +280,7 @@ describe("a slot cannot be attached to another user's template", () => {
   });
 });
 
-describe("two teachers' windows saving the same view at once", () => {
+describe("two windows saving the same view at once", () => {
   /**
    * The concurrent-save case T-010 requires a test for.
    *

@@ -31,6 +31,7 @@ for reading. Order is priority; the ID number is not.
 | [T-021](T-021-week-view-overflow.md) | Week view — lesson text overflows the day card from the xl breakpoint | todo | T-007 |
 | [T-016](T-016-sign-in-rate-limit.md) | Rate limiting on sign-in | todo | T-006 |
 | [T-022](T-022-mutation-returning-convention-test.md) | Convention test — every UPDATE in `lib/actions` checks the rows it matched | todo | T-009 |
+| [T-023](T-023-unrendered-field-errors.md) | A field error whose field is not on the screen must still be shown | todo | T-009, T-010 |
 | [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | done | T-002, T-004 |
 
 ## Open questions
@@ -76,7 +77,9 @@ the documentation practice rather than the application, and nothing in the
 diagram waits on either. T-019 follows from T-017 and touches only
 `architect-overview.md`. T-022 hangs off T-009 for its subject matter, not its
 code: it turns a rule that ticket's review had to enforce by hand into one the
-test suite enforces, so it is review tooling in the same sense as T-017.
+test suite enforces, so it is review tooling in the same sense as T-017. T-023
+is the same shape and hangs off both T-009 and T-010, because one defect turned
+up in both reviews and was fixed by hand each time.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009 and T-010 are done, T-012 is next — have every
