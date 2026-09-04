@@ -39,7 +39,8 @@ have no database. T-010 shipped with four unexecuted tests for that reason.
       branches to be up to date before merging"*. The second is what makes the
       first a statement about `main`: a branch that contains the current `main`
       merges to the same tree it was checked at. Without it the gate is a claim
-      about the branch alone.
+      about the branch alone. **Checked for the workflow and the documentation
+      only — the GitHub setting is not enabled yet; see `## Notes`.**
 - [x] The gate covers `npm run lint`, `npm run typecheck`, `npm test`,
       `npm run build` and `npm run test:integration` — the five commands the root
       `CLAUDE.md` names, no fewer.
@@ -68,7 +69,8 @@ have no database. T-010 shipped with four unexecuted tests for that reason.
       Postgres and asserted to exit 0 and leave the schema in place. Nothing
       checks this before a deploy today (ADR-003).
 - [x] A superseded run on the same branch is cancelled rather than left to
-      finish, and every job has a `timeout-minutes`.
+      finish, and every job has a `timeout-minutes`. **Except on `main`, which
+      is exempt from cancellation on purpose — ADR-007, Consequences.**
 - [x] The choice of how CI provisions Postgres, and of one shared definition of
       the checks over two duplicated workflows, is recorded in an ADR with the
       alternatives that were rejected.
@@ -77,7 +79,9 @@ have no database. T-010 shipped with four unexecuted tests for that reason.
 - [x] A merge into `main` is itself a push and therefore gated by the same run,
       with the publish depending on it. A workflow that reports failure but does
       not block a merge is a notification, not a gate — PR #17 was merged with
-      nothing required and nothing run.
+      nothing required and nothing run. **The run and the publish dependency
+      ship here; the blocking half is the branch protection of the third
+      criterion.**
 
 ## Notes
 
@@ -98,11 +102,13 @@ The version agreement of the third criterion is `lib/db/postgresImage.test.ts`;
 the migration-applied assertion of the fifth is `scripts/verify-schema.sql`, run
 in both database jobs.
 
-**Branch protection is repository configuration, not code.** The third criterion
-is checked because the workflow and the documentation are in place — README's
-"Deploying to the VPS" names the two settings verbatim — but the rule itself has
-to be enabled in GitHub's *Settings → Branches*. Until it is, the workflow
-reports rather than blocks.
+**Branch protection is repository configuration, not code, and it is not
+enabled yet.** The third and fifteenth criteria are checked because everything
+this repository can contain is in place — the workflow, and README's "Deploying
+to the VPS" naming the two settings verbatim — but the rule itself has to be
+enabled in GitHub's *Settings → Branches*. **Until it is, CI reports and does
+not block: a red commit can still be merged into `main`, exactly as PR #17
+was.** `status: done` covers the code and the documents, not that setting.
 
 Out of scope: a preview deployment per pull request, and running the suite
 against more than one Postgres version. Neither is a first-release need.

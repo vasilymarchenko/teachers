@@ -21,14 +21,6 @@
 
 DO $$
 DECLARE
-  -- Invariant I3 and its two siblings — `architect-overview.md` §3.2,
-  -- `design/schema.md` §4.7. Named here so a renamed constraint fails this
-  -- check rather than passing it by not being looked for.
-  expected_exclusions text[] := ARRAY[
-    'academic_year_no_overlap_ex',
-    'semester_no_overlap_ex',
-    'schedule_template_no_overlap_ex'
-  ];
   -- One table per aggregate of `design/schema.md` §4, plus better-auth's four.
   expected_tables text[] := ARRAY[
     'academic_year', 'account', 'bell_schedule', 'day_override', 'event',
@@ -54,10 +46,23 @@ BEGIN
       array_to_string(missing, ', ');
   END IF;
 
-  SELECT array_agg(c ORDER BY c) INTO missing
-  FROM unnest(expected_exclusions) AS c
+  -- Invariant I3 and its two siblings — `architect-overview.md` §3.2,
+  -- `design/schema.md` §4.7. Each is checked against the table it belongs to,
+  -- not by name alone: `pg_constraint.conname` is unique per table, not per
+  -- database, so a constraint of the right name on the wrong relation would
+  -- otherwise satisfy this check while the table it was meant to protect
+  -- accepts every overlap.
+  SELECT array_agg(t || '.' || c ORDER BY t) INTO missing
+  FROM (VALUES
+    ('academic_year', 'academic_year_no_overlap_ex'),
+    ('semester', 'semester_no_overlap_ex'),
+    ('schedule_template', 'schedule_template_no_overlap_ex')
+  ) AS expected(t, c)
   WHERE NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = c AND contype = 'x'
+    SELECT 1 FROM pg_constraint
+    WHERE conname = expected.c
+      AND contype = 'x'
+      AND conrelid = to_regclass(quote_ident(expected.t))
   );
 
   IF missing IS NOT NULL THEN
@@ -68,6 +73,6 @@ BEGIN
       array_to_string(missing, ', ');
   END IF;
 
-  RAISE NOTICE 'schema verified: btree_gist, % tables, % exclusion constraints.',
-    array_length(expected_tables, 1), array_length(expected_exclusions, 1);
+  RAISE NOTICE 'schema verified: btree_gist, % tables, 3 exclusion constraints.',
+    array_length(expected_tables, 1);
 END $$;

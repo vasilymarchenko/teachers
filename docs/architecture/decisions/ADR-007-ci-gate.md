@@ -9,7 +9,11 @@ ticket: T-024
 ## Context
 
 Until now the only automation was `.github/workflows/docker-publish.yml`, on
-`push` to `main`, publishing `latest` and `sha-<short-sha>` unconditionally. The
+`push` to `main`, publishing `latest` and `sha-<short-sha>` unconditionally.
+ADR-003 names that file as where the `migrator` image is built and pushed; this
+decision deletes it, and ADR-003 is not edited to match — it records what was
+true on its date. Its `migrate`-image contract is unchanged and now lives in
+`ci.yml`'s `publish` job. The
 first automated reading of a change therefore happened *after* it was merged,
 and a commit that did not compile still became the tag the VPS pulls.
 

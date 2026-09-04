@@ -8,10 +8,10 @@
 # request already shows the run its head has — opening, reopening or retargeting
 # one re-runs nothing.
 #
-# What makes a green branch a statement about `main` is branch protection
-# requiring *"Require branches to be up to date before merging"* alongside these
-# checks; without it the gate is a claim about the branch alone. README's
-# "Deploying to the VPS" holds the settings.
+# A green branch is a statement about `main` only in combination with branch
+# protection, which is repository configuration and not in this file. README's
+# "Deploying to the VPS" names the settings; ADR-007 says why they are what the
+# guarantee rests on.
 #
 # `pull_request_target` is not used anywhere here and must not be: it runs with
 # the base branch's permissions and a writable token, which is the one trigger
@@ -33,8 +33,10 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  # The one place CI names a Postgres image. `lib/db/postgresImage.test.ts`
-  # holds this line and the two compose files to the same major version.
+  # Read by the `run:` steps of the `images` job. The `integration` job cannot
+  # use it — GitHub does not expose the `env` context to `services:` — so this
+  # file names the image twice on purpose. `lib/db/postgresImage.test.ts` holds
+  # both occurrences and the two compose files to the same version.
   POSTGRES_IMAGE: postgres:16-alpine
 
 # Read-only by default. Only `publish` widens this, and only to `packages:
@@ -77,10 +79,10 @@ jobs:
     name: integration suite
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # The database belongs to the run and dies with it. `docker-compose.yml` is
-    # not reused: it is dev-only by its own documentation — a named volume,
-    # `restart: unless-stopped` and a published host port, none of which is
-    # wanted here (ADR-007).
+    # The database belongs to the run and dies with it. Reusing
+    # `docker-compose.yml` was considered and rejected — ADR-007.
+    #
+    # Kept in step with `POSTGRES_IMAGE` above by `lib/db/postgresImage.test.ts`.
     services:
       postgres:
         image: postgres:16-alpine
