@@ -22,7 +22,7 @@ See [`docs/specs/specification.md`](docs/specs/specification.md) for the full pr
 | Tests | Vitest (unit tests for the schedule domain) |
 | Printing | `@media print` on a `/print/...` route; server-side PDF deferred |
 | Reverse proxy | Caddy (automatic TLS) |
-| Deploy | Docker Compose + GitHub Actions → GHCR → `docker compose pull` |
+| Deploy | Docker Compose + GitHub Actions → GHCR → `docker compose pull`, gated on CI |
 
 Background jobs and AI are deliberately out of the first release — see the "Deliberately not in the first release" table in the stack doc.
 
@@ -106,6 +106,41 @@ refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=1`.
 
 ## Deploying to the VPS
 
+### What CI does before anything is published
+
+`.github/workflows/ci.yml` runs on **every pushed commit, on any branch**, and
+checks that commit: `npm run lint`, `npm run typecheck`, `npm test`,
+`npm run build`, and `npm run test:integration` against a throwaway PostgreSQL 16
+that the run creates and destroys. It also builds both Docker images and runs the
+`migrator` image against a second throwaway database, asserting it exits 0 and
+leaves the schema behind — so the image that migrates production has migrated
+something before a deploy relies on it.
+
+The images are published to GHCR only from `main`, and only after all of that is
+green. A red gate publishes nothing; the reasoning and the alternatives are in
+ADR-007.
+
+**Two repository settings make this a gate rather than a notification** — they
+live in GitHub, not in this repository, under *Settings → Branches → Branch
+protection rules* for `main`:
+
+1. **Require status checks to pass before merging**, with the three gate jobs
+   selected: `lint, typecheck, unit tests, build`, `integration suite`, and
+   `docker images and migrator smoke test`. Not `publish to GHCR` — it runs
+   only on `main`, so requiring it would block every pull request on a check
+   that never reports.
+2. **Require branches to be up to date before merging.** This is the one that
+   makes the first a statement about `main`: a branch that contains the current
+   `main` merges to the same tree it was checked at. Without it, a green check
+   describes the branch alone, and two branches that pass separately can still
+   break `main` together.
+
+**Neither is enabled yet** — `docs/backlog/T-025-enable-branch-protection.md`
+carries them. Until they are, CI reports and does not block: a red commit can
+still be merged into `main`.
+
+### First deploy
+
 Prerequisites on the VPS: Docker Engine with the Compose plugin (`docker compose`,
 not the standalone `docker-compose`), and a domain name pointed at the VPS's
 public IP — Caddy's automatic TLS needs that to request a certificate. Only
@@ -136,8 +171,10 @@ three commands above, in the same order — `migrate` before `up -d`, every time
 even when this deploy added no new migration.
 
 To roll back, set `IMAGE_TAG` in `.env` to a previous `sha-<short-sha>` (GitHub
-Actions publishes one for both images on every push to `main`, alongside
-`latest`) and repeat `pull` + `migrate` + `up -d`. A rollback across a migration
+Actions publishes one for both images alongside `latest`, for every commit on
+`main` **whose gate passed** — a commit whose CI run went red was never
+published, so check the run before picking a tag out of `git log`) and repeat
+`pull` + `migrate` + `up -d`. A rollback across a migration
 that changed the schema also needs the matching down step run by hand — there
 is no automated down migration.
 
