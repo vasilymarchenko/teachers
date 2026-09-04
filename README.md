@@ -135,6 +135,10 @@ protection rules* for `main`:
    describes the branch alone, and two branches that pass separately can still
    break `main` together.
 
+**Neither is enabled yet** — `docs/backlog/T-025-enable-branch-protection.md`
+carries them. Until they are, CI reports and does not block: a red commit can
+still be merged into `main`.
+
 ### First deploy
 
 Prerequisites on the VPS: Docker Engine with the Compose plugin (`docker compose`,
@@ -167,8 +171,10 @@ three commands above, in the same order — `migrate` before `up -d`, every time
 even when this deploy added no new migration.
 
 To roll back, set `IMAGE_TAG` in `.env` to a previous `sha-<short-sha>` (GitHub
-Actions publishes one for both images on every push to `main`, alongside
-`latest`) and repeat `pull` + `migrate` + `up -d`. A rollback across a migration
+Actions publishes one for both images alongside `latest`, for every commit on
+`main` **whose gate passed** — a commit whose CI run went red was never
+published, so check the run before picking a tag out of `git log`) and repeat
+`pull` + `migrate` + `up -d`. A rollback across a migration
 that changed the schema also needs the matching down step run by hand — there
 is no automated down migration.
 

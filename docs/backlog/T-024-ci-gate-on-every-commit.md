@@ -35,12 +35,15 @@ have no database. T-010 shipped with four unexecuted tests for that reason.
       attaches to a commit, so the pull request shows the run its head commit
       already has. Opening, reopening or re-targeting a pull request re-runs
       nothing, because the commit has not changed.
-- [x] Branch protection on `main` requires **both** the gate and *"Require
+- [ ] Branch protection on `main` requires **both** the gate and *"Require
       branches to be up to date before merging"*. The second is what makes the
       first a statement about `main`: a branch that contains the current `main`
       merges to the same tree it was checked at. Without it the gate is a claim
-      about the branch alone. **Checked for the workflow and the documentation
-      only — the GitHub setting is not enabled yet; see `## Notes`.**
+      about the branch alone. **Not met: the two settings are repository
+      configuration and nothing in a commit can enable them. Everything this
+      repository can contain is in place — the workflow, and README's "Deploying
+      to the VPS" naming both settings verbatim — and the setting itself is
+      carried by T-025.**
 - [x] The gate covers `npm run lint`, `npm run typecheck`, `npm test`,
       `npm run build` and `npm run test:integration` — the five commands the root
       `CLAUDE.md` names, no fewer.
@@ -81,7 +84,7 @@ have no database. T-010 shipped with four unexecuted tests for that reason.
       not block a merge is a notification, not a gate — PR #17 was merged with
       nothing required and nothing run. **The run and the publish dependency
       ship here; the blocking half is the branch protection of the third
-      criterion.**
+      criterion, which is not met and is carried by T-025.**
 
 ## Notes
 
@@ -98,17 +101,16 @@ second, separate database for the migrator smoke test, two builds rather than
 one carrying a `push` input, the whole gate on every push including the slow
 half, and no `pull_request` trigger for forks.
 
-The version agreement of the third criterion is `lib/db/postgresImage.test.ts`;
-the migration-applied assertion of the fifth is `scripts/verify-schema.sql`, run
-in both database jobs.
+The version agreement of the seventh criterion is
+`lib/db/postgresImage.test.ts`; the migration-applied assertion of the fifth is
+`scripts/verify-schema.sql`, run in both database jobs.
 
 **Branch protection is repository configuration, not code, and it is not
-enabled yet.** The third and fifteenth criteria are checked because everything
-this repository can contain is in place — the workflow, and README's "Deploying
-to the VPS" naming the two settings verbatim — but the rule itself has to be
-enabled in GitHub's *Settings → Branches*. **Until it is, CI reports and does
-not block: a red commit can still be merged into `main`, exactly as PR #17
-was.** `status: done` covers the code and the documents, not that setting.
+enabled yet**, so the third criterion is left unchecked and T-025 carries it.
+**Until it is enabled, CI reports and does not block: a red commit can still be
+merged into `main`, exactly as PR #17 was.** `status: done` here means every
+part of this ticket a commit can contain has shipped; the one part it cannot is
+tracked as its own item rather than ticked off here.
 
 Out of scope: a preview deployment per pull request, and running the suite
 against more than one Postgres version. Neither is a first-release need.

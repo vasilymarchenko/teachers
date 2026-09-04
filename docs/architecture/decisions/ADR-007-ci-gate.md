@@ -44,8 +44,9 @@ hand it to an unreviewed commit. And the exclusion constraints of
    published host port — and none of that is wanted on a runner. Making it serve
    both would mean parameterising it into something neither reader can scan.
 2. **A GitHub Actions `services:` container.** The runner starts it before the
-   job, health-checks it with the same `pg_isready` probe the compose files use,
-   and destroys it with the job. Ephemeral by construction, and nothing about
+   job, health-checks it with `pg_isready` — over TCP rather than the compose
+   files' unix socket, because the temporary server `initdb` runs answers on the
+   socket while refusing every TCP connection — and destroys it with the job. Ephemeral by construction, and nothing about
    the dev-only file has to change or be worked around. It costs a third place
    naming the Postgres version.
 3. **`docker run` by hand in a step.** Maximum control, and the only option when
@@ -120,8 +121,9 @@ reports without blocking is a notification, not a gate.
 Every WIP push costs two Docker builds and two Postgres containers. Superseded
 runs are cancelled, which recovers most of it — except on `main`, which is
 excluded from cancellation on purpose: that run publishes `sha-<short-sha>`, and
-README's rollback instructions promise such a tag for every commit on `main`.
-Cancelling it would leave a commit with no image to roll back to.
+README's rollback instructions promise such a tag for every commit on `main`
+whose gate passed. Cancelling it would leave a green commit with no image to
+roll back to — the one case the tag exists for.
 
 Fork pull requests are not covered: `push` does not fire for someone who cannot
 push to the repository, so an outside contribution arrives ungated. A

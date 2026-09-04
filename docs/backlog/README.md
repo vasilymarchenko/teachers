@@ -34,6 +34,7 @@ for reading. Order is priority; the ID number is not.
 | [T-023](T-023-unrendered-field-errors.md) | A field error whose field is not on the screen must still be shown | todo | T-009, T-010 |
 | [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | done | T-002, T-004 |
 | [T-024](T-024-ci-gate-on-every-commit.md) | CI — run the full gate on every pushed commit, and gate the image publish on it | done | T-015 |
+| [T-025](T-025-enable-branch-protection.md) | Enable branch protection on `main` so the CI gate blocks rather than reports | todo | T-024 |
 
 ## Open questions
 

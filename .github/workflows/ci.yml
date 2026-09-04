@@ -65,15 +65,14 @@ jobs:
 
       - run: npm test
 
-      # `next build` reads the environment through `lib/db/client.ts` and
-      # better-auth. It connects to nothing at build time — every route that
-      # touches the database is dynamic — but the variables must parse, so they
-      # are set to values that are syntactically real and deliberately useless.
+      # Deliberately with no environment at all. The Drizzle client and
+      # better-auth are both created on first use, not at import time
+      # (`lib/db/client.ts`, `lib/auth/auth.ts`), so `next build` reads none of
+      # these variables — and the `builder` stage of the `Dockerfile` runs the
+      # same command with nothing set. Supplying them here would let an eager
+      # `process.env` read enter the import graph with `checks` still green and
+      # the `runner` image build failing instead.
       - run: npm run build
-        env:
-          DATABASE_URL: postgres://teachers:teachers@127.0.0.1:5432/teachers
-          BETTER_AUTH_SECRET: build-only-secret-not-used-to-sign-anything
-          BETTER_AUTH_URL: http://localhost:3000
 
   integration:
     name: integration suite
@@ -83,6 +82,11 @@ jobs:
     # `docker-compose.yml` was considered and rejected — ADR-007.
     #
     # Kept in step with `POSTGRES_IMAGE` above by `lib/db/postgresImage.test.ts`.
+    #
+    # `pg_isready -h 127.0.0.1`, not the default unix socket: while `initdb`
+    # runs, the image starts a temporary server with `listen_addresses=''`,
+    # which answers on the socket and refuses every TCP connection. A socket
+    # probe therefore reports ready before anything here can connect.
     services:
       postgres:
         image: postgres:16-alpine
@@ -93,7 +97,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U teachers -d teachers"
+          --health-cmd "pg_isready -h 127.0.0.1 -U teachers -d teachers"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -162,7 +166,7 @@ jobs:
             -e POSTGRES_PASSWORD=teachers \
             -e POSTGRES_DB=teachers \
             -p 5433:5432 \
-            --health-cmd "pg_isready -U teachers -d teachers" \
+            --health-cmd "pg_isready -h 127.0.0.1 -U teachers -d teachers" \
             --health-interval 5s --health-timeout 5s --health-retries 20 \
             "$POSTGRES_IMAGE"
           for _ in $(seq 1 30); do
