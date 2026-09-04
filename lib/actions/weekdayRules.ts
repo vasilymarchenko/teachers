@@ -62,18 +62,48 @@ const YEAR_ALREADY_ENDED =
 const RULE_NOT_FOUND = "Правило не знайдено. Оновіть сторінку";
 
 /**
- * A rule that reaches past the year's last day.
+ * A boundary that reaches past the year's last day — design §5, "a child range
+ * inside its year".
  *
- * `NEXT_BREAK` and `END_OF_SEMESTER` cannot produce one — they resolve against
- * the year's own breaks and semesters, which the actions already keep inside
- * it — so in practice this is a mistyped `lastDay`. It has to be refused rather
- * than stored: `listWeekdayRules()` selects by overlap, so a rule reaching into
- * the next year is listed under **both**, and deleting either year takes it
- * with them (`deleteAcademicYearAction`), silently un-blanking a weekday in a
- * year the teacher never touched. Design §5, "a child range inside its year".
+ * It has to be refused rather than stored: `listWeekdayRules()` selects by
+ * overlap, so a rule reaching into the next year is listed under **both**, and
+ * deleting either year takes it with them (`deleteAcademicYearAction`),
+ * silently un-blanking a weekday in a year the teacher never touched.
+ *
+ * All three kinds can produce one, so all three get a message on a field the
+ * teacher can actually see. `DATE` is the mistyped `lastDay` and the common
+ * case. The symbolic two look impossible — they resolve against the year's own
+ * breaks and semesters — but `listNonTeachingPeriods()` and `listSemesters()`
+ * return a row left outside its year by a later edit to the year's dates
+ * (deliberately: it is still the year's row and still editable there), and
+ * `resolveBoundary()` will resolve to it. So they are answered by naming the
+ * row to fix, exactly as `unresolvableBoundary()` names the missing one.
  */
-const BOUNDARY_OUTSIDE_THE_YEAR =
-  "Останній день має бути в межах навчального року";
+function boundaryOutsideTheYear(
+  kind: BoundaryKind,
+  formData: FormData,
+): FormState {
+  switch (kind) {
+    case "NEXT_BREAK":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.boundaryKind,
+        "Найближчі канікули виходять за межі навчального року. Виправте дати канікул або виберіть дату",
+        formData,
+      );
+    case "END_OF_SEMESTER":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.boundaryKind,
+        "Семестр виходить за межі навчального року. Виправте дати семестру або виберіть дату",
+        formData,
+      );
+    case "DATE":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.lastDay,
+        "Останній день має бути в межах навчального року",
+        formData,
+      );
+  }
+}
 
 /**
  * A symbol that resolves to nothing usable is not an error but a question the
@@ -168,11 +198,7 @@ export async function createWeekdayRuleAction(
     return unresolvableBoundary(boundaryKind, formData);
   }
   if (!boundaryWithinYear(boundaryDate, year.dateTo)) {
-    return rejectedField(
-      WEEKDAY_RULE_FIELD.lastDay,
-      BOUNDARY_OUTSIDE_THE_YEAR,
-      formData,
-    );
+    return boundaryOutsideTheYear(boundaryKind, formData);
   }
 
   try {
@@ -225,11 +251,7 @@ export async function updateWeekdayRuleAction(
     return unresolvableBoundary(boundaryKind, formData);
   }
   if (!boundaryWithinYear(boundaryDate, year.dateTo)) {
-    return rejectedField(
-      WEEKDAY_RULE_FIELD.lastDay,
-      BOUNDARY_OUTSIDE_THE_YEAR,
-      formData,
-    );
+    return boundaryOutsideTheYear(boundaryKind, formData);
   }
 
   try {

@@ -170,13 +170,23 @@ today once the year has started, so `validFrom > year.dateTo` would write a rule
 that no year's screen lists and the calendar still applies.
 
 The resolved `boundaryDate` is then checked against the other end of the year:
-`boundaryDate <= nextIsoDate(year.dateTo)`, exclusive against inclusive. Only a
-`DATE` can fail it — `NEXT_BREAK` and `END_OF_SEMESTER` resolve against the
-year's own breaks and semesters — so in practice it catches a mistyped
-`lastDay`. It is the mirror of the check above and exists for the same reason:
-`listWeekdayRules()` selects by overlap, so a rule reaching past the year's last
-day is listed under **two** years, and `deleteAcademicYearAction` on either one
-deletes it, un-blanking a weekday in a year the teacher never touched.
+`boundaryWithinYear()`, i.e. `boundaryDate <= nextIsoDate(year.dateTo)` —
+exclusive against inclusive, so a rule that stops exactly where the year does is
+the year's own. It is the mirror of the check above and exists for the same
+reason: `listWeekdayRules()` selects by overlap, so a rule reaching past the
+year's last day is listed under **two** years, and `deleteAcademicYearAction` on
+either one deletes it, un-blanking a weekday in a year the teacher never
+touched.
+
+All three kinds can fail it, so all three get a message on a field the form
+actually shows. `DATE` is the common case — a mistyped `lastDay`. The symbolic
+two read as impossible, since they resolve against the year's own breaks and
+semesters, but `listNonTeachingPeriods()` and `listSemesters()` deliberately
+return a row that a later edit to the year's dates left outside it (§3: it is
+still the year's row and still editable there), and `resolveBoundary()` will
+resolve to that row. Those two therefore land on `boundaryKind` and name the row
+to correct, the way `unresolvableBoundary()` names the missing one; only `DATE`
+lands on `lastDay`, which is the sole field hidden for the other kinds.
 
 **`createParityAnchorAction`.** Refuses a date equal to `year.dateFrom` — that
 row belongs to the year form — and a date outside the year.
