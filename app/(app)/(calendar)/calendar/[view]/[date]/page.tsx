@@ -84,6 +84,11 @@ export default async function Page({
 
   const days = buildCalendarDays(input, { ...range, view: schedule }, periods);
   const viewProps = { days, schedule, today: today() };
+  // Editing starts from the day and the week, the two views a lesson is
+  // legible in (specification §5.3, ADR-008); the month and year cells open
+  // the day instead. `bells` is where «додати урок» takes its lesson numbers
+  // from, and it is already in the input `expand()` was given.
+  const editing = { view, schedule, bells: input.bells };
 
   return (
     <div className="space-y-4">
@@ -109,8 +114,8 @@ export default async function Page({
         </p>
       )}
 
-      {view === "day" && <DayView {...viewProps} />}
-      {view === "week" && <WeekView {...viewProps} />}
+      {view === "day" && <DayView {...viewProps} editing={editing} />}
+      {view === "week" && <WeekView {...viewProps} editing={editing} />}
       {view === "month" && <MonthView {...viewProps} anchor={date} />}
       {view === "year" && <YearView {...viewProps} />}
     </div>

@@ -1,7 +1,8 @@
+import Link from "next/link";
 import type { ResolvedLesson } from "@/lib/domain/schedule/types";
 import type { SlotPayload } from "@/lib/validation/slotPayload";
 import { cn } from "@/lib/utils";
-import { LESSON_LABELS } from "./labels";
+import { EDIT_LABELS, LESSON_LABELS } from "./labels";
 
 /**
  * One lesson, as specification §5.1 lists its fields and §5.4 wants a
@@ -92,6 +93,7 @@ function payloadSummary(payload: SlotPayload): string {
 export function LessonRow({
   lesson,
   cancelled = false,
+  editHref,
 }: {
   lesson: ResolvedLesson;
   /**
@@ -100,6 +102,15 @@ export function LessonRow({
    * lesson and not a shorter day (specification §5.3).
    */
   cancelled?: boolean;
+  /**
+   * The override editor of this lesson (T-011). Present in the day and week
+   * views, where specification §5.3 starts the edit «прямо з календаря»;
+   * absent in the month and year cells, which are too small to carry a second
+   * link per lesson and whose day number already opens the day.
+   *
+   * A cancelled row carries it too — that is where the cancellation is undone.
+   */
+  editHref?: string;
 }) {
   return (
     <li
@@ -153,6 +164,18 @@ export function LessonRow({
           </p>
         )}
       </div>
+
+      {editHref !== undefined && (
+        <Link
+          className="text-muted-foreground hover:text-foreground shrink-0 self-start text-sm underline underline-offset-2"
+          href={editHref}
+        >
+          <span aria-hidden>{EDIT_LABELS.edit}</span>
+          <span className="sr-only">
+            {EDIT_LABELS.editLesson(lesson.lessonNumber)}
+          </span>
+        </Link>
+      )}
     </li>
   );
 }

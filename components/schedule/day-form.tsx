@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { SLOT_FIELD_LABELS } from "@/components/forms/slot-labels";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { saveTemplateDayAction } from "@/lib/actions/scheduleTemplate";
@@ -20,7 +21,6 @@ import {
   ACTION_LABELS,
   DAY_LABELS,
   dayFormLabel,
-  FIELD_LABELS,
   lessonRowLabel,
   WEEKDAY_LABELS,
 } from "./labels";
@@ -148,7 +148,7 @@ function SlotInput({
         <Input
           {...props}
           defaultValue={fieldValue(state, name, storedValue(stored, field))}
-          placeholder={FIELD_LABELS[field]}
+          placeholder={SLOT_FIELD_LABELS[field]}
           type={field === "zoomLink" ? "url" : "text"}
         />
       )}

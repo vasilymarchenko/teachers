@@ -68,10 +68,7 @@ export function buildCalendarDays(
 ): CalendarDay[] {
   const days = expand(input, request);
   const planned = new Map(
-    expand({ ...input, overrides: [] }, request).map((day) => [
-      day.date,
-      day.lessons,
-    ]),
+    buildPlannedDays(input, request).map((day) => [day.date, day.lessons]),
   );
 
   return days.map((day) => {
@@ -89,6 +86,29 @@ export function buildCalendarDays(
       ...(name === undefined ? {} : { nonTeachingName: name }),
     };
   });
+}
+
+/**
+ * The window as the weekly template alone gives it — every `DayOverride`
+ * ignored.
+ *
+ * Two screens need it and both need the *same* one. `buildCalendarDays()` takes
+ * the difference against it to recover the lessons a `CLEARED` override removed
+ * (§4.1 above); the override editor of T-011 shows the teacher the planned
+ * lesson she is about to edit, replace or cancel, and what «Прибрати правку»
+ * would restore. Neither may answer «який слот діяв на цю дату» itself — that
+ * rule belongs to `expand()`, which is why this is one line and is exported
+ * rather than repeated.
+ *
+ * The result is a `ResolvedDay[]` and not a `CalendarDay[]`: with no overrides
+ * applied nothing can be cancelled, so there would be nothing to put in the
+ * extra field.
+ */
+export function buildPlannedDays(
+  input: ScheduleInput,
+  request: ExpandRequest,
+): ResolvedDay[] {
+  return expand({ ...input, overrides: [] }, request);
 }
 
 /**

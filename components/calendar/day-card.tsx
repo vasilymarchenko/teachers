@@ -1,7 +1,7 @@
 import type { CalendarDay } from "@/lib/domain/calendar/days";
 import { cn } from "@/lib/utils";
 import { DAY_LABELS, PARITY_LABELS } from "./labels";
-import { DayLessons } from "./day-lessons";
+import { DayLessons, type DayEditing } from "./day-lessons";
 
 /**
  * One day with its own heading — the block the day view shows alone and the
@@ -16,11 +16,14 @@ export function DayCard({
   title,
   isToday = false,
   headingLevel = "h2",
+  editing,
 }: {
   day: CalendarDay;
   title: string;
   isToday?: boolean;
   headingLevel?: "h2" | "h3";
+  /** Present in the day and week views, where the day is edited (T-011). */
+  editing?: DayEditing;
 }) {
   const Heading = headingLevel;
 
@@ -41,7 +44,7 @@ export function DayCard({
           {isToday && ` · ${DAY_LABELS.today}`}
         </p>
       </div>
-      <DayLessons day={day} />
+      <DayLessons day={day} editing={editing} />
     </section>
   );
 }

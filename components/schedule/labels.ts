@@ -1,6 +1,7 @@
 import type { Parity, ScheduleView, Weekday } from "@/lib/db/schema/enums";
 import type { IsoDate } from "@/lib/time/today";
-import type { TemplateSlotFieldName } from "@/lib/validation/templateDay";
+import { slotFieldLabel } from "@/components/forms/slot-labels";
+import type { SlotFieldName } from "@/lib/validation/slotFields";
 import type { LessonRow } from "./lessonRows";
 
 /**
@@ -51,18 +52,9 @@ export const NO_BELLS = {
 export const DAY_LABELS = {
   /** Each input names its own lesson: a screen reader otherwise hears
       «Предмет» ten times down one column. */
-  field: (lessonNumber: number, field: TemplateSlotFieldName): string =>
-    `Урок ${lessonNumber}, ${FIELD_LABELS[field].toLowerCase()}`,
+  field: (lessonNumber: number, field: SlotFieldName): string =>
+    slotFieldLabel(lessonNumber, field),
   empty: "Уроків на цей день немає — заповніть будь-який рядок і збережіть.",
-};
-
-/** The cell's fields — specification §5.1, its three and its five. */
-export const FIELD_LABELS: Record<TemplateSlotFieldName, string> = {
-  subject: "Предмет",
-  className: "Клас",
-  teacherName: "ПІБ учителя",
-  zoomLink: "Посилання на Zoom",
-  note: "Додаткова інформація",
 };
 
 /** «3 · 10:15» — specification §5.1 asks for the number and the start time. */

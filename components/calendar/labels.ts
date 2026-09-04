@@ -1,9 +1,14 @@
 import { format, parseISO } from "date-fns";
 import { uk } from "date-fns/locale";
-import type { Parity, ScheduleView } from "@/lib/db/schema/enums";
+import type {
+  DayOverrideKind,
+  Parity,
+  ScheduleView,
+} from "@/lib/db/schema/enums";
 import type { CalendarDay } from "@/lib/domain/calendar/days";
 import type { CalendarViewName } from "@/lib/domain/calendar/views";
 import type { IsoDate } from "@/lib/time/today";
+import type { EditableOverrideKind } from "@/lib/validation/dayOverride";
 
 /**
  * Every word the calendar shows the teacher — Ukrainian, because she reads it
@@ -179,3 +184,91 @@ export function dayTooltip(day: CalendarDay): string {
 
   return `${dayAndMonth(day.date)} — ${parts.join(" · ")}`;
 }
+
+/** The edit affordances on a day — specification §5.3, T-011. */
+export const EDIT_LABELS = {
+  /** On a lesson row; the row above it already says which lesson it is. */
+  edit: "Змінити",
+  editLesson: (lessonNumber: number) => `Змінити урок ${lessonNumber}`,
+  add: "Додати урок:",
+  addLesson: (lessonNumber: number) => `Додати урок ${lessonNumber}`,
+  /** Without bells there are no lesson numbers to add a lesson at. */
+  noBells: "Щоб додати урок, спершу заповніть розклад дзвінків",
+  toBells: "Розклад дзвінків",
+};
+
+/**
+ * The override editor — specification §5.3 and §5.4, one lesson of one date.
+ *
+ * Three texts here carry a rule rather than a name, and each says out loud
+ * something the model does that the teacher would otherwise have to guess:
+ *
+ *  - `intro` — an override changes this date and nothing else (§5.4);
+ *  - `substitutionHint` — the lesson shown under a «заміна» is taken from the
+ *    weekly schedule in force **on that date**, so a later change to the
+ *    schedule changes it. That is accepted behaviour (overview §3.4), and the
+ *    screen may not imply otherwise by staying silent about it;
+ *  - `clearHint` — «скасувати» leaves the lesson visible and struck through,
+ *    which is what makes it different from «прибрати правку».
+ */
+export const OVERRIDE_LABELS = {
+  title: (lessonNumber: number, date: IsoDate) =>
+    `Урок ${lessonNumber} — ${capitalise(weekdayName(date))}, ${fullDate(date)}`,
+  intro:
+    "Зміни на цій сторінці стосуються лише цієї дати. Тижневий розклад та інші дні залишаються без змін.",
+  back: "Повернутися до календаря",
+
+  currentTitle: "Зараз у календарі",
+  currentNone: "На цей номер уроку в календарі нічого немає.",
+  currentCleared: "Урок скасовано.",
+
+  plannedTitle: "За тижневим розкладом",
+  plannedNone: "Тижневий розклад на цей номер уроку нічого не дає.",
+
+  formTitle: "Що поставити на цю дату",
+  kindLabel: "Тип запису",
+  substitutionHint:
+    "Замінений урок береться з того тижневого розкладу, який діє на цю дату, і не зберігається разом із заміною. Якщо розклад згодом зміниться, поруч із заміною буде вже інший урок — сама заміна залишиться на місці.",
+  save: "Зберегти",
+  saving: "Зберігаємо…",
+
+  clear: "Скасувати урок",
+  clearing: "Скасовуємо…",
+  clearHint:
+    "Скасований урок залишається видимим у календарі — закресленим, щоб було зрозуміло, що його не буде.",
+
+  removing: "Прибираємо…",
+  removeConfirm:
+    "Прибрати цю зміну? На цю дату знову діятиме тижневий розклад.",
+  removeHint:
+    "Якщо прибрати зміну, на цю дату повернеться урок із тижневого розкладу.",
+};
+
+/** «Прибрати правку» — named after what is being removed (glossary §3). */
+export const REMOVE_OVERRIDE_LABELS: Record<DayOverrideKind, string> = {
+  EDIT: "Прибрати правку",
+  SUBSTITUTION: "Прибрати заміну",
+  CLEARED: "Повернути урок",
+};
+
+/**
+ * The choice between «правка» and «заміна» — the one field only an override
+ * has (overview §3.4). The difference is not what is stored but what the
+ * calendar shows beside it, so each option says that and nothing else.
+ */
+export const OVERRIDE_KIND_OPTIONS: readonly {
+  value: EditableOverrideKind;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "EDIT",
+    label: "Правка",
+    description: "Просто інший урок цього дня.",
+  },
+  {
+    value: "SUBSTITUTION",
+    label: "Заміна",
+    description: "Те саме, але поруч буде видно, який урок замінено.",
+  },
+];
