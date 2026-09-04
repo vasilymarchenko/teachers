@@ -44,6 +44,17 @@ const CONSTRAINT_MESSAGES = {
   academic_year_dates_ck: "Рік не може завершуватися раніше, ніж починається",
 };
 
+/**
+ * The year disappeared between the read and the UPDATE inside the transaction.
+ *
+ * A control signal, not a fault: it exists only to abort the transaction from
+ * inside the callback, because Drizzle rolls back and rethrows whatever the
+ * callback throws. The caller turns it back into `YEAR_NOT_FOUND` — the same
+ * message the pre-transaction read produces — so the teacher sees one answer
+ * whichever side of the race they land on.
+ */
+class YearVanished extends Error {}
+
 export async function createAcademicYearAction(
   _prevState: FormState,
   formData: FormData,
@@ -166,7 +177,7 @@ export async function updateAcademicYearAction(
 
   try {
     await getDb().transaction(async (tx) => {
-      await tx
+      const updated = await tx
         .update(academicYear)
         .set({ dateFrom, dateTo })
         .where(
@@ -174,7 +185,18 @@ export async function updateAcademicYearAction(
             eq(academicYear.userId, userId),
             eq(academicYear.id, academicYearId),
           ),
-        );
+        )
+        // A row deleted in another tab must not come back as a clean save: the
+        // UPDATE matches nothing and Drizzle reports success either way.
+        .returning({ id: academicYear.id });
+
+      // Thrown rather than returned: the anchor write below has no
+      // `academic_year_id` to cascade from, so committing it against a year
+      // that no longer exists would leave an anchor no screen lists and
+      // `parityOn()` keeps reading — the "row nothing can reach" that
+      // `deleteAcademicYearAction` is written to avoid. Throwing rolls the
+      // whole transaction back.
+      if (updated.length === 0) throw new YearVanished();
 
       // Moving the year's first day moves its initial anchor with it: the
       // initial value *is* the anchor on that day (overview §3.5), so leaving
@@ -201,6 +223,9 @@ export async function updateAcademicYearAction(
         });
     });
   } catch (error) {
+    if (error instanceof YearVanished) {
+      return rejected(YEAR_NOT_FOUND, formData);
+    }
     const message = constraintMessage(error, CONSTRAINT_MESSAGES, SAVE_REFUSED);
     if (message === undefined) throw error;
     return rejected(message, formData);

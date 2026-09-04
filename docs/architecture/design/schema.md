@@ -205,10 +205,20 @@ overview §8.1 is about those.
 overlap changes no answer. No exclusion constraint here.
 
 **Where `NEXT_BREAK` resolves to.** `boundaries.ts` takes the earliest
-`date_from` among rows with `kind = 'BREAK'` and `date_from > today()`; that day
-is the exclusive `boundary_date` (overview §8.1, fixtures §3.3 R1 → 2026-10-26).
-`PUBLIC_HOLIDAY` and `OTHER` do not resolve a `NEXT_BREAK` — «найближчі
-канікули» means a break.
+`date_from` among rows with `kind = 'BREAK'` and `date_from > referenceDate`;
+that day is the exclusive `boundary_date` (overview §8.1, fixtures §3.3 R1 →
+2026-10-26). `PUBLIC_HOLIDAY` and `OTHER` do not resolve a `NEXT_BREAK` —
+«найближчі канікули» means a break.
+
+**`referenceDate` is the caller's, not `today()`.** `resolveBoundary()` takes it
+as a parameter and has no clock of its own (overview §8.5). For the weekday
+rules of §4.4 it is the rule's own `valid_from` — the later of
+`academic_year.date_from` and `today()`, per `ADR-004` — so setting a year up in
+August resolves «до найближчих канікул» against the year's first day, not
+against August, and gets the year's first break rather than one that has already
+passed. Any future caller resolving a validity boundary (a `ScheduleTemplate`'s
+`valid_to`, say) passes the date the boundary is measured from, on the same
+rule.
 
 ### 4.4 `non_teaching_weekday_rule`
 

@@ -43,7 +43,7 @@ Before pushing, run `npm run lint && npm run typecheck && npm test`. A single te
 Two rules from the architecture that are easy to violate silently:
 
 - **No `new Date()` in domain code.** "Today" comes only from `lib/time/today.ts`, which resolves the date in `Europe/Kyiv` (§8.5). The container runs in UTC; a naive `new Date()` is a day off for three hours every night.
-- **`userId` is the first argument** of every function in `lib/db/queries` and of every mutation, and it is only ever obtained from `requireUser()` — never from form or request input (§8.4).
+- **`userId` is the first argument** of every function in `lib/db/queries`. A mutation cannot take it first — a Server Action's signature belongs to `useActionState` — so it calls `requireUser()` before any other work and filters every statement by the result. Either way `userId` is only ever obtained from `requireUser()`, never from form or request input (§8.4).
 
 ## Project
 

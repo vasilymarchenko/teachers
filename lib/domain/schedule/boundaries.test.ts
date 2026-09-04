@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { resolveBoundary, ruleValidFrom } from "./boundaries";
+import {
+  boundaryWithinYear,
+  resolveBoundary,
+  ruleValidFrom,
+} from "./boundaries";
 import { BREAKS, SEMESTERS, YEAR } from "./fixtures/scenario";
 
 /**
@@ -121,5 +125,36 @@ describe("ruleValidFrom()", () => {
     // Not 2026-09-01: every Friday since September has already been taught, and
     // a rule reaching back over them rewrites history (specification §5.2).
     expect(ruleValidFrom(YEAR.dateFrom, "2027-03-15")).toBe("2027-03-15");
+  });
+});
+
+/**
+ * The other end of the ADR-004 check: `ruleValidFrom()` keeps a rule from
+ * reaching back before the year, this keeps it from reaching past the end.
+ *
+ * The table has no `academic_year_id`, so `listWeekdayRules()` selects by
+ * overlap — a rule that outlives its year is listed under the next one too, and
+ * deleting either takes it with them.
+ */
+describe("boundaryWithinYear()", () => {
+  it("accepts a boundary well inside the year", () => {
+    // Fixtures §3.3, R1 → the autumn break's first day.
+    expect(boundaryWithinYear("2026-10-26", YEAR.dateTo)).toBe(true);
+  });
+
+  it("accepts a boundary on the day after the year's last day", () => {
+    // Exclusive against inclusive: a rule that stops exactly where the year
+    // does is still the year's own (schema §4.4 against §4.1).
+    expect(boundaryWithinYear("2027-06-01", YEAR.dateTo)).toBe(true);
+  });
+
+  it("rejects a boundary two days past the year's last day", () => {
+    expect(boundaryWithinYear("2027-06-02", YEAR.dateTo)).toBe(false);
+  });
+
+  it("rejects a mistyped last day that lands in the next year", () => {
+    // The failure this check exists for: `lastDay` 2027-09-30 entered under
+    // 2026/27 puts the rule in two years at once.
+    expect(boundaryWithinYear("2027-10-01", YEAR.dateTo)).toBe(false);
   });
 });

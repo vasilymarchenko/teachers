@@ -30,6 +30,7 @@ for reading. Order is priority; the ID number is not.
 | [T-013](T-013-print-views.md) | Print mechanism — the `/print` route and its page layout | todo | T-007 |
 | [T-021](T-021-week-view-overflow.md) | Week view — lesson text overflows the day card from the xl breakpoint | todo | T-007 |
 | [T-016](T-016-sign-in-rate-limit.md) | Rate limiting on sign-in | todo | T-006 |
+| [T-022](T-022-mutation-returning-convention-test.md) | Convention test — every UPDATE in `lib/actions` checks the rows it matched | todo | T-009 |
 | [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | done | T-002, T-004 |
 
 ## Open questions
@@ -48,7 +49,7 @@ Each mirrors a section of `docs/architecture/architect-overview.md` §10.
 ## Dependency shape
 
 ```
-T-002 scaffold ──┬──> T-014 shell ─────────────────────────> T-009 year setup
+T-002 scaffold ──┬──> T-014 shell ─────────────────────────> T-009 year setup ──> T-022 UPDATE test
                  │
                  ├──> T-005 domain ──┐
                  │                   │
@@ -73,7 +74,9 @@ because nothing is runnable before it. T-001 is done: its output,
 T-017 and T-018 are absent from the diagram: they change the review tooling and
 the documentation practice rather than the application, and nothing in the
 diagram waits on either. T-019 follows from T-017 and touches only
-`architect-overview.md`.
+`architect-overview.md`. T-022 hangs off T-009 for its subject matter, not its
+code: it turns a rule that ticket's review had to enforce by hand into one the
+test suite enforces, so it is review tooling in the same sense as T-017.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010, T-012 — have every dependency satisfied.
@@ -82,7 +85,7 @@ the shell — T-007, T-009, T-010, T-012 — have every dependency satisfied.
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018 and T-019 are not product scope: they are the
+`docs/tech-stack.md`. T-017, T-018, T-019 and T-022 are not product scope: they are the
 review tooling those tickets are checked by, and the documents that tooling
 reads. Second- and third-phase work (class list and birthdays §9,
 import §10, AI) has no tickets by design; `architect-overview.md` §7 records the

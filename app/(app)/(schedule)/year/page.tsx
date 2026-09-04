@@ -118,20 +118,27 @@ export default async function Page({
 
       {selected !== null && frame !== null ? (
         <>
-          {/* Keyed for the same reason as the year form above. */}
+          {/*
+            Keyed for the same reason as the year form above. The prefixes are
+            not decoration: these three are siblings in one children array, and
+            a bare `selected.id` on all of them is a duplicate key, which React
+            treats as unsupported — only one child per key is matched against
+            the previous render, so the remount this comment is asking for is
+            exactly what stops happening.
+          */}
           <SemestersSection
             academicYearId={selected.id}
-            key={selected.id}
+            key={`semesters-${selected.id}`}
             semesters={frame[0]}
           />
           <PeriodsSection
             academicYearId={selected.id}
-            key={selected.id}
+            key={`periods-${selected.id}`}
             periods={frame[1]}
           />
           <RulesSection
             academicYearId={selected.id}
-            key={selected.id}
+            key={`rules-${selected.id}`}
             rules={frame[2]}
           />
         </>

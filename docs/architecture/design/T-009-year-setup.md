@@ -169,6 +169,15 @@ A year that has already ended is refused before any of that: `validFrom` is
 today once the year has started, so `validFrom > year.dateTo` would write a rule
 that no year's screen lists and the calendar still applies.
 
+The resolved `boundaryDate` is then checked against the other end of the year:
+`boundaryDate <= nextIsoDate(year.dateTo)`, exclusive against inclusive. Only a
+`DATE` can fail it — `NEXT_BREAK` and `END_OF_SEMESTER` resolve against the
+year's own breaks and semesters — so in practice it catches a mistyped
+`lastDay`. It is the mirror of the check above and exists for the same reason:
+`listWeekdayRules()` selects by overlap, so a rule reaching past the year's last
+day is listed under **two** years, and `deleteAcademicYearAction` on either one
+deletes it, un-blanking a weekday in a year the teacher never touched.
+
 **`createParityAnchorAction`.** Refuses a date equal to `year.dateFrom` — that
 row belongs to the year form — and a date outside the year.
 
@@ -178,7 +187,7 @@ row belongs to the year form — and a date outside the year.
 |---|---|---|
 | shape, required fields, `dateFrom <= dateTo`, `timeFrom < timeTo`, `HH:MM`, `DATE` needs a `lastDay` | the Zod schema | it is the boundary the browser and the action share |
 | a child range inside its year | the action | needs the year row; no constraint expresses it |
-| an UPDATE that matched no row (deleted in another tab) | the action, via `.returning()` | Drizzle reports success for an UPDATE that matched nothing |
+| an UPDATE that matched no row (deleted in another tab) | the action, via `.returning()` | Drizzle reports success for an UPDATE that matched nothing. In `updateAcademicYearAction` the empty result **throws** (`YearVanished`) rather than returning: the anchor upsert in the same transaction has no `academic_year_id` to cascade from, so it has to roll back with the year |
 | a year narrowed past a row that hangs off it | the action | needs both the old and the new range |
 | two years / two semesters overlapping | `*_no_overlap_ex` | checking it in the action is a race: two submissions can both read "no overlap" and both insert |
 | a year's second semester 1 | `semester_year_index_uq` | same race |
