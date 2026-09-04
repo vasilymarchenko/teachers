@@ -89,3 +89,46 @@ function resolveKind({
 }
 
 const earlier = (a: IsoDate, b: IsoDate): IsoDate => (a <= b ? a : b);
+
+/**
+ * Where a rule written by the year-setup screens starts applying — ADR-004.
+ *
+ * The later of the year's first day and today. Setting a year up before it
+ * begins, which is the ordinary case, gives the year's first day, so a
+ * methodical day entered in August covers the year from its start (schema §4.4,
+ * fixtures §3.3 R1–R3 at `2026-09-01`). Adding one in March gives today
+ * instead, so the rule does not reach back over Fridays that have already
+ * happened — specification §5.2, «історія не переписується», and the reason
+ * `valid_from` exists at all (fixtures §9, finding F-3).
+ *
+ * It is also the `referenceDate` the rule's boundary resolves against, which is
+ * what keeps «до найближчих канікул» from resolving to a break in the past.
+ *
+ * `today` is a parameter and never `new Date()`: the domain has no clock
+ * (overview §8.5), and the caller takes it from `lib/time/today.ts`.
+ */
+export function ruleValidFrom(yearStart: IsoDate, today: IsoDate): IsoDate {
+  return today > yearStart ? today : yearStart;
+}
+
+/**
+ * Whether a resolved boundary keeps its rule inside the year it was entered
+ * under — the other end of the ADR-004 check that `ruleValidFrom()` serves.
+ *
+ * `boundaryDate` is **exclusive** and `yearEnd` is **inclusive** (schema §4.4,
+ * §4.1), so the comparison is against the day *after* the year's last day: a
+ * rule that stops exactly where the year does is inside it, and one that stops
+ * a day later is not.
+ *
+ * It matters because `listWeekdayRules()` selects by overlap rather than by a
+ * foreign key — the table has no `academic_year_id`. A rule reaching past the
+ * year's last day is therefore listed under two years at once, and deleting
+ * either one takes it with them, un-blanking a weekday in a year the teacher
+ * never touched.
+ */
+export function boundaryWithinYear(
+  boundaryDate: IsoDate,
+  yearEnd: IsoDate,
+): boolean {
+  return boundaryDate <= nextIsoDate(yearEnd);
+}

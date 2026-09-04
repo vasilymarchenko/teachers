@@ -1,0 +1,297 @@
+"use server";
+
+import { and, eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { requireUser } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/client";
+import { constraintMessage } from "@/lib/db/constraintViolation";
+import {
+  getAcademicYear,
+  getWeekdayRule,
+  listNonTeachingPeriods,
+  listSemesters,
+} from "@/lib/db/queries/yearSetup";
+import type { BoundaryKind } from "@/lib/db/schema/enums";
+import { nonTeachingWeekdayRule } from "@/lib/db/schema";
+import {
+  boundaryWithinYear,
+  resolveBoundary,
+  ruleValidFrom,
+} from "@/lib/domain/schedule/boundaries";
+import { today, type IsoDate } from "@/lib/time/today";
+import {
+  invalidInput,
+  rejected,
+  rejectedField,
+  type FormState,
+} from "@/lib/validation/formState";
+import {
+  WEEKDAY_RULE_FIELD,
+  weekdayRuleInput,
+} from "@/lib/validation/weekdayRule";
+import { SAVE_REFUSED, YEAR_NOT_FOUND, YEAR_SETUP_PATH } from "./yearSetup";
+
+/**
+ * Weekdays excluded from the schedule — specification §3.4,
+ * `non_teaching_weekday_rule` in schema §4.4.
+ *
+ * This is where overview §8.1 happens: the teacher chooses «до дати Х» / «до
+ * найближчих канікул» / «до кінця семестру», and what gets stored is the
+ * resolved `boundaryDate` together with the `boundaryKind` that says how it was
+ * chosen. `expand()` never resolves anything afterwards, which is what keeps a
+ * break moved in January from rewriting October.
+ *
+ * `validFrom` is not the teacher's to choose — ADR-004.
+ */
+
+const CONSTRAINT_MESSAGES = {
+  ntwr_range_ck: "Правило має діяти хоча б один день",
+};
+
+/**
+ * A rule is shown under the year whose dates reach it, and `validFrom` is
+ * today once the year has started (ADR-004). For a year that has already
+ * ended, today is after its last day, so the rule would be written and then
+ * listed under no year at all — invisible on this screen and still blanking a
+ * weekday in the calendar. Refused rather than written.
+ */
+const YEAR_ALREADY_ENDED =
+  "Цей навчальний рік уже завершився — правило не належатиме до нього. Виберіть рік, який ще триває";
+
+/** The rule is gone — deleted in another tab, or an invented id. */
+const RULE_NOT_FOUND = "Правило не знайдено. Оновіть сторінку";
+
+/**
+ * A boundary that reaches past the year's last day — design §5, "a child range
+ * inside its year".
+ *
+ * It has to be refused rather than stored: `listWeekdayRules()` selects by
+ * overlap, so a rule reaching into the next year is listed under **both**, and
+ * deleting either year takes it with them (`deleteAcademicYearAction`),
+ * silently un-blanking a weekday in a year the teacher never touched.
+ *
+ * All three kinds can produce one, so all three get a message on a field the
+ * teacher can actually see. `DATE` is the mistyped `lastDay` and the common
+ * case. The symbolic two look impossible — they resolve against the year's own
+ * breaks and semesters — but `listNonTeachingPeriods()` and `listSemesters()`
+ * return a row left outside its year by a later edit to the year's dates
+ * (deliberately: it is still the year's row and still editable there), and
+ * `resolveBoundary()` will resolve to it. So they are answered by naming the
+ * row to fix, exactly as `unresolvableBoundary()` names the missing one.
+ */
+function boundaryOutsideTheYear(
+  kind: BoundaryKind,
+  formData: FormData,
+): FormState {
+  switch (kind) {
+    case "NEXT_BREAK":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.boundaryKind,
+        "Найближчі канікули виходять за межі навчального року. Виправте дати канікул або виберіть дату",
+        formData,
+      );
+    case "END_OF_SEMESTER":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.boundaryKind,
+        "Семестр виходить за межі навчального року. Виправте дати семестру або виберіть дату",
+        formData,
+      );
+    case "DATE":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.lastDay,
+        "Останній день має бути в межах навчального року",
+        formData,
+      );
+  }
+}
+
+/**
+ * A symbol that resolves to nothing usable is not an error but a question the
+ * teacher has to answer: there are no breaks entered yet, no semester still
+ * running, or the chosen last day has already passed. The message says which,
+ * and lands on the field that has to change.
+ */
+function unresolvableBoundary(
+  kind: BoundaryKind,
+  formData: FormData,
+): FormState {
+  switch (kind) {
+    case "NEXT_BREAK":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.boundaryKind,
+        "Після початку дії правила немає канікул. Додайте канікули або виберіть дату",
+        formData,
+      );
+    case "END_OF_SEMESTER":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.boundaryKind,
+        "Немає семестру, який ще триває. Додайте семестри або виберіть дату",
+        formData,
+      );
+    case "DATE":
+      return rejectedField(
+        WEEKDAY_RULE_FIELD.lastDay,
+        "Останній день має бути пізніше за день, з якого діє правило",
+        formData,
+      );
+  }
+}
+
+/**
+ * The resolved boundary for a rule that starts on `validFrom`, or `undefined`.
+ *
+ * The breaks are the `BREAK` periods only — «найближчі канікули» means a break,
+ * not a public holiday (schema §4.3).
+ */
+async function resolveFor(
+  userId: string,
+  academicYearId: string,
+  validFrom: IsoDate,
+  kind: BoundaryKind,
+  lastDay: IsoDate | undefined,
+): Promise<IsoDate | undefined> {
+  const [semesters, periods] = await Promise.all([
+    listSemesters(userId, academicYearId),
+    listNonTeachingPeriods(userId, academicYearId),
+  ]);
+
+  return resolveBoundary({
+    kind,
+    referenceDate: validFrom,
+    lastDay,
+    breaks: periods.filter((period) => period.kind === "BREAK"),
+    semesters,
+  });
+}
+
+export async function createWeekdayRuleAction(
+  academicYearId: string,
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { id: userId } = await requireUser();
+
+  const parsed = weekdayRuleInput.safeParse({
+    weekday: formData.get("weekday"),
+    boundaryKind: formData.get("boundaryKind"),
+    lastDay: formData.get("lastDay") ?? "",
+  });
+  if (!parsed.success) return invalidInput(parsed.error, formData);
+
+  const year = await getAcademicYear(userId, academicYearId);
+  if (year === null) return rejected(YEAR_NOT_FOUND, formData);
+
+  const { weekday, boundaryKind, lastDay } = parsed.data;
+  // ADR-004: the year's first day when the year has not started, today when it
+  // has — so a rule entered in March does not reach back over March's Fridays.
+  const validFrom = ruleValidFrom(year.dateFrom, today());
+  if (validFrom > year.dateTo) return rejected(YEAR_ALREADY_ENDED, formData);
+
+  const boundaryDate = await resolveFor(
+    userId,
+    academicYearId,
+    validFrom,
+    boundaryKind,
+    lastDay,
+  );
+  if (boundaryDate === undefined) {
+    return unresolvableBoundary(boundaryKind, formData);
+  }
+  if (!boundaryWithinYear(boundaryDate, year.dateTo)) {
+    return boundaryOutsideTheYear(boundaryKind, formData);
+  }
+
+  try {
+    await getDb()
+      .insert(nonTeachingWeekdayRule)
+      .values({ userId, weekday, validFrom, boundaryDate, boundaryKind });
+  } catch (error) {
+    const message = constraintMessage(error, CONSTRAINT_MESSAGES, SAVE_REFUSED);
+    if (message === undefined) throw error;
+    return rejected(message, formData);
+  }
+
+  revalidatePath(YEAR_SETUP_PATH);
+  return {};
+}
+
+export async function updateWeekdayRuleAction(
+  ruleId: string,
+  academicYearId: string,
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { id: userId } = await requireUser();
+
+  const parsed = weekdayRuleInput.safeParse({
+    weekday: formData.get("weekday"),
+    boundaryKind: formData.get("boundaryKind"),
+    lastDay: formData.get("lastDay") ?? "",
+  });
+  if (!parsed.success) return invalidInput(parsed.error, formData);
+
+  const existing = await getWeekdayRule(userId, ruleId);
+  if (existing === null) return rejected(RULE_NOT_FOUND, formData);
+
+  const year = await getAcademicYear(userId, academicYearId);
+  if (year === null) return rejected(YEAR_NOT_FOUND, formData);
+
+  const { weekday, boundaryKind, lastDay } = parsed.data;
+  // The rule keeps the day it started on: an edit changes where it ends, not
+  // the weeks it already governed.
+  const { validFrom } = existing;
+  const boundaryDate = await resolveFor(
+    userId,
+    academicYearId,
+    validFrom,
+    boundaryKind,
+    lastDay,
+  );
+  if (boundaryDate === undefined) {
+    return unresolvableBoundary(boundaryKind, formData);
+  }
+  if (!boundaryWithinYear(boundaryDate, year.dateTo)) {
+    return boundaryOutsideTheYear(boundaryKind, formData);
+  }
+
+  try {
+    const updated = await getDb()
+      .update(nonTeachingWeekdayRule)
+      .set({ weekday, boundaryDate, boundaryKind })
+      .where(
+        and(
+          eq(nonTeachingWeekdayRule.userId, userId),
+          eq(nonTeachingWeekdayRule.id, ruleId),
+        ),
+      )
+      // A row deleted in another tab must not come back as a clean save: the
+      // UPDATE matches nothing and Drizzle reports success either way.
+      .returning({ id: nonTeachingWeekdayRule.id });
+
+    if (updated.length === 0) return rejected(RULE_NOT_FOUND, formData);
+  } catch (error) {
+    const message = constraintMessage(error, CONSTRAINT_MESSAGES, SAVE_REFUSED);
+    if (message === undefined) throw error;
+    return rejected(message, formData);
+  }
+
+  revalidatePath(YEAR_SETUP_PATH);
+  return {};
+}
+
+export async function deleteWeekdayRuleAction(
+  ruleId: string,
+): Promise<void> {
+  const { id: userId } = await requireUser();
+
+  await getDb()
+    .delete(nonTeachingWeekdayRule)
+    .where(
+      and(
+        eq(nonTeachingWeekdayRule.userId, userId),
+        eq(nonTeachingWeekdayRule.id, ruleId),
+      ),
+    );
+
+  revalidatePath(YEAR_SETUP_PATH);
+}

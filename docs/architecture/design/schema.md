@@ -205,10 +205,20 @@ overview §8.1 is about those.
 overlap changes no answer. No exclusion constraint here.
 
 **Where `NEXT_BREAK` resolves to.** `boundaries.ts` takes the earliest
-`date_from` among rows with `kind = 'BREAK'` and `date_from > today()`; that day
-is the exclusive `boundary_date` (overview §8.1, fixtures §3.3 R1 → 2026-10-26).
-`PUBLIC_HOLIDAY` and `OTHER` do not resolve a `NEXT_BREAK` — «найближчі
-канікули» means a break.
+`date_from` among rows with `kind = 'BREAK'` and `date_from > referenceDate`;
+that day is the exclusive `boundary_date` (overview §8.1, fixtures §3.3 R1 →
+2026-10-26). `PUBLIC_HOLIDAY` and `OTHER` do not resolve a `NEXT_BREAK` —
+«найближчі канікули» means a break.
+
+**`referenceDate` is the caller's, not `today()`.** `resolveBoundary()` takes it
+as a parameter and has no clock of its own (overview §8.5). For the weekday
+rules of §4.4 it is the rule's own `valid_from` — the later of
+`academic_year.date_from` and `today()`, per `ADR-004` — so setting a year up in
+August resolves «до найближчих канікул» against the year's first day, not
+against August, and gets the year's first break rather than one that has already
+passed. Any future caller resolving a validity boundary (a `ScheduleTemplate`'s
+`valid_to`, say) passes the date the boundary is measured from, on the same
+rule.
 
 ### 4.4 `non_teaching_weekday_rule`
 
@@ -231,20 +241,25 @@ CONSTRAINT ntwr_range_ck CHECK (valid_from < boundary_date)
 **The rule applies to a date `d` when `valid_from <= d < boundary_date`.**
 `valid_from` exists because of fixtures §9 F-3: without it a rule entered in
 October reaches back over every past Friday and silently rewrites history,
-contradicting specification §5.2. It is resolved at write time exactly as
-`ScheduleTemplate.valid_from` is — the write sets it to `today()`
-(`lib/time/today.ts`), never to a caller-supplied date. Year setup (T-009) is the
-one exception: it writes `valid_from = academic_year.date_from` for the rules it
-creates as part of the year frame, which is what makes the fixture's R1–R3 legal
-from 2026-09-01.
+contradicting specification §5.2. It is resolved at write time and never taken
+from caller input: the year-setup screens set it to the **later of
+`academic_year.date_from` and `today()`** (`lib/time/today.ts`), through
+`ruleValidFrom()` in `lib/domain/schedule/boundaries.ts`. Setting a year up
+before it starts therefore gives the year's first day, which is what makes the
+fixture's R1–R3 legal from 2026-09-01; adding a rule mid-year gives today. An
+edit keeps the row's existing `valid_from`. `ADR-004` records why, and what a
+plain `academic_year.date_from` would have cost.
 
 **Overlapping rules for the same weekday are allowed.** `isNonTeaching` is an
 OR over rows, so a second rule covering a Friday already covered changes no
 answer — the rows are redundant, never contradictory. A non-overlap exclusion
 would buy nothing and would break the ordinary «extend the methodical day past
 the winter break» edit, which writes a new rule whose range starts inside the
-old one's. The cost is a rule list that can contain duplicates; T-009 dedupes in
-the UI, not in the schema.
+old one's. The cost is a rule list that can contain duplicates, and it is a cost
+that was accepted rather than paid off: T-009 lists the rows as they are and
+collapses nothing (`design/T-009-year-setup.md` §8). A reader of this list must
+therefore expect the same weekday twice, with the older row's range starting
+inside the newer one's.
 
 **There is no implicit weekend.** Saturday and Sunday are non-teaching only
 because rows say so (fixtures §9, F-3, "Related"). Year setup creates R2/R3.
