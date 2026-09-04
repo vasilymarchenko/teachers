@@ -25,6 +25,7 @@ export type FieldControlProps = {
 export function FormField({
   name,
   label,
+  labelHidden = false,
   error,
   hint,
   className,
@@ -32,6 +33,13 @@ export function FormField({
 }: {
   name: string;
   label: string;
+  /**
+   * Keeps the label for a screen reader and takes it off the screen — for a
+   * grid whose column heading already says what the control is, and where a
+   * visible label per cell would be the same word repeated down the page
+   * (the template editor of T-010). The label itself is never dropped.
+   */
+  labelHidden?: boolean;
   error?: string;
   /** Standing guidance under the control — not a message about this submission. */
   hint?: string;
@@ -51,7 +59,10 @@ export function FormField({
 
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={id} className="text-sm font-medium">
+      <label
+        htmlFor={id}
+        className={labelHidden ? "sr-only" : "text-sm font-medium"}
+      >
         {label}
       </label>
       {children({

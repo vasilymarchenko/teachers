@@ -25,12 +25,13 @@ for reading. Order is priority; the ID number is not.
 | [T-009](T-009-year-setup-screens.md) | Year setup — year, semesters, non-teaching periods, bells, parity | done | T-006, T-014 |
 | [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | todo | T-005, T-007, T-008, T-014 |
 | [T-007](T-007-calendar-read-views.md) | Calendar read views — day, week, month, year | done | T-005, T-008, T-014 |
-| [T-010](T-010-weekly-template-editor.md) | Weekly template editor with copy-on-write versioning | todo | T-005, T-008, T-014 |
+| [T-010](T-010-weekly-template-editor.md) | Weekly template editor with copy-on-write versioning | done | T-005, T-008, T-014 |
 | [T-011](T-011-day-override-editing.md) | Day overrides — edit, substitution, cancel a single lesson | todo | T-007 |
 | [T-013](T-013-print-views.md) | Print mechanism — the `/print` route and its page layout | todo | T-007 |
 | [T-021](T-021-week-view-overflow.md) | Week view — lesson text overflows the day card from the xl breakpoint | todo | T-007 |
 | [T-016](T-016-sign-in-rate-limit.md) | Rate limiting on sign-in | todo | T-006 |
 | [T-022](T-022-mutation-returning-convention-test.md) | Convention test — every UPDATE in `lib/actions` checks the rows it matched | todo | T-009 |
+| [T-023](T-023-unrendered-field-errors.md) | A field error whose field is not on the screen must still be shown | todo | T-009, T-010 |
 | [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | done | T-002, T-004 |
 
 ## Open questions
@@ -49,7 +50,8 @@ Each mirrors a section of `docs/architecture/architect-overview.md` §10.
 ## Dependency shape
 
 ```
-T-002 scaffold ──┬──> T-014 shell ─────────────────────────> T-009 year setup ──> T-022 UPDATE test
+T-002 scaffold ──┬──> T-014 shell ─────────────────────────> T-009 year setup ──┬──> T-022 UPDATE test
+                 │                                                              └──> T-023 field errors *
                  │
                  ├──> T-005 domain ──┐
                  │                   │
@@ -76,16 +78,20 @@ the documentation practice rather than the application, and nothing in the
 diagram waits on either. T-019 follows from T-017 and touches only
 `architect-overview.md`. T-022 hangs off T-009 for its subject matter, not its
 code: it turns a rule that ticket's review had to enforce by hand into one the
-test suite enforces, so it is review tooling in the same sense as T-017.
+test suite enforces, so it is review tooling in the same sense as T-017. T-023
+is the same shape and hangs off both T-009 and T-010, because one defect turned
+up in both reviews and was fixed by hand each time — the `*` in the diagram
+marks that second edge, which the tree has no room to draw.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
-the shell — T-007, T-009, T-010, T-012 — have every dependency satisfied.
+the shell — T-007, T-009 and T-010 are done, T-012 is next — have every
+dependency satisfied.
 
 ## Coverage
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019 and T-022 are not product scope: they are the
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022 and T-023 are not product scope: they are the
 review tooling those tickets are checked by, and the documents that tooling
 reads. Second- and third-phase work (class list and birthdays §9,
 import §10, AI) has no tickets by design; `architect-overview.md` §7 records the

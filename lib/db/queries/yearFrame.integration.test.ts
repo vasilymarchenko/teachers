@@ -5,7 +5,7 @@ import { closeDb } from "@/lib/db/client";
 import { insertFixtureScenario } from "@/lib/db/fixtures/scenarioRows";
 import { academicYear, semester, user } from "@/lib/db/schema";
 import { createTestDatabase } from "@/lib/db/testDatabase";
-import { getYearFrame } from "./yearFrame";
+import { getUpcomingYearFrame, getYearFrame } from "./yearFrame";
 
 /**
  * The year frame read — schema §4.1 and §4.2, and the one read of T-008 whose
@@ -77,6 +77,59 @@ describe("getYearFrame()", () => {
     expect(await getYearFrame(userId, "2027-06-01")).toBeNull();
   });
 
+});
+
+describe("getUpcomingYearFrame()", () => {
+  // The setup order ADR-004 calls the ordinary case: on an August day the
+  // teacher has entered September but is not inside it yet, and «до кінця
+  // семестру» has to resolve against the year about to begin rather than be
+  // refused with «спершу задайте навчальний рік».
+  it("returns the year about to begin, with both semesters", async () => {
+    const frame = await getUpcomingYearFrame(userId, "2026-08-24");
+
+    expect(frame).toStrictEqual({
+      id: expect.any(String),
+      dateFrom: "2026-09-01",
+      dateTo: "2027-05-31",
+      semesters: [
+        { dateFrom: "2026-09-01", dateTo: "2026-12-24" },
+        { dateFrom: "2027-01-12", dateTo: "2027-05-31" },
+      ],
+    });
+  });
+
+  it("takes the earliest year that begins after the date", async () => {
+    const otherId = await createUser();
+
+    try {
+      // Written later-first, so a read that trusted insertion order would
+      // resolve a boundary against 2029 while 2028 is the one about to start.
+      await db.insert(academicYear).values([
+        { userId: otherId, dateFrom: "2029-09-01", dateTo: "2030-05-31" },
+        { userId: otherId, dateFrom: "2028-09-01", dateTo: "2029-05-31" },
+      ]);
+
+      expect(
+        (await getUpcomingYearFrame(otherId, "2028-08-24"))?.dateFrom,
+      ).toBe("2028-09-01");
+    } finally {
+      await db.delete(user).where(eq(user.id, otherId));
+    }
+  });
+
+  it("excludes a year that has already started", async () => {
+    // Strictly after: a year whose first day is the date itself is the year in
+    // force, and `getYearFrame()` is what answers for it.
+    expect(await getUpcomingYearFrame(userId, "2026-09-01")).toBeNull();
+  });
+
+  it("returns null when nothing has been set up ahead", async () => {
+    // The one case that really is «спершу задайте навчальний рік».
+    expect(await getUpcomingYearFrame(userId, "2027-06-01")).toBeNull();
+  });
+});
+
+describe("getYearFrame(), continued", () => {
   it("orders the semesters by index, not by insertion", async () => {
     const otherId = await createUser();
 

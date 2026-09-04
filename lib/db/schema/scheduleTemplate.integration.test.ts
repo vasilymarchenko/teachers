@@ -135,7 +135,7 @@ describe("a second template edit on the same day", () => {
   // `docs/architecture/design/schema.md` §4.7. The first edit of a day cuts the
   // version in force at `today()` and inserts a new one. A second edit the same
   // day cannot cut again — the version in force now starts today, so the cut
-  // would give it zero length — so it updates that version's slots in place.
+  // would give it zero length — so that version is replaced instead.
   const today = "2027-04-12";
 
   it("cannot be done by cutting: the cut would make the version zero-length", async () => {
@@ -154,29 +154,42 @@ describe("a second template edit on the same day", () => {
     ).toBe("schedule_template_range_ck");
   });
 
-  it("updates the version in force in place, leaving one version and no hole", async () => {
+  it("replaces that version, leaving one version and no hole", async () => {
     const [created] = await db
       .insert(scheduleTemplate)
       .values(version("OWN", today, "2027-06-01"))
       .returning();
 
-    const [slot] = await db
-      .insert(templateSlot)
-      .values({
+    await db.insert(templateSlot).values({
+      userId,
+      templateId: created.id,
+      weekday: "MON",
+      lessonNumber: 1,
+      parity: "NUMERATOR",
+      payload: { subject: "Математика", className: "7-А" },
+    });
+
+    // The `replace` branch of `planTemplateEdit()`, as `applyTemplateEdit()`
+    // performs it: the version goes, its slots with it by cascade, and the new
+    // one takes the same range. Both statements are in one transaction, so the
+    // exclusion constraint never sees the two ranges at once.
+    await db.transaction(async (tx) => {
+      await tx.delete(scheduleTemplate).where(eq(scheduleTemplate.id, created.id));
+
+      const [replacement] = await tx
+        .insert(scheduleTemplate)
+        .values(version("OWN", today, "2027-06-01"))
+        .returning();
+
+      await tx.insert(templateSlot).values({
         userId,
-        templateId: created.id,
+        templateId: replacement.id,
         weekday: "MON",
         lessonNumber: 1,
         parity: "NUMERATOR",
-        payload: { subject: "Математика", className: "7-А" },
-      })
-      .returning();
-
-    // The in-place path: same version, edited slots.
-    await db
-      .update(templateSlot)
-      .set({ payload: { subject: "Алгебра", className: "9-А" } })
-      .where(eq(templateSlot.id, slot.id));
+        payload: { subject: "Алгебра", className: "9-А" },
+      });
+    });
 
     const versions = await db
       .select()
@@ -192,12 +205,19 @@ describe("a second template edit on the same day", () => {
     expect(versions[0].validFrom).toBe(today);
     expect(versions[0].validTo).toBe("2027-06-01");
 
+    // The old version's slots went with it: no orphan row survives the cascade.
     const slots = await db
       .select()
       .from(templateSlot)
-      .where(eq(templateSlot.templateId, created.id));
+      .where(eq(templateSlot.templateId, versions[0].id));
     expect(slots).toHaveLength(1);
     expect(slots[0].payload).toEqual({ subject: "Алгебра", className: "9-А" });
+
+    const orphans = await db
+      .select()
+      .from(templateSlot)
+      .where(eq(templateSlot.templateId, created.id));
+    expect(orphans).toHaveLength(0);
   });
 });
 
@@ -257,5 +277,79 @@ describe("a slot cannot be attached to another user's template", () => {
     ).toBe("template_slot_template_fk");
 
     await db.delete(user).where(eq(user.id, otherUserId));
+  });
+});
+
+describe("two windows saving the same view at once", () => {
+  /**
+   * The concurrent-save case T-010 requires a test for.
+   *
+   * Both windows planned their edit against the same version in force, so both
+   * do the copy-on-write of overview §3.2 — trim that version at the cut, then
+   * insert a new one covering the rest. Nothing in the application can tell
+   * them apart: each read a live version and each is writing a legal pair of
+   * statements. `schedule_template_no_overlap_ex` (I3) is what decides, and it
+   * is the reason the constraint is in the schema rather than in a check the
+   * action performs before writing — a check would let both pass and then let
+   * both insert.
+   *
+   * The loser's message is `VERSION_CHANGED` in
+   * `lib/actions/scheduleTemplate.ts`, mapped from this constraint name.
+   */
+  const cut = "2027-02-15";
+
+  const copyOnWrite = (
+    database: typeof db,
+    versionId: string,
+  ): Promise<unknown> =>
+    database.transaction(async (tx) => {
+      await tx
+        .update(scheduleTemplate)
+        .set({ validTo: cut })
+        .where(eq(scheduleTemplate.id, versionId));
+
+      await tx
+        .insert(scheduleTemplate)
+        .values(version("OWN", cut, "2027-06-01"));
+    });
+
+  it("lets one through and refuses the other by the exclusion constraint", async () => {
+    const [inForce] = await db
+      .insert(scheduleTemplate)
+      .values(version("OWN", "2027-01-11", "2027-06-01"))
+      .returning();
+
+    // Two connections, because two transactions on one connection are not
+    // concurrent — the second would simply run after the first.
+    const other = createTestDatabase();
+    try {
+      const results = await Promise.allSettled([
+        copyOnWrite(db, inForce.id),
+        copyOnWrite(other.db, inForce.id),
+      ]);
+
+      const rejected = results.filter((result) => result.status === "rejected");
+      expect(rejected).toHaveLength(1);
+      expect(
+        ((rejected[0] as PromiseRejectedResult).reason as {
+          cause?: { constraint_name?: string };
+        }).cause?.constraint_name,
+      ).toBe("schedule_template_no_overlap_ex");
+    } finally {
+      await other.close();
+    }
+
+    // The winner's write is whole: the old version is trimmed and exactly one
+    // version covers the days after the cut.
+    const rows = await db
+      .select()
+      .from(scheduleTemplate)
+      .where(
+        and(eq(scheduleTemplate.userId, userId), eq(scheduleTemplate.view, "OWN")),
+      );
+
+    expect(rows).toHaveLength(2);
+    expect(rows.filter((row) => row.validFrom === cut)).toHaveLength(1);
+    expect(rows.find((row) => row.validFrom === "2027-01-11")?.validTo).toBe(cut);
   });
 });

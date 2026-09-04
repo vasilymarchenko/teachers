@@ -370,15 +370,25 @@ does the two writes — `UPDATE ... SET valid_to = today()` on the current versi
 never transiently violated. The cut point is always `today()` from
 `lib/time/today.ts` (T-005).
 
-**A second edit on the same day updates the current version in place.** If the
-version in force already has `valid_from = today()` — it was created by an
-earlier edit today — cutting it would set `valid_to = valid_from`, which
-`schedule_template_range_ck` rejects, and rightly: a zero-length version is not
-a thing. The write is then an `UPDATE` of that version's slots, not a new
-version. This is not a weakening of I1: nothing before today is being rewritten,
-because that version has never been in force on a day that has passed. `lib/actions`
-therefore branches on `current.valid_from = today()` before choosing between
-copy-on-write and an in-place edit; T-004's constraint test covers both paths.
+**A second edit on the same day replaces the current version, it does not cut
+it.** If the version in force already has `valid_from = today()` — it was
+created by an earlier edit today — cutting it would set `valid_to = valid_from`,
+which `schedule_template_range_ck` rejects, and rightly: a zero-length version
+is not a thing. That version is replaced instead, leaving one version over the
+same range with different slots. This is not a weakening of I1: nothing before
+today is being rewritten, because that version has never been in force on a day
+that has passed. The branch is `planTemplateEdit()`'s, on
+`current.validFrom === cutAt` — it returns `replace` where it would otherwise
+return `trim`, and `lib/actions` sees only which of the two the plan carries.
+T-004's constraint test covers both paths.
+
+The replacement is a `DELETE` of the version — its slots go with it by
+cascade — followed by the same `INSERT` the other branch performs, inside the
+one transaction. An `UPDATE` of the slots would reach the same state; the delete
+keeps the writing of slots to a single statement shared by every branch
+(`design/T-010-weekly-template-editor.md` §2). Either way **no live version's
+slots are edited in place** — that is what ADR-006 forbids, and the two are not
+the same thing: this version's whole range is in the future.
 
 **Gaps are legal.** Nothing forbids `[A, B)` followed by `[C, D)` with `B < C`;
 fixtures §3.6 requires the `CLASS` gap `[2026-10-21, 2026-11-02)` to survive.

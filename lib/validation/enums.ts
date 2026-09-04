@@ -16,6 +16,7 @@ import type {
   BoundaryKind,
   NonTeachingKind,
   Parity,
+  ScheduleView,
   Weekday,
 } from "@/lib/db/schema/enums";
 
@@ -31,6 +32,9 @@ export const WEEKDAY_VALUES = [
   "SAT",
   "SUN",
 ] as const satisfies readonly Weekday[];
+
+export const SCHEDULE_VIEW_VALUES = ["OWN", "CLASS"] as const satisfies
+  readonly ScheduleView[];
 
 export const NON_TEACHING_KIND_VALUES = [
   "BREAK",

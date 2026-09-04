@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planTemplateEdit } from "./copyOnWrite";
+import { capToNextVersion, planTemplateEdit } from "./copyOnWrite";
 
 /**
  * The two template writes of `docs/architecture/design/expand-fixtures.md` §3.8,
@@ -105,5 +105,55 @@ describe("planTemplateEdit()", () => {
     expect(() =>
       planTemplateEdit({ validTo: "2026-10-21", now: ON_2026_10_21 }),
     ).toThrow(/not after the cut/);
+  });
+});
+
+describe("capToNextVersion", () => {
+  /** «до кінця семестру», resolved against the autumn of the fixture year. */
+  const endOfSemester = {
+    validTo: "2026-12-25",
+    boundaryKind: "END_OF_SEMESTER",
+  } as const;
+
+  // The half of overview §3.2 `planTemplateEdit()` leaves to the editor: a
+  // version that starts after the cut is not planned against, but the new
+  // version may not run over it either.
+  it("stops the new version where the later one starts", () => {
+    expect(capToNextVersion(endOfSemester, "2026-11-02")).toStrictEqual({
+      validTo: "2026-11-02",
+      boundaryKind: "DATE",
+    });
+  });
+
+  // §8.1: `boundaryKind` says how `validTo` was arrived at, and a capped date
+  // was arrived at from the next version, not from the symbol. Left as
+  // `END_OF_SEMESTER` the screen would say «до 01.11 (до кінця семестру)» about
+  // a semester ending on 25.12, and `boundaryFor()` would inherit that pair
+  // into every later version of the view.
+  it("makes a capped bound a DATE boundary", () => {
+    expect(capToNextVersion(endOfSemester, "2026-11-02").boundaryKind).toBe(
+      "DATE",
+    );
+  });
+
+  it("leaves the bound alone when the later version starts after it", () => {
+    // Two versions with a gap between them — legal, and not this function's to
+    // close (§3.2).
+    const bound = { validTo: "2026-10-21", boundaryKind: "NEXT_BREAK" } as const;
+    expect(capToNextVersion(bound, "2026-11-02")).toStrictEqual(bound);
+  });
+
+  it("leaves the bound alone when there is no later version", () => {
+    expect(capToNextVersion(endOfSemester, undefined)).toStrictEqual(
+      endOfSemester,
+    );
+  });
+
+  it("keeps the two ends apart when they would meet exactly", () => {
+    const bound = {
+      validTo: "2026-11-02",
+      boundaryKind: "END_OF_SEMESTER",
+    } as const;
+    expect(capToNextVersion(bound, "2026-11-02")).toStrictEqual(bound);
   });
 });
