@@ -127,32 +127,3 @@ export async function listEvents(userId: string): Promise<EventEditRow[]> {
     .where(eq(event.userId, userId))
     .orderBy(desc(event.dateFrom), asc(event.title));
 }
-
-/**
- * One event, for an action that has to know what it is changing — the
- * «виконано» toggle checks that the row is a `DEADLINE` before it writes, since
- * `event_done_ck` forbids `done` on an `INFO` event.
- */
-export async function getEvent(
-  userId: string,
-  eventId: string,
-): Promise<EventEditRow | null> {
-  const [row] = await getDb()
-    .select({
-      id: event.id,
-      kind: event.kind,
-      title: event.title,
-      note: event.note,
-      dateFrom: event.dateFrom,
-      dateTo: event.dateTo,
-      done: event.done,
-      recurrenceKind: event.recurrenceKind,
-      boundaryDate: event.boundaryDate,
-      boundaryKind: event.boundaryKind,
-    })
-    .from(event)
-    .where(and(eq(event.userId, userId), eq(event.id, eventId)))
-    .limit(1);
-
-  return row ?? null;
-}

@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeDb } from "@/lib/db/client";
 import { event, user } from "@/lib/db/schema";
 import { createTestDatabase } from "@/lib/db/testDatabase";
-import { getEvent, getEventsInRange, listEvents } from "./events";
+import { getEventsInRange, listEvents } from "./events";
 
 /**
  * `Event` for a range — schema §4.10, and the half of it the date index cannot
@@ -162,31 +162,6 @@ describe("listEvents()", () => {
 
     try {
       expect(await listEvents(otherId)).toStrictEqual([]);
-    } finally {
-      await db.delete(user).where(eq(user.id, otherId));
-    }
-  });
-});
-
-describe("getEvent()", () => {
-  it("returns the one row by id", async () => {
-    const [first] = await listEvents(userId);
-
-    expect((await getEvent(userId, first.id))?.title).toBe(first.title);
-  });
-
-  it("returns null for another teacher's event", async () => {
-    const [first] = await listEvents(userId);
-    const otherId = `test-${randomUUID()}`;
-    await db.insert(user).values({
-      id: otherId,
-      name: "Another teacher",
-      email: `${otherId}@example.test`,
-      emailVerified: false,
-    });
-
-    try {
-      expect(await getEvent(otherId, first.id)).toBeNull();
     } finally {
       await db.delete(user).where(eq(user.id, otherId));
     }

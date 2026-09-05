@@ -201,6 +201,7 @@ export function dayTooltip(day: CalendarDay): string {
  */
 export const EVENT_LABELS = {
   events: "подій",
+  /** The single home of the word — the year tooltip and the day list share it. */
   overdue: "прострочено",
   /** The heading over a day's events, where lessons come first. */
   title: "Події",

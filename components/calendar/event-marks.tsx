@@ -1,7 +1,8 @@
 import type { EventMark } from "@/lib/domain/events/marks";
 import { cn } from "@/lib/utils";
-import { DONE_LABELS, EVENT_KIND_LABELS } from "@/components/events/labels";
+import { EVENT_KIND_LABELS } from "@/components/events/labels";
 import { EventDoneToggle } from "./event-done-toggle";
+import { EVENT_LABELS } from "./labels";
 
 /**
  * The events of one day — specification §6.3, «події… позначкою на даті (і
@@ -40,7 +41,7 @@ export function EventMarks({
             <span className="sr-only">{EVENT_KIND_LABELS[event.kind]}</span>
             <span>{event.title}</span>
             {event.isOverdue && (
-              <span className="text-xs">{DONE_LABELS.overdue}</span>
+              <span className="text-xs">{EVENT_LABELS.overdue}</span>
             )}
           </span>
           {event.note !== null && (

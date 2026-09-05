@@ -18,7 +18,7 @@ worked cases the tests are checked against.
 | `lib/domain/events/recurrence.ts` | `RecurrenceInput`, `occurrencesInRange()` |
 | `lib/domain/events/marks.ts` | `EventInput`, `EventMark`, `eventMarksByDate()` |
 | `lib/domain/calendar/days.ts` | `CalendarDay` gains `events`; `buildCalendarDays()` gains a fourth argument |
-| `lib/db/queries/events.ts` | gains `EventEditRow`, `listEvents()`, `getEvent()` |
+| `lib/db/queries/events.ts` | gains `EventEditRow`, `listEvents()` |
 | `lib/validation/event.ts` | `deadlineInput`, `infoEventInput`, `EVENT_FIELD`, `readDeadline()`, `readInfoEvent()` |
 | `lib/actions/events.ts` | `createDeadlineAction()`, `updateDeadlineAction()`, `createInfoEventAction()`, `updateInfoEventAction()`, `setEventDoneAction()`, `deleteEventAction()` |
 | `lib/actions/eventsShared.ts` | the paths and messages the actions share; constants only, no `"use server"` |
@@ -45,8 +45,11 @@ YEARLY   → the same month and day, each year
 A repeating event occurs while `date < boundaryDate` — the exclusive form every
 boundary in the schema has (overview §8.1) — so the last day it can fall on is
 `boundaryDate - 1 day`. A `MONTHLY` or `YEARLY` candidate that is not a real
-date produces nothing (ADR-009); candidates are built as strings and checked
-with `isIsoDate()`, never stepped with `addIsoMonths()`, which clamps.
+date produces nothing (ADR-009): a candidate is built as a string and accepted
+only if `isIsoDate()` accepts it, and it is never obtained by stepping the
+previous occurrence with `addIsoMonths()` / `addIsoYears()`, which clamp. The
+monthly loop does step a cursor with `addIsoMonths()`, and may: the cursor is
+the first of a month, a day every month has, so no candidate can be clamped.
 
 A recurring row with no `boundaryDate` — a shape `event_recurrence_ck` forbids —
 expands to nothing rather than to an unbounded series.

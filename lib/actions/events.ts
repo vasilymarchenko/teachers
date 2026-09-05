@@ -114,7 +114,10 @@ export async function updateDeadlineAction(
   try {
     const updated = await getDb()
       .update(event)
-      .set({ title, note, dateFrom, updatedAt: new Date() })
+      // `note: note ?? null` and not `note`: Drizzle drops an `undefined` from
+      // the SET clause, so a teacher who cleared the description would be told
+      // the save succeeded and find the old text still there.
+      .set({ title, note: note ?? null, dateFrom, updatedAt: new Date() })
       // `kind` is part of the filter, not of the update: a deadline stays a
       // deadline, and an id that names an INFO event matches nothing rather
       // than turning one kind into the other.
@@ -189,10 +192,12 @@ export async function updateInfoEventAction(
       .update(event)
       .set({
         title,
-        note,
-        // Every column of the shape is written, `null` included: an event that
-        // stops repeating has to lose its boundary, or `event_recurrence_ck`
-        // refuses the row it left half-changed.
+        // Every column is written, `null` included — Drizzle drops an
+        // `undefined` from the SET clause, so a cleared description or a
+        // dropped end date would silently keep its old value. The boundary has
+        // to go the same way: an event that stops repeating must lose it, or
+        // `event_recurrence_ck` refuses the half-changed row.
+        note: note ?? null,
         dateFrom,
         dateTo: dateTo ?? null,
         recurrenceKind,

@@ -87,8 +87,8 @@ marks that second edge, which the tree has no room to draw.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency they
-carried is satisfied. T-011, which hangs off T-007 alone, is done too; T-013,
-the last UI ticket off T-007, is next.
+carried is satisfied. T-011, which hangs off T-007 alone, is done too; T-013 and
+T-021, the two open tickets off T-007, are what remain of the calendar work.
 
 ## Coverage
 

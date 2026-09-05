@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { BoundaryKind } from "@/lib/db/schema/enums";
 import { BOUNDARY_KIND_VALUES, RECURRENCE_KIND_VALUES } from "./enums";
 import {
   DATE_RANGE_RULE,
@@ -103,7 +102,14 @@ export const infoEventInput = z
 
 export type InfoEventFormInput = z.infer<typeof infoEventInput>;
 
-/** The `name=` of every input of both forms, as the components spell them. */
+/**
+ * The `name=` of every input of both forms, as the components spell them.
+ *
+ * `satisfies Record<keyof InfoEventFormInput, string>` is what earns it
+ * (overview §8.2): the information event has every field either form has, so
+ * binding the map to that schema means a key renamed there stops compiling here
+ * instead of silently posting under a name the schema no longer reads.
+ */
 export const EVENT_FIELD = {
   title: "title",
   note: "note",
@@ -112,10 +118,7 @@ export const EVENT_FIELD = {
   recurrenceKind: "recurrenceKind",
   boundaryKind: "boundaryKind",
   lastDay: "lastDay",
-} as const;
-
-/** A `BoundaryKind` the action can resolve, once the schema has accepted it. */
-export type EventBoundaryKind = BoundaryKind;
+} as const satisfies Record<keyof InfoEventFormInput, string>;
 
 /** The deadline form as plain strings — every field, as always. */
 export function readDeadline(formData: FormData): Record<string, string> {

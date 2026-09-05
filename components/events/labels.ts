@@ -113,7 +113,6 @@ export const DONE_LABELS = {
   markDone: "Позначити виконаним",
   markNotDone: "Зняти позначку",
   marking: "Зберігаємо…",
-  overdue: "прострочено",
 };
 
 /**
