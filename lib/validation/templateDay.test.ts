@@ -126,22 +126,49 @@ describe("the CLASS day", () => {
     ).toEqual({ [templateSlotField(2, "teacherName")]: "Вкажіть ПІБ учителя" });
   });
 
-  it("refuses a Zoom link that is not a link", () => {
+  it("refuses a Zoom link that is not an http(s) link", () => {
+    // The rule and its message live in `slotFields.ts`, shared with the day
+    // override form (T-011, `design/T-011-day-overrides.md` §5): `z.url()`
+    // alone accepts schemes an `href` must never carry, so the check this
+    // screen applies is pinned here as well as there.
+    for (const zoomLink of [
+      "zoom.us/j/123",
+      "mailto:teacher@example.com",
+      "javascript:alert(1)",
+      "data:text/html,<p>",
+      "ftp://files.example.com/room",
+    ]) {
+      const parsed = schema.safeParse({
+        entries: [
+          row(2, {
+            subject: "Хімія",
+            teacherName: "Іваненко І. І.",
+            zoomLink,
+          }),
+        ],
+      });
+
+      expect(parsed.success, zoomLink).toBe(false);
+      expect(
+        !parsed.success &&
+          Object.keys(templateDayFieldErrors(parsed.error, [2])),
+        zoomLink,
+      ).toEqual([templateSlotField(2, "zoomLink")]);
+    }
+  });
+
+  it("accepts an http(s) Zoom link whatever its case", () => {
     const parsed = schema.safeParse({
       entries: [
         row(2, {
           subject: "Хімія",
           teacherName: "Іваненко І. І.",
-          zoomLink: "zoom.us/j/123",
+          zoomLink: "HTTPS://zoom.us/j/123",
         }),
       ],
     });
 
-    expect(parsed.success).toBe(false);
-    expect(
-      !parsed.success &&
-        Object.keys(templateDayFieldErrors(parsed.error, [2])),
-    ).toEqual([templateSlotField(2, "zoomLink")]);
+    expect(parsed.success).toBe(true);
   });
 
   it("does not ask for a teacher on a row that is entirely empty", () => {

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarNav } from "@/components/calendar/calendar-nav";
-import { periodTitle, YEAR_NOT_SET_UP } from "@/components/calendar/labels";
+import {
+  EDIT_LABELS,
+  periodTitle,
+  YEAR_NOT_SET_UP,
+} from "@/components/calendar/labels";
 import {
   scheduleViewOf,
   type SearchParamValue,
@@ -84,6 +88,11 @@ export default async function Page({
 
   const days = buildCalendarDays(input, { ...range, view: schedule }, periods);
   const viewProps = { days, schedule, today: today() };
+  // Editing starts from the day and the week, the two views a lesson is
+  // legible in (specification §5.3, ADR-008); the month and year cells open
+  // the day instead. `bells` is where «додати урок» takes its lesson numbers
+  // from, and it is already in the input `expand()` was given.
+  const editing = { view, schedule, bells: input.bells };
 
   return (
     <div className="space-y-4">
@@ -109,8 +118,22 @@ export default async function Page({
         </p>
       )}
 
-      {view === "day" && <DayView {...viewProps} />}
-      {view === "week" && <WeekView {...viewProps} />}
+      {/* The dead end «Додати урок» has without a `BellSchedule`, said once
+          for the screen rather than once per day: the week view renders seven
+          days, and seven copies of one notice with seven links to `/year` is
+          what a freshly set-up account would meet. Only the two editable views
+          can hit it — the month and year cells offer no «додати урок». */}
+      {editing.bells.length === 0 && (view === "day" || view === "week") && (
+        <p className="text-muted-foreground text-sm">
+          {EDIT_LABELS.noBells} —{" "}
+          <Link className="underline underline-offset-2" href="/year">
+            {EDIT_LABELS.toBells}
+          </Link>
+        </p>
+      )}
+
+      {view === "day" && <DayView {...viewProps} editing={editing} />}
+      {view === "week" && <WeekView {...viewProps} editing={editing} />}
       {view === "month" && <MonthView {...viewProps} anchor={date} />}
       {view === "year" && <YearView {...viewProps} />}
     </div>

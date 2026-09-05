@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parityEnum, weekdayEnum } from "@/lib/db/schema/enums";
-import { TEMPLATE_SLOT_FIELDS } from "@/lib/validation/templateDay";
 import {
   COPY_LABELS,
   DAY_LABELS,
-  FIELD_LABELS,
   lessonRowLabel,
   SHORT_WEEKDAY_LABELS,
   WEEKDAY_LABELS,
@@ -20,14 +18,6 @@ import {
  */
 
 describe("the template editor's labels", () => {
-  it("names every field of both views", () => {
-    for (const view of ["OWN", "CLASS"] as const) {
-      for (const field of TEMPLATE_SLOT_FIELDS[view]) {
-        expect(FIELD_LABELS[field], `${view}.${field}`).toBeTruthy();
-      }
-    }
-  });
-
   it("names every weekday, long and short", () => {
     for (const weekday of weekdayEnum.enumValues) {
       expect(WEEKDAY_LABELS[weekday], weekday).toBeTruthy();

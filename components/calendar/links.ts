@@ -37,3 +37,22 @@ export function calendarHref(
   const suffix = schedule === "CLASS" ? `?schedule=${CLASS_SEARCH_VALUE}` : "";
   return `/calendar/${view}/${date}${suffix}`;
 }
+
+/**
+ * The override editor of one lesson — `/calendar/<view>/<date>/lesson/<n>`.
+ *
+ * It sits **under** the calendar view the teacher came from, so «Повернутися»
+ * lands back on the day, week, month or year she was looking at, and the URL is
+ * still the whole state of the screen. The `?schedule=class` of §6.2 rides
+ * along exactly as it does on the views themselves — an override belongs to one
+ * `view`, and losing that segment of the address would edit the other one.
+ */
+export function lessonHref(
+  view: CalendarViewName,
+  date: IsoDate,
+  lessonNumber: number,
+  schedule: ScheduleView,
+): string {
+  const suffix = schedule === "CLASS" ? `?schedule=${CLASS_SEARCH_VALUE}` : "";
+  return `/calendar/${view}/${date}/lesson/${lessonNumber}${suffix}`;
+}

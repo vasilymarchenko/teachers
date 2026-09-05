@@ -68,17 +68,14 @@ export function buildCalendarDays(
 ): CalendarDay[] {
   const days = expand(input, request);
   const planned = new Map(
-    expand({ ...input, overrides: [] }, request).map((day) => [
-      day.date,
-      day.lessons,
-    ]),
+    buildPlannedDays(input, request).map((day) => [day.date, day.lessons]),
   );
 
   return days.map((day) => {
     const kept = new Set(day.lessons.map((lesson) => lesson.lessonNumber));
-    const cancelled = (planned.get(day.date) ?? [])
-      .filter((lesson) => !kept.has(lesson.lessonNumber))
-      .map(withoutIsTaughtByMe);
+    const cancelled = (planned.get(day.date) ?? []).filter(
+      (lesson) => !kept.has(lesson.lessonNumber),
+    );
     const name = day.isNonTeaching
       ? nameOfPeriodOn(day.date, periods)
       : undefined;
@@ -92,12 +89,46 @@ export function buildCalendarDays(
 }
 
 /**
- * A cancelled lesson arrives from the override-free expansion, and in `CLASS`
- * view that expansion resolved `isTaughtByMe` against the **planned** `OWN` day
- * — not the resolved one the rule requires (`expand.ts`, fixtures §8.6). An
- * override on the teacher's own day is exactly where the two answers diverge,
- * so the flag would be wrong precisely in the case it exists for. It is dropped:
- * «веду я» on a lesson that does not happen answers a question nobody asked.
+ * The window as the weekly template alone gives it — every `DayOverride`
+ * ignored.
+ *
+ * Two screens need it and both need the *same* one. `buildCalendarDays()` takes
+ * the difference against it to recover the lessons a `CLEARED` override removed
+ * (§4.1 above); the override editor of T-011 shows the teacher the planned
+ * lesson she is about to edit, replace or cancel, and what «Прибрати правку»
+ * would restore. Neither may answer «який слот діяв на цю дату» itself — that
+ * rule belongs to `expand()`, which is why this is one line and is exported
+ * rather than repeated.
+ *
+ * The result is a `ResolvedDay[]` and not a `CalendarDay[]`: with no overrides
+ * applied nothing can be cancelled, so there would be nothing to put in the
+ * extra field.
+ */
+export function buildPlannedDays(
+  input: ScheduleInput,
+  request: ExpandRequest,
+): ResolvedDay[] {
+  return expand({ ...input, overrides: [] }, request).map((day) => ({
+    ...day,
+    lessons: day.lessons.map(withoutIsTaughtByMe),
+  }));
+}
+
+/**
+ * **No planned lesson carries `isTaughtByMe`.**
+ *
+ * In `CLASS` view the override-free expansion resolves that flag against the
+ * **planned** `OWN` day — not the resolved one the rule requires (`expand.ts`,
+ * fixtures §8.6). An override on the teacher's own day is exactly where the two
+ * answers diverge, so the flag would be wrong precisely in the case it exists
+ * for: on 2026-10-19 the planned `CLASS` lesson 1 says «веду я» while the
+ * resolved day says the teacher's own lesson that hour was cancelled.
+ *
+ * Both consumers of the planned expansion would show it: the cancelled lessons
+ * of `buildCalendarDays()` («веду я» on a lesson that does not happen answers a
+ * question nobody asked) and the override editor's «за тижневим розкладом»
+ * block (T-011), which would then contradict the row above it. So it is dropped
+ * once, here, rather than by each caller.
  */
 function withoutIsTaughtByMe(lesson: ResolvedLesson): ResolvedLesson {
   if (lesson.isTaughtByMe === undefined) return lesson;

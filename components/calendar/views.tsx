@@ -6,7 +6,7 @@ import { isoDayNumber } from "@/lib/domain/schedule/dates";
 import type { IsoDate } from "@/lib/time/today";
 import { cn } from "@/lib/utils";
 import { DayCard } from "./day-card";
-import { DayLessons } from "./day-lessons";
+import { DayLessons, type DayEditing } from "./day-lessons";
 import {
   capitalise,
   dayAndMonth,
@@ -37,25 +37,33 @@ type ViewProps = {
   today: IsoDate;
 };
 
-export function DayView({ days, today }: ViewProps) {
+/**
+ * The day and the week are the two views specification §5.3 edits from, so they
+ * are the two that take `editing`; the month and the year pass it nowhere.
+ */
+type EditableViewProps = ViewProps & { editing: DayEditing };
+
+export function DayView({ days, today, editing }: EditableViewProps) {
   const [day] = days;
   if (day === undefined) return null;
 
   return (
     <DayCard
       day={day}
+      editing={editing}
       isToday={day.date === today}
       title={capitalise(weekdayName(day.date))}
     />
   );
 }
 
-export function WeekView({ days, today }: ViewProps) {
+export function WeekView({ days, today, editing }: EditableViewProps) {
   return (
     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
       {days.map((day) => (
         <DayCard
           day={day}
+          editing={editing}
           headingLevel="h3"
           isToday={day.date === today}
           key={day.date}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURE, WINDOW } from "@/lib/domain/schedule/fixtures/scenario";
-import { buildCalendarDays, type CalendarDay } from "./days";
+import { buildCalendarDays, buildPlannedDays, type CalendarDay } from "./days";
 import type { NamedNonTeachingPeriod } from "./days";
 import type { ScheduleView } from "@/lib/db/schema/enums";
 import type { IsoDate } from "@/lib/time/today";
@@ -178,5 +178,107 @@ describe("the window itself", () => {
 
     expect(day?.cancelled.map((lesson) => lesson.lessonNumber)).toEqual([1]);
     expect(day?.cancelled[0]).not.toHaveProperty("isTaughtByMe");
+  });
+});
+
+/**
+ * The override-free expansion the override editor of T-011 shows the teacher —
+ * «за тижневим розкладом». Every expectation is read off
+ * `docs/architecture/design/expand-fixtures.md` §3.6 (the slot tables) and §5
+ * (the pinned `OWN` days).
+ */
+describe("the planned day", () => {
+  function plannedOn(date: IsoDate, view: ScheduleView) {
+    const days = buildPlannedDays(FIXTURE, { ...WINDOW, view });
+    const day = days.find((candidate) => candidate.date === date);
+    if (day === undefined) throw new Error(`${date} is outside the window`);
+    return day;
+  }
+
+  it("shows the slot an EDIT replaced (§3.6 OWN-V1 TUE/2, 10-13)", () => {
+    // The calendar shows O1's «Алгебра (контрольна)» on this slot; what the
+    // teacher is replacing — and what «Прибрати правку» would restore — is
+    // OWN-V1's TUE lesson 2.
+    expect(plannedOn("2026-10-13", "OWN").lessons).toEqual([
+      {
+        lessonNumber: 2,
+        timeFrom: "09:25",
+        timeTo: "10:10",
+        payload: { subject: "Геометрія", className: "9-А" },
+        origin: "TEMPLATE",
+      },
+    ]);
+  });
+
+  it("agrees with the `replacedOriginal` of a SUBSTITUTION (§8.4, 11-05)", () => {
+    // The fixture pins `replacedOriginal = Математика · 5-В` on this date —
+    // recomputed from OWN-V2 and the parity A2 gives, not frozen at write
+    // time. The editor must show the teacher the same lesson the calendar
+    // draws under the substitution, or the screen would promise something the
+    // model does not do (overview §3.4).
+    const planned = plannedOn("2026-11-05", "OWN").lessons;
+
+    expect(planned).toHaveLength(1);
+    expect(planned[0].payload).toEqual({
+      subject: "Математика",
+      className: "5-В",
+    });
+  });
+
+  it("holds the lesson a CLEARED override took off (§5, 10-19)", () => {
+    // The same lesson `buildCalendarDays()` reports as cancelled: deleting O2
+    // brings it back, which is what the editor's «Повернути урок» says.
+    expect(plannedOn("2026-10-19", "OWN").lessons).toEqual(
+      dayOn("2026-10-19", "OWN").cancelled,
+    );
+  });
+
+  it("gives nothing on a non-teaching date (§8.7, 10-17)", () => {
+    // O6's make-up lesson sits on a Saturday R2 makes non-teaching. The
+    // template contributes nothing there — `isNonTeaching` suppresses
+    // `origin = TEMPLATE` — so the editor says the weekly schedule gives
+    // nothing, while the override itself is untouched.
+    const day = plannedOn("2026-10-17", "OWN");
+
+    expect(day.isNonTeaching).toBe(true);
+    expect(day.lessons).toEqual([]);
+    expect(dayOn("2026-10-17", "OWN").lessons).toHaveLength(1);
+  });
+
+  it("never carries `isTaughtByMe`, in either view (§8.6)", () => {
+    // The flag would be resolved against the **planned** `OWN` day, and an
+    // override on the teacher's own day is exactly where that differs from the
+    // resolved one the rule requires: on 10-19 the planned `CLASS` lesson 1
+    // would say «веду я», while O2 cancelled the teacher's own lesson that
+    // hour. Both consumers — the cancelled lessons of `buildCalendarDays()`
+    // and the override editor's «за тижневим розкладом» — would show it.
+    const planned = plannedOn("2026-10-19", "CLASS").lessons;
+
+    expect(planned.length).toBeGreaterThan(0);
+    for (const lesson of planned) {
+      expect(lesson.isTaughtByMe, `#${lesson.lessonNumber}`).toBeUndefined();
+      expect("isTaughtByMe" in lesson).toBe(false);
+    }
+
+    // …and the resolved day still answers the question, so nothing was lost.
+    expect(
+      dayOn("2026-10-19", "CLASS").lessons.every(
+        (lesson) => lesson.isTaughtByMe !== undefined,
+      ),
+    ).toBe(true);
+  });
+
+  it("ignores every override, in both views", () => {
+    for (const view of ["OWN", "CLASS"] as const) {
+      const days = buildPlannedDays(FIXTURE, { ...WINDOW, view });
+      for (const day of days) {
+        for (const lesson of day.lessons) {
+          expect(lesson.origin, `${day.date} #${lesson.lessonNumber}`).toBe(
+            "TEMPLATE",
+          );
+          expect(lesson.replacedOriginal).toBeUndefined();
+        }
+      }
+    }
   });
 });

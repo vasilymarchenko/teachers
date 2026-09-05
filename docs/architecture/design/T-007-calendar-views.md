@@ -53,7 +53,7 @@ rather than before them.
 
 `zoomLink` renders as an `<a href>` only when it starts with `http://` or
 `https://`; anything else is shown as text. `z.url()` accepts schemes an `href`
-must not carry, and the write path (T-010, T-011) does not exist yet.
+must not carry, so what the write path stores is not enough on its own.
 
 ## 3. Ranges — `rangeFor(view, date, yearRange?)`
 
@@ -167,8 +167,8 @@ RSC payload. If the trigger is ever reached, the recorded reaction is to cache
   dropping repeating ones would mislead. T-012 adds the markers; the day
   components take a `CalendarDay`, so events arrive as one more field on it.
 - **Editing.** Read-only by design: templates are T-010, day overrides T-011.
-  The `origin` badges and the struck-through cancelled rows are what T-011 will
-  attach its actions to.
+  The `origin` badges and the struck-through cancelled rows are what T-011
+  attached its «Змінити» links to (`design/T-011-day-overrides.md`).
 - **Birthdays**, second phase (specification §9).
 
 The year view's title says «Навчальний рік» only when an `AcademicYear` covers
