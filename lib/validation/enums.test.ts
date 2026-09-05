@@ -1,16 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   boundaryKindEnum,
+  eventKindEnum,
   nonTeachingKindEnum,
   parityEnum,
+  recurrenceKindEnum,
   scheduleViewEnum,
   weekdayEnum,
 } from "@/lib/db/schema/enums";
 import {
   BOUNDARY_KIND_VALUES,
+  EVENT_KIND_VALUES,
   LESSON_NUMBERS,
   NON_TEACHING_KIND_VALUES,
   PARITY_VALUES,
+  RECURRENCE_KIND_VALUES,
   SCHEDULE_VIEW_VALUES,
   SEMESTER_INDEXES,
   WEEKDAY_VALUES,
@@ -32,6 +36,8 @@ describe("the form enum tuples", () => {
     ["non_teaching_kind", NON_TEACHING_KIND_VALUES, nonTeachingKindEnum],
     ["boundary_kind", BOUNDARY_KIND_VALUES, boundaryKindEnum],
     ["schedule_view", SCHEDULE_VIEW_VALUES, scheduleViewEnum],
+    ["event_kind", EVENT_KIND_VALUES, eventKindEnum],
+    ["recurrence_kind", RECURRENCE_KIND_VALUES, recurrenceKindEnum],
   ] as const;
 
   for (const [name, values, pgEnum] of cases) {

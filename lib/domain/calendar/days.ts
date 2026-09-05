@@ -1,3 +1,4 @@
+import type { EventMark } from "@/lib/domain/events/marks";
 import { isoDaysBetween } from "@/lib/domain/schedule/dates";
 import { expand, type ExpandRequest } from "@/lib/domain/schedule/expand";
 import type {
@@ -24,6 +25,11 @@ import type { IsoDate } from "@/lib/time/today";
  * when the day is non-teaching because of a `NonTeachingWeekdayRule`: a rule is
  * a weekday, it has no name to give (schema §4.4).
  *
+ * `events` — the deadlines and information events of specification §6.3 that
+ * fall on this date, expanded by `lib/domain/events` (T-012). A repeating event
+ * is the same row on each of its dates, so the calendar never asks what an
+ * occurrence is: it asks the day.
+ *
  * This merge is made once, here, for the same reason `ResolvedLesson` is
  * (overview §5): the day view, the week grid, the month grid, the year grid and
  * the printed page all need it, and four components computing it four ways is
@@ -33,6 +39,8 @@ export type CalendarDay = ResolvedDay & {
   cancelled: ResolvedLesson[];
   /** Ukrainian — the teacher reads it. */
   nonTeachingName?: string;
+  /** Empty on a date nothing falls on — never absent, so no view has to test. */
+  events: EventMark[];
 };
 
 /** A `NonTeachingPeriod` as the calendar names it — `getNonTeachingPeriods()`. */
@@ -60,11 +68,17 @@ export type NamedNonTeachingPeriod = NonTeachingPeriodInput & {
  *
  * The cost is a second expansion of the window — measured for the year view
  * against the ~300 ms trigger of overview §9, and recorded in T-007.
+ *
+ * The events arrive already expanded and already grouped
+ * (`eventMarksByDate()`), because their expansion needs `today()` and the
+ * domain has no clock: the screen reads it once and hands it in, the same way
+ * it hands in the rows.
  */
 export function buildCalendarDays(
   input: ScheduleInput,
   request: ExpandRequest,
   periods: readonly NamedNonTeachingPeriod[] = [],
+  events: ReadonlyMap<IsoDate, EventMark[]> = new Map(),
 ): CalendarDay[] {
   const days = expand(input, request);
   const planned = new Map(
@@ -84,6 +98,7 @@ export function buildCalendarDays(
       ...day,
       cancelled,
       ...(name === undefined ? {} : { nonTeachingName: name }),
+      events: events.get(day.date) ?? [],
     };
   });
 }

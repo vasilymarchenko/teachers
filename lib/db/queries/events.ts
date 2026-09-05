@@ -1,7 +1,11 @@
-import { and, asc, eq, gt, gte, lte, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, lte, ne, or, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { event } from "@/lib/db/schema";
-import type { EventKind, RecurrenceKind } from "@/lib/db/schema/enums";
+import type {
+  BoundaryKind,
+  EventKind,
+  RecurrenceKind,
+} from "@/lib/db/schema/enums";
 import type { DateRange } from "@/lib/domain/schedule/types";
 import type { IsoDate } from "@/lib/time/today";
 
@@ -80,4 +84,75 @@ export async function getEventsInRange(
       ),
     )
     .orderBy(asc(event.dateFrom), asc(event.title));
+}
+
+/**
+ * An `Event` as the `/events` screen edits it — every column a form writes.
+ *
+ * It is `EventRow` plus `boundaryKind`, which the calendar has no use for and
+ * the editor cannot do without: the symbol is what the teacher chose («до
+ * найближчих канікул»), and the resolved date alone could not put the form back
+ * the way she left it (overview §8.1).
+ */
+export type EventEditRow = EventRow & {
+  /** Display only; present exactly when the event recurs. */
+  boundaryKind: BoundaryKind | null;
+};
+
+/**
+ * Every event of the teacher, newest date first — the `/events` screen
+ * (specification §6.3).
+ *
+ * Not scoped to a range or to an `AcademicYear`: an event belongs to no year
+ * (schema §4.10 has no `academic_year_id`), and the screen is the one place
+ * where an event dated outside the year in view must still be findable. The
+ * order puts what is coming up and what has just passed at the top, which is
+ * where a teacher looks first; `title` breaks the tie so the list is stable.
+ */
+export async function listEvents(userId: string): Promise<EventEditRow[]> {
+  return getDb()
+    .select({
+      id: event.id,
+      kind: event.kind,
+      title: event.title,
+      note: event.note,
+      dateFrom: event.dateFrom,
+      dateTo: event.dateTo,
+      done: event.done,
+      recurrenceKind: event.recurrenceKind,
+      boundaryDate: event.boundaryDate,
+      boundaryKind: event.boundaryKind,
+    })
+    .from(event)
+    .where(eq(event.userId, userId))
+    .orderBy(desc(event.dateFrom), asc(event.title));
+}
+
+/**
+ * One event, for an action that has to know what it is changing — the
+ * «виконано» toggle checks that the row is a `DEADLINE` before it writes, since
+ * `event_done_ck` forbids `done` on an `INFO` event.
+ */
+export async function getEvent(
+  userId: string,
+  eventId: string,
+): Promise<EventEditRow | null> {
+  const [row] = await getDb()
+    .select({
+      id: event.id,
+      kind: event.kind,
+      title: event.title,
+      note: event.note,
+      dateFrom: event.dateFrom,
+      dateTo: event.dateTo,
+      done: event.done,
+      recurrenceKind: event.recurrenceKind,
+      boundaryDate: event.boundaryDate,
+      boundaryKind: event.boundaryKind,
+    })
+    .from(event)
+    .where(and(eq(event.userId, userId), eq(event.id, eventId)))
+    .limit(1);
+
+  return row ?? null;
 }

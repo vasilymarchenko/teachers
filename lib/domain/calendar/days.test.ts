@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { eventMarksByDate, type EventInput } from "@/lib/domain/events/marks";
 import { FIXTURE, WINDOW } from "@/lib/domain/schedule/fixtures/scenario";
 import { buildCalendarDays, buildPlannedDays, type CalendarDay } from "./days";
 import type { NamedNonTeachingPeriod } from "./days";
@@ -280,5 +281,78 @@ describe("the planned day", () => {
         }
       }
     }
+  });
+});
+
+describe("events on a day (specification §6.3)", () => {
+  /** One deadline on 2026-10-15 and one repeating INFO event on Fridays. */
+  const EVENTS: EventInput[] = [
+    {
+      id: "d1",
+      kind: "DEADLINE",
+      title: "Здати звіт",
+      note: null,
+      done: false,
+      dateFrom: "2026-10-15",
+      dateTo: null,
+      recurrenceKind: "NONE",
+      boundaryDate: null,
+    },
+    {
+      id: "e1",
+      kind: "INFO",
+      title: "День золотої рибки",
+      note: null,
+      done: null,
+      dateFrom: "2026-09-04",
+      dateTo: null,
+      recurrenceKind: "WEEKLY",
+      boundaryDate: "2026-10-26",
+    },
+  ];
+
+  function daysWithEvents(): CalendarDay[] {
+    return buildCalendarDays(
+      FIXTURE,
+      { ...WINDOW, view: "OWN" },
+      PERIODS,
+      eventMarksByDate(EVENTS, WINDOW, "2026-10-19"),
+    );
+  }
+
+  it("hangs an event on the date it falls on", () => {
+    const day = daysWithEvents().find((d) => d.date === "2026-10-15");
+
+    expect(day?.events).toEqual([
+      {
+        id: "d1",
+        kind: "DEADLINE",
+        title: "Здати звіт",
+        note: null,
+        done: false,
+        isOverdue: true,
+      },
+    ]);
+  });
+
+  it("hangs a repeating event on each of its occurrences (10-16, 10-23)", () => {
+    const days = daysWithEvents();
+    const dates = days
+      .filter((day) => day.events.some((event) => event.id === "e1"))
+      .map((day) => day.date);
+
+    expect(dates).toEqual(["2026-10-16", "2026-10-23"]);
+  });
+
+  it("gives a date with no event an empty list, never an absent field", () => {
+    const day = daysWithEvents().find((d) => d.date === "2026-10-19");
+
+    expect(day?.events).toEqual([]);
+  });
+
+  it("leaves every day without events when none are passed", () => {
+    const days = buildCalendarDays(FIXTURE, { ...WINDOW, view: "OWN" }, PERIODS);
+
+    expect(days.every((day) => day.events.length === 0)).toBe(true);
   });
 });

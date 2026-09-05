@@ -14,8 +14,10 @@
  */
 import type {
   BoundaryKind,
+  EventKind,
   NonTeachingKind,
   Parity,
+  RecurrenceKind,
   ScheduleView,
   Weekday,
 } from "@/lib/db/schema/enums";
@@ -47,6 +49,20 @@ export const BOUNDARY_KIND_VALUES = [
   "NEXT_BREAK",
   "END_OF_SEMESTER",
 ] as const satisfies readonly BoundaryKind[];
+
+export const EVENT_KIND_VALUES = ["DEADLINE", "INFO"] as const satisfies
+  readonly EventKind[];
+
+/**
+ * `NONE` first, because it is the shape a new event has until the teacher asks
+ * for a repetition — and the only shape a `DEADLINE` can have (overview §4).
+ */
+export const RECURRENCE_KIND_VALUES = [
+  "NONE",
+  "WEEKLY",
+  "MONTHLY",
+  "YEARLY",
+] as const satisfies readonly RecurrenceKind[];
 
 /** The lesson numbers a `BellSchedule` may cover — specification §3.3. */
 export const LESSON_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;

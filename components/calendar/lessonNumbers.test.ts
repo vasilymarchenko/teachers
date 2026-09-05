@@ -31,6 +31,7 @@ function day(lessons: number[], cancelled: number[] = []): CalendarDay {
     isNonTeaching: false,
     lessons: lessons.map(lesson),
     cancelled: cancelled.map(lesson),
+    events: [],
   };
 }
 

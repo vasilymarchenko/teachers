@@ -23,6 +23,7 @@ function day(fields: Partial<CalendarDay>): CalendarDay {
     isNonTeaching: false,
     lessons: [],
     cancelled: [],
+    events: [],
     ...fields,
   };
 }

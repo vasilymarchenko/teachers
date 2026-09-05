@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeDb } from "@/lib/db/client";
 import { event, user } from "@/lib/db/schema";
 import { createTestDatabase } from "@/lib/db/testDatabase";
-import { getEventsInRange } from "./events";
+import { getEvent, getEventsInRange, listEvents } from "./events";
 
 /**
  * `Event` for a range — schema §4.10, and the half of it the date index cannot
@@ -120,6 +120,73 @@ describe("getEventsInRange()", () => {
 
     try {
       expect(await getEventsInRange(otherId, WINDOW)).toStrictEqual([]);
+    } finally {
+      await db.delete(user).where(eq(user.id, otherId));
+    }
+  });
+});
+
+describe("listEvents()", () => {
+  it("returns every event of the teacher, newest date first", async () => {
+    const rows = await listEvents(userId);
+
+    expect(rows.map((row) => row.title)).toStrictEqual([
+      "Майбутній дедлайн",
+      "Здати звіт",
+      "Минулий дедлайн",
+      "Тиждень науки",
+      "Ярмарок",
+      "День золотої рибки",
+      "Осінній гурток",
+    ]);
+  });
+
+  it("carries the boundary the teacher chose, symbol and date", async () => {
+    const rows = await listEvents(userId);
+    const club = rows.find((row) => row.title === "Осінній гурток");
+
+    // Both halves: the form is put back with «до найближчих канікул» selected,
+    // and the expansion runs on the resolved date (overview §8.1).
+    expect(club?.boundaryKind).toBe("NEXT_BREAK");
+    expect(club?.boundaryDate).toBe("2026-11-09");
+  });
+
+  it("returns nothing for another teacher", async () => {
+    const otherId = `test-${randomUUID()}`;
+    await db.insert(user).values({
+      id: otherId,
+      name: "Another teacher",
+      email: `${otherId}@example.test`,
+      emailVerified: false,
+    });
+
+    try {
+      expect(await listEvents(otherId)).toStrictEqual([]);
+    } finally {
+      await db.delete(user).where(eq(user.id, otherId));
+    }
+  });
+});
+
+describe("getEvent()", () => {
+  it("returns the one row by id", async () => {
+    const [first] = await listEvents(userId);
+
+    expect((await getEvent(userId, first.id))?.title).toBe(first.title);
+  });
+
+  it("returns null for another teacher's event", async () => {
+    const [first] = await listEvents(userId);
+    const otherId = `test-${randomUUID()}`;
+    await db.insert(user).values({
+      id: otherId,
+      name: "Another teacher",
+      email: `${otherId}@example.test`,
+      emailVerified: false,
+    });
+
+    try {
+      expect(await getEvent(otherId, first.id)).toBeNull();
     } finally {
       await db.delete(user).where(eq(user.id, otherId));
     }
