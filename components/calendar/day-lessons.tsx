@@ -3,7 +3,8 @@ import type { ScheduleView } from "@/lib/db/schema/enums";
 import type { CalendarDay } from "@/lib/domain/calendar/days";
 import type { CalendarViewName } from "@/lib/domain/calendar/views";
 import type { BellInput } from "@/lib/domain/schedule/types";
-import { DAY_LABELS, EDIT_LABELS } from "./labels";
+import { EventMarks } from "./event-marks";
+import { DAY_LABELS, EDIT_LABELS, EVENT_LABELS } from "./labels";
 import { addableLessonNumbers } from "./lessonNumbers";
 import { LessonRow } from "./lesson-row";
 import { lessonHref } from "./links";
@@ -41,6 +42,11 @@ export type DayEditing = {
  * - a teaching day whose lessons were all cancelled — the cancelled lessons
  *   are shown struck through, not omitted;
  * - a teaching day with nothing planned — «Уроків немає».
+ *
+ * Events (specification §6.3) hang under the lessons rather than among them:
+ * a deadline is not an hour of the day, and the `editing` that decides whether
+ * a lesson can be changed here is also what decides whether a deadline can be
+ * ticked off (ADR-008 — the day and the week, not the grids).
  */
 export function DayLessons({
   day,
@@ -93,6 +99,15 @@ export function DayLessons({
       )}
 
       {editing !== undefined && <AddLesson day={day} editing={editing} />}
+
+      {day.events.length > 0 && (
+        <div className="border-border space-y-1 border-t pt-2">
+          <h4 className="text-muted-foreground text-xs font-semibold">
+            {EVENT_LABELS.title}
+          </h4>
+          <EventMarks editable={editing !== undefined} events={day.events} />
+        </div>
+      )}
     </div>
   );
 }

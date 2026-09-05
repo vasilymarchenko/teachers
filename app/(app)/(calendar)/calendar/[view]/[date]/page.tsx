@@ -18,9 +18,11 @@ import {
 } from "@/components/calendar/views";
 import { requireUser } from "@/lib/auth/session";
 import { getNonTeachingPeriods } from "@/lib/db/queries/calendarRules";
+import { getEventsInRange } from "@/lib/db/queries/events";
 import { getScheduleInput } from "@/lib/db/queries/scheduleInput";
 import { getYearFrame, type YearFrame } from "@/lib/db/queries/yearFrame";
 import { buildCalendarDays } from "@/lib/domain/calendar/days";
+import { eventMarksByDate } from "@/lib/domain/events/marks";
 import { isCalendarViewName, rangeFor } from "@/lib/domain/calendar/views";
 import { isIsoDate } from "@/lib/domain/schedule/dates";
 import type { DateRange } from "@/lib/domain/schedule/types";
@@ -38,16 +40,18 @@ export const dynamic = "force-dynamic";
  * `buildCalendarDays()` expands it. Day, week, month and year differ in the
  * range and in the component that arranges the result, in nothing else.
  *
- * Two reads, not one: `getScheduleInput()` is exactly what `expand()` takes,
- * and naming a shaded day needs the `NonTeachingPeriod` rows themselves
+ * Three reads, not one: `getScheduleInput()` is exactly what `expand()` takes,
+ * naming a shaded day needs the `NonTeachingPeriod` rows themselves
  * (`docs/architecture/design/T-008-calendar-read-queries.md` §1 left that call
- * to this screen). They run concurrently, so it is one round trip's worth of
- * latency, and `ScheduleInput` stays the domain's input rather than growing a
- * field for the sake of a heading.
+ * to this screen), and the events of §6.3 are a fourth source of their own.
+ * They run concurrently, so it is one round trip's worth of latency, and
+ * `ScheduleInput` stays the domain's input rather than growing a field for the
+ * sake of a heading or a deadline.
  *
- * Events (§6.3) are **not** here: expanding a recurrence is T-012, and a
- * calendar that showed one-off events but silently dropped repeating ones would
- * be worse than one that shows none yet.
+ * The events arrive as rows and are expanded here (`eventMarksByDate()`, T-012)
+ * because a repeating event has no row per occurrence — the same decision the
+ * schedule makes with `expand()`. `today()` is read once, on this side, and
+ * handed to the domain, which has no clock (overview §8.5).
  */
 export default async function Page({
   params,
@@ -79,15 +83,22 @@ export default async function Page({
       ? rangeFor(view, date, rangeOfFrame(await framePromise))
       : rangeFor(view, date);
 
-  const [frame, input, periods] = await Promise.all([
+  const [frame, input, periods, events] = await Promise.all([
     framePromise,
     getScheduleInput(userId, range),
     getNonTeachingPeriods(userId, range),
+    getEventsInRange(userId, range),
   ]);
   const yearRange = rangeOfFrame(frame);
 
-  const days = buildCalendarDays(input, { ...range, view: schedule }, periods);
-  const viewProps = { days, schedule, today: today() };
+  const now = today();
+  const days = buildCalendarDays(
+    input,
+    { ...range, view: schedule },
+    periods,
+    eventMarksByDate(events, range, now),
+  );
+  const viewProps = { days, schedule, today: now };
   // Editing starts from the day and the week, the two views a lesson is
   // legible in (specification §5.3, ADR-008); the month and year cells open
   // the day instead. `bells` is where «додати урок» takes its lesson numbers

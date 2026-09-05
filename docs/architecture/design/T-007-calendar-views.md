@@ -80,6 +80,7 @@ week, month (clamped: 31 March − 1 month = 28 February), calendar year.
 CalendarDay = ResolvedDay & {
   cancelled: ResolvedLesson[]     ← lessons a CLEARED override took off this date
   nonTeachingName?: string        ← the NonTeachingPeriod that shades the day
+  events: EventMark[]             ← the events of §6.3 that fall on this date (T-012)
 }
 ```
 
@@ -161,11 +162,13 @@ RSC payload. If the trigger is ever reached, the recorded reaction is to cache
 
 ## 6. What this ticket deliberately leaves out
 
-- **Events (§6.3).** `getEventsInRange()` exists (T-008) but nothing on this
-  screen calls it: placing a recurring event on its dates is T-012's
+- **Events (§6.3).** `getEventsInRange()` existed (T-008) and nothing on this
+  screen called it: placing a recurring event on its dates is T-012's
   `recurrence.ts`, and a calendar showing one-off events while silently
-  dropping repeating ones would mislead. T-012 adds the markers; the day
-  components take a `CalendarDay`, so events arrive as one more field on it.
+  dropping repeating ones would mislead. **T-012 has since added them**, as the
+  `events` field above and a fourth argument to `buildCalendarDays()` —
+  mechanics in `design/T-012-events.md`. The rest of this document describes
+  the screen as it still is.
 - **Editing.** Read-only by design: templates are T-010, day overrides T-011.
   The `origin` badges and the struck-through cancelled rows are what T-011
   attached its «Змінити» links to (`design/T-011-day-overrides.md`).

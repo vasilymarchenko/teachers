@@ -79,6 +79,8 @@
 | періодичність повторення | `recurrenceKind` | `NONE` \| `WEEKLY` \| `MONTHLY` \| `YEARLY` — лише в `INFO` | §6.3 |
 | без повторення | `NONE` | одноразова подія; єдине можливе значення для `DEADLINE` | §6.3 |
 | щотижня / щомісяця / щороку | `WEEKLY` \| `MONTHLY` \| `YEARLY` | значення `recurrenceKind` | §6.3 |
+| входження події | `EventMark` | подія на одній конкретній даті календаря; повторювана подія дає багато входжень і лишається одним рядком | §6.3 |
+| прострочено | `isOverdue` | `DEADLINE`, дата якого вже минула і який не позначено виконаним | §6.3 |
 
 ## 6. Друга черга (термінів у коді ще немає)
 
@@ -93,8 +95,8 @@
 ## 7. Терміни, що лишаються тільки в коді
 
 Не мають продуктового відповідника й **не повинні** з'являтися в українських продуктових текстах: `requireUser()`, `id`, `userId`, `createdAt`, `updatedAt`, `Server Action`, `Route Handler`, `payload`, `tombstone`, `copy-on-write`, `EXCLUDE USING gist`, `unstable_cache`, `ScheduleInput` (вхід `expand()`), `IsoDate`, `CalendarDay`
-(`ResolvedDay` плюс те, що потрібно екрану календаря: скасовані уроки й назва
-`NonTeachingPeriod` — `architect-overview.md` §5), `LessonRow` (рядок сітки
+(`ResolvedDay` плюс те, що потрібно екрану календаря: скасовані уроки, назва
+`NonTeachingPeriod` і події на цю дату — `architect-overview.md` §5), `LessonRow` (рядок сітки
 редактора шаблону: номер уроку плюс час із `BellSchedule`), `DayEditing`
 (те, що потрібно рядку календаря, щоб із нього можна було відкрити правку дня:
 вид календаря, вид розкладу й `BellSchedule` — `design/T-011-day-overrides.md`).

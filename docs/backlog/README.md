@@ -23,7 +23,7 @@ for reading. Order is priority; the ID number is not.
 | [T-019](T-019-findable-invariants.md) | Make the architecture's invariants findable in the document | todo | T-017 |
 | [T-020](T-020-skill-project-prefix.md) | Prefix project-specific skills and agents with teachers- | done | — |
 | [T-009](T-009-year-setup-screens.md) | Year setup — year, semesters, non-teaching periods, bells, parity | done | T-006, T-014 |
-| [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | todo | T-005, T-007, T-008, T-014 |
+| [T-012](T-012-events-and-recurrence.md) | Events — deadlines, info events and recurrence expansion | done | T-005, T-007, T-008, T-014 |
 | [T-007](T-007-calendar-read-views.md) | Calendar read views — day, week, month, year | done | T-005, T-008, T-014 |
 | [T-010](T-010-weekly-template-editor.md) | Weekly template editor with copy-on-write versioning | done | T-005, T-008, T-014 |
 | [T-011](T-011-day-override-editing.md) | Day overrides — edit, substitution, cancel a single lesson | done | T-007 |
@@ -86,8 +86,9 @@ up in both reviews and was fixed by hand each time — the `*` in the diagram
 marks that second edge, which the tree has no room to draw.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
-the shell — T-007, T-009 and T-010 are done, T-012 is next — have every
-dependency satisfied. T-011, which hangs off T-007 alone, is done too.
+the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency they
+carried is satisfied. T-011, which hangs off T-007 alone, is done too; T-013 and
+T-021, the two open tickets off T-007, are what remain of the calendar work.
 
 ## Coverage
 

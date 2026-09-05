@@ -150,6 +150,12 @@ export function YearView({ days, schedule, today }: ViewProps) {
                       "font-semibold",
                     day.cancelled.length > 0 &&
                       "decoration-destructive underline decoration-2",
+                    // An event is a mark on the date (specification §6.3); the
+                    // cell has no room for its title, so the tooltip carries
+                    // it and an overdue deadline colours the cell.
+                    day.events.length > 0 && "font-semibold",
+                    day.events.some((event) => event.isOverdue) &&
+                      "text-destructive",
                     day.date === today && "ring-primary ring-2",
                   )}
                   href={calendarHref("day", day.date, schedule)}
@@ -241,6 +247,18 @@ function MonthCell({
             key={`cancelled-${lesson.lessonNumber}`}
           >
             {lesson.lessonNumber} · {lesson.payload.subject}
+          </li>
+        ))}
+        {day.events.map((event) => (
+          <li
+            className={cn(
+              "truncate",
+              event.isOverdue && "text-destructive",
+              event.done === true && "text-muted-foreground line-through",
+            )}
+            key={`event-${event.id}`}
+          >
+            {event.kind === "DEADLINE" ? "◷" : "•"} {event.title}
           </li>
         ))}
       </ul>

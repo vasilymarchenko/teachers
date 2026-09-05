@@ -164,7 +164,10 @@ export const YEAR_NOT_SET_UP = {
  *
  * The cancelled lessons are counted here too: a day whose only lesson a
  * `CLEARED` override removed must not read as a free day (specification §5.3),
- * and in the year grid the tooltip is most of what the cell can say.
+ * and in the year grid the tooltip is most of what the cell can say. So are the
+ * events of §6.3, and the overdue ones separately — a year cell has room for a
+ * mark and for nothing else, so the tooltip is where «що саме на цій даті»
+ * has to be answered.
  */
 export function dayTooltip(day: CalendarDay): string {
   const parts: string[] = [];
@@ -181,9 +184,28 @@ export function dayTooltip(day: CalendarDay): string {
   if (day.cancelled.length > 0) {
     parts.push(`${LESSON_LABELS.cancelled}: ${day.cancelled.length}`);
   }
+  if (day.events.length > 0) {
+    parts.push(`${EVENT_LABELS.events}: ${day.events.length}`);
+  }
+  const overdue = day.events.filter((event) => event.isOverdue).length;
+  if (overdue > 0) parts.push(`${EVENT_LABELS.overdue}: ${overdue}`);
 
   return `${dayAndMonth(day.date)} — ${parts.join(" · ")}`;
 }
+
+/**
+ * What the calendar itself says about events — specification §6.3, T-012. The
+ * names of the two kinds live in `components/events/labels.ts`, where the
+ * screen that creates them keeps them; these are the words only the calendar
+ * needs.
+ */
+export const EVENT_LABELS = {
+  events: "подій",
+  /** The single home of the word — the year tooltip and the day list share it. */
+  overdue: "прострочено",
+  /** The heading over a day's events, where lessons come first. */
+  title: "Події",
+};
 
 /** The edit affordances on a day — specification §5.3, T-011. */
 export const EDIT_LABELS = {
