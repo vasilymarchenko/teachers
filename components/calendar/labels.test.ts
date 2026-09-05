@@ -104,6 +104,28 @@ describe("the override editor's labels", () => {
     expect(OVERRIDE_LABELS.removeHint).toContain("тижневого розкладу");
   });
 
+  it("warns that cancelling over an override loses what was typed", () => {
+    // Cancelling upserts the same row to `CLEARED` with an empty payload, so
+    // «Повернути урок» afterwards restores the weekly template's lesson and not
+    // the teacher's. The plain hint says the opposite, so the two must differ
+    // and the confirmation must exist.
+    expect(OVERRIDE_LABELS.clearOverwritesHint).not.toBe(
+      OVERRIDE_LABELS.clearHint,
+    );
+    expect(OVERRIDE_LABELS.clearOverwritesHint).toContain("втрачено");
+    expect(OVERRIDE_LABELS.clearConfirm).toContain("втрачено");
+  });
+
+  it("does not promise a lesson back where the template gives none", () => {
+    // The state «Додати урок» creates: no `TemplateSlot` under the override, so
+    // removing it leaves the date empty (`design/T-011-day-overrides.md` §3).
+    expect(OVERRIDE_LABELS.removeHintNoPlanned).not.toContain(
+      "повернеться урок",
+    );
+    expect(OVERRIDE_LABELS.removeHintNoPlanned).toContain("не залишиться");
+    expect(OVERRIDE_LABELS.removeConfirmNoPlanned).toContain("не залишиться");
+  });
+
   it("titles the screen with the lesson and the date", () => {
     expect(OVERRIDE_LABELS.title(3, "2026-10-19")).toBe(
       "Урок 3 — Понеділок, 19 жовтня 2026 р.",

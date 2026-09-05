@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  DAY_LABELS,
   fullDate,
   OVERRIDE_LABELS,
   PARITY_LABELS,
@@ -101,10 +102,16 @@ export default async function Page({
         <h1 className="text-2xl font-semibold">
           {OVERRIDE_LABELS.title(lessonNumber, date)}
         </h1>
+        {/* A day is non-teaching either because a `NonTeachingPeriod` covers
+            it or because a `NonTeachingWeekdayRule` does, and a rule has no
+            name to give (schema §4.4). `DayLessons` falls back to
+            `unnamedNonTeaching` for that case; saying nothing here instead
+            would make a Saturday read as an ordinary date on the one screen
+            that is about to write a lesson onto it. */}
         <p className="text-muted-foreground text-sm">
           {PARITY_LABELS[day.parity]}
-          {day.isNonTeaching && day.nonTeachingName !== undefined &&
-            ` · ${day.nonTeachingName}`}
+          {day.isNonTeaching &&
+            ` · ${day.nonTeachingName ?? DAY_LABELS.unnamedNonTeaching}`}
         </p>
         <p className="text-muted-foreground text-sm">{OVERRIDE_LABELS.intro}</p>
       </div>
@@ -168,12 +175,21 @@ export default async function Page({
             «Прибрати правку» is for, and it is already on the screen. */}
         {current !== undefined && plannedLesson !== undefined && (
           <ClearLessonForm
+            // Cancelling upserts this slot's row to `CLEARED`, so a payload
+            // already on it is overwritten and «Повернути урок» then restores
+            // the template's lesson rather than the teacher's. That is the one
+            // case the button has to ask about first.
+            overwrites={override !== null && override.kind !== "CLEARED"}
             slot={{ date, view: schedule, lessonNumber }}
           />
         )}
         {override !== null && (
           <RemoveOverrideForm
             kind={override.kind}
+            // What removal leaves behind: the planned lesson where the template
+            // fills this slot, and nothing at all where it does not — which is
+            // the state «Додати урок» creates.
+            restoresPlanned={plannedLesson !== undefined}
             slot={{ date, view: schedule, lessonNumber }}
           />
         )}

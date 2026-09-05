@@ -109,22 +109,16 @@ export function DayLessons({
  *
  * Without a `BellSchedule` there are no lesson numbers to offer — the same
  * dead end the template editor has, answered with the same pointer at the year
- * setup rather than with an invented list of ten.
+ * setup rather than with an invented list of ten. That pointer belongs to the
+ * **screen**, not to the day: this component is rendered seven times by the
+ * week view, and a freshly set-up account would meet seven identical copies of
+ * one notice with seven links to `/year`. The calendar page says it once, above
+ * the views, the way it already says that the year is not set up.
  */
 function AddLesson({ day, editing }: { day: CalendarDay; editing: DayEditing }) {
+  if (editing.bells.length === 0) return null;
+
   const numbers = addableLessonNumbers(day, editing.bells);
-
-  if (editing.bells.length === 0) {
-    return (
-      <p className="text-muted-foreground text-xs">
-        {EDIT_LABELS.noBells} —{" "}
-        <Link className="underline underline-offset-2" href="/year">
-          {EDIT_LABELS.toBells}
-        </Link>
-      </p>
-    );
-  }
-
   if (numbers.length === 0) return null;
 
   return (

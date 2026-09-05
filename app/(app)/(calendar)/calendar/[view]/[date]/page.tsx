@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarNav } from "@/components/calendar/calendar-nav";
-import { periodTitle, YEAR_NOT_SET_UP } from "@/components/calendar/labels";
+import {
+  EDIT_LABELS,
+  periodTitle,
+  YEAR_NOT_SET_UP,
+} from "@/components/calendar/labels";
 import {
   scheduleViewOf,
   type SearchParamValue,
@@ -111,6 +115,20 @@ export default async function Page({
             {YEAR_NOT_SET_UP.link}
           </Link>
           {YEAR_NOT_SET_UP.after}
+        </p>
+      )}
+
+      {/* The dead end «Додати урок» has without a `BellSchedule`, said once
+          for the screen rather than once per day: the week view renders seven
+          days, and seven copies of one notice with seven links to `/year` is
+          what a freshly set-up account would meet. Only the two editable views
+          can hit it — the month and year cells offer no «додати урок». */}
+      {editing.bells.length === 0 && (view === "day" || view === "week") && (
+        <p className="text-muted-foreground text-sm">
+          {EDIT_LABELS.noBells} —{" "}
+          <Link className="underline underline-offset-2" href="/year">
+            {EDIT_LABELS.toBells}
+          </Link>
         </p>
       )}
 

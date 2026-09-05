@@ -26,6 +26,15 @@ export const CALENDAR_PATH = "/calendar";
  */
 export const SAVE_REFUSED = "Не вдалося зберегти: дані суперечать іншим записам";
 
-/** The override the screen was showing is not there any more. */
+/**
+ * The override the screen was showing is not there any more.
+ *
+ * «запис», not «правка»: the glossary (§3) reserves «точкова правка» for
+ * `kind = EDIT`, while `removeDayOverrideAction` answers this for all three
+ * kinds — a teacher who pressed «Повернути урок» on a cancellation would
+ * otherwise be told a правка she never made had been removed. «запис» is the
+ * word the screen already uses for an override of any kind
+ * (`OVERRIDE_LABELS.kindLabel`, «Тип запису»).
+ */
 export const OVERRIDE_NOT_FOUND =
-  "Цю правку вже прибрано в іншому вікні. Оновіть сторінку";
+  "Цей запис уже прибрано в іншому вікні. Оновіть сторінку";

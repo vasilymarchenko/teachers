@@ -41,4 +41,8 @@ Two things settled while doing the work, neither named by a criterion:
 - an all-blank save is refused rather than written — design doc §5;
 - the fields of a lesson are shared with the weekly template editor
   (`lib/validation/slotFields.ts`, `components/forms/slot-labels.ts`) — design
-  doc §1.
+  doc §1. Sharing them tightens the template editor's `zoomLink` to `http(s)`,
+  which is the one place this ticket changes T-010's write path — design doc §5;
+- «Скасувати урок» confirms when it would overwrite an `EDIT` or a
+  `SUBSTITUTION`, and «Прибрати правку» promises a restored lesson only where
+  the template gives one — design doc §3.

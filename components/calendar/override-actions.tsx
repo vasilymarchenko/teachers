@@ -29,12 +29,26 @@ type Slot = { date: IsoDate; view: ScheduleView; lessonNumber: number };
 /**
  * «Скасувати урок» — the tombstone of specification §5.3.
  *
- * No confirmation: the cancellation is visible on the calendar immediately and
- * is undone by the button beside it, so a dialogue would guard against nothing.
- * The hint says what cancelling does, which is the part a teacher cannot guess:
- * the lesson stays on the screen, struck through.
+ * Over a plain template lesson it needs no confirmation: the cancellation is
+ * visible on the calendar immediately, «Повернути урок» beside it deletes the
+ * tombstone and the template lesson comes back untouched, so a dialogue would
+ * guard against nothing.
+ *
+ * Over an `EDIT` or a `SUBSTITUTION` it is not undoable, and that is what
+ * `overwrites` marks. Cancelling upserts the **same** row to `CLEARED` with
+ * `payload = NULL` (`lib/actions/dayOverride.ts`), so the lesson the teacher
+ * typed is gone; «Повернути урок» then restores the *weekly template's* lesson,
+ * not hers. That is text of her own with no button to bring it back — the
+ * condition `RemoveOverrideForm` already confirms on.
  */
-export function ClearLessonForm({ slot }: { slot: Slot }) {
+export function ClearLessonForm({
+  slot,
+  overwrites = false,
+}: {
+  slot: Slot;
+  /** An override carrying a payload sits on this slot and would be replaced. */
+  overwrites?: boolean;
+}) {
   const [state, formAction] = useActionState(
     clearLessonAction.bind(null, slot),
     EMPTY_FORM_STATE,
@@ -42,11 +56,15 @@ export function ClearLessonForm({ slot }: { slot: Slot }) {
 
   return (
     <form action={formAction} className="space-y-2">
-      <SubmitButton pendingLabel={OVERRIDE_LABELS.clearing} variant="outline">
+      <SubmitButton
+        confirm={overwrites ? OVERRIDE_LABELS.clearConfirm : undefined}
+        pendingLabel={OVERRIDE_LABELS.clearing}
+        variant="outline"
+      >
         {OVERRIDE_LABELS.clear}
       </SubmitButton>
       <p className="text-muted-foreground text-xs">
-        {OVERRIDE_LABELS.clearHint}
+        {overwrites ? OVERRIDE_LABELS.clearOverwritesHint : OVERRIDE_LABELS.clearHint}
       </p>
       <FormMessage>{state.error}</FormMessage>
     </form>
@@ -58,16 +76,23 @@ export function ClearLessonForm({ slot }: { slot: Slot }) {
  * is deleted and the weekly template applies to the date again.
  *
  * Named after what is being removed, because the three kinds are undone for
- * three different reasons (glossary §3). This one does confirm: unlike a
- * cancellation, what it removes is text the teacher typed, and there is no
- * button to bring it back.
+ * three different reasons (glossary §3). This one confirms whenever what it
+ * removes is text the teacher typed, and there is no button to bring it back.
+ *
+ * What it leaves behind is **not** always a lesson: an override written through
+ * «Додати урок» sits on a slot the weekly template does not fill, and removing
+ * it leaves the date empty. `restoresPlanned` is what the screen read off
+ * `buildPlannedDays()`, so the wording promises only what will happen.
  */
 export function RemoveOverrideForm({
   slot,
   kind,
+  restoresPlanned,
 }: {
   slot: Slot;
   kind: DayOverrideKind;
+  /** The weekly template gives a lesson on this slot, so removal restores it. */
+  restoresPlanned: boolean;
 }) {
   const [state, formAction] = useActionState(
     removeDayOverrideAction.bind(null, slot),
@@ -79,11 +104,17 @@ export function RemoveOverrideForm({
       {/* The whole form is the delete, so the button needs no `formAction` of
           its own — see `DeleteButton`. */}
       <DeleteButton
-        confirm={OVERRIDE_LABELS.removeConfirm}
+        confirm={
+          restoresPlanned
+            ? OVERRIDE_LABELS.removeConfirm
+            : OVERRIDE_LABELS.removeConfirmNoPlanned
+        }
         label={REMOVE_OVERRIDE_LABELS[kind]}
       />
       <p className="text-muted-foreground text-xs">
-        {OVERRIDE_LABELS.removeHint}
+        {restoresPlanned
+          ? OVERRIDE_LABELS.removeHint
+          : OVERRIDE_LABELS.removeHintNoPlanned}
       </p>
       <FormMessage>{state.error}</FormMessage>
     </form>

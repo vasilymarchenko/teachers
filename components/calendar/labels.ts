@@ -239,11 +239,30 @@ export const OVERRIDE_LABELS = {
   clearing: "Скасовуємо…",
   clearHint:
     "Скасований урок залишається видимим у календарі — закресленим, щоб було зрозуміло, що його не буде.",
+  /**
+   * Cancelling a slot that already carries an override replaces it with a
+   * tombstone: the text the teacher typed is overwritten and nothing on the
+   * screen brings it back. `clearHint` alone would let her press the button
+   * believing otherwise.
+   */
+  clearOverwritesHint:
+    "Скасований урок залишається видимим у календарі — закресленим. Але те, що ви вписали на цю дату, буде втрачено: після скасування повернути можна лише урок із тижневого розкладу.",
+  clearConfirm:
+    "Скасувати урок? Те, що ви вписали на цю дату, буде втрачено — повернути його не вийде.",
 
   removeConfirm:
-    "Прибрати цю зміну? На цю дату знову діятиме тижневий розклад.",
+    "Прибрати цей запис? На цю дату знову діятиме тижневий розклад.",
   removeHint:
-    "Якщо прибрати зміну, на цю дату повернеться урок із тижневого розкладу.",
+    "Якщо прибрати запис, на цю дату повернеться урок із тижневого розкладу.",
+  /**
+   * The slot has no lesson in the weekly template — the override was written
+   * through «Додати урок». Removing it leaves the date empty, so the wording
+   * may not promise a lesson that would come back.
+   */
+  removeConfirmNoPlanned:
+    "Прибрати цей запис? Тижневий розклад на цей урок нічого не дає, тож на цю дату уроку не залишиться.",
+  removeHintNoPlanned:
+    "Тижневий розклад на цей номер уроку нічого не дає, тож якщо прибрати запис, на цю дату уроку не залишиться.",
 };
 
 /** «Прибрати правку» — named after what is being removed (glossary §3). */

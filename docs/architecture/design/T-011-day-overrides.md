@@ -15,7 +15,7 @@ what each screen state is computed from.
 | File | Exports / change |
 |---|---|
 | `lib/validation/slotFields.ts` | **new**, extracted from `templateDay.ts`: `SLOT_FIELDS`, `SlotFieldName`, `MAX_SLOT_LENGTH`, `rawSlotFields`, `isBlankSlot()`, `checkSlotFields()`, `toSlotPayload()` |
-| `lib/validation/templateDay.ts` | now consumes `slotFields.ts`; `TEMPLATE_SLOT_FIELDS` and `TemplateSlotFieldName` are aliases of it. No behaviour change |
+| `lib/validation/templateDay.ts` | now consumes `slotFields.ts`; `TEMPLATE_SLOT_FIELDS` and `TemplateSlotFieldName` are aliases of it. **One behaviour change**, inherited from the shared checker: a `zoomLink` must now be `http(s)`, where the template editor accepted any `z.url()` — see §5 |
 | `lib/validation/dayOverride.ts` | **new**: `EDITABLE_OVERRIDE_KINDS`, `DAY_OVERRIDE_FIELD`, `dayOverrideInputFor()`, `readDayOverride()`, `parseLessonNumber()` |
 | `lib/db/queries/overrides.ts` | gains `getDayOverride(userId, date, view, lessonNumber)` |
 | `lib/actions/calendar.ts` | **new**, constants only (no `"use server"`): `CALENDAR_PATH`, `SAVE_REFUSED`, `OVERRIDE_NOT_FOUND` |
@@ -84,11 +84,25 @@ State table, for `n` on one date:
 
 | `getDayOverride()` | `day.lessons` | `day.cancelled` | Screen |
 |---|---|---|---|
-| `null` | the template's lesson | — | form prefilled from the planned lesson; «Скасувати урок» |
-| `EDIT` / `SUBSTITUTION` | the override's lesson | — | form prefilled from the stored payload; «Скасувати урок»; «Прибрати правку» / «Прибрати заміну» |
+| `null` | the template's lesson | — | form prefilled from the planned lesson; «Скасувати урок», unconfirmed |
+| `EDIT` / `SUBSTITUTION` | the override's lesson | — | form prefilled from the stored payload; «Скасувати урок», **confirmed**; «Прибрати правку» / «Прибрати заміну» |
 | `CLEARED` | — | the planned lesson | form prefilled from the planned lesson; «Повернути урок». No «Скасувати урок»: there is nothing left to cancel |
 | `EDIT` / `SUBSTITUTION`, no slot | the override's lesson | — | as above, **without** «Скасувати урок» |
 | `null`, no slot | — | — | empty form; no «Скасувати урок» — a tombstone over nothing is a no-op (§8.8) |
+
+«Скасувати урок» **confirms over a payload.** Cancelling upserts the same row
+to `CLEARED` with `payload = NULL`, so an `EDIT` or a `SUBSTITUTION` on the slot
+is overwritten and «Повернути урок» then restores the *weekly template's* lesson
+and not the one the teacher typed. That is her own text with nothing on the
+screen to bring it back — the condition «Прибрати правку» already confirms on —
+so the button asks first in exactly that state (`ClearLessonForm`,
+`overwrites`), and says so in its hint. Over a plain template lesson it stays
+unconfirmed: there, «Повернути урок» genuinely restores what was there.
+
+«Прибрати правку» **promises only what it can deliver.** Where the template
+fills the slot, removal brings its lesson back; where it does not — the state
+«Додати урок» creates — removal leaves the date empty, and the wording says that
+instead (`restoresPlanned`, `removeHintNoPlanned`).
 
 «Скасувати урок» needs both a lesson on the screen and a template lesson under
 it: over an override with no slot beneath, a tombstone resolves to nothing at
@@ -132,7 +146,16 @@ payload is stored, so unknown keys never reach the `jsonb` (schema §7).
   must be an `http(s)` URL, which is what its message has always said and what
   `LessonRow` requires before it will render an `<a href>`; `z.url()` alone
   accepts `mailto:`, `data:` and `javascript:`. The renderer's own guard stays
-  for rows written before this check;
+  for rows written before this check.
+
+  **This tightens the weekly template editor too**, which is the one place T-011
+  changes T-010's write path: `templateDay.ts` checked `z.url()` alone, so a
+  `mailto:` or `ftp:` link saved under T-010 parses today and will be refused on
+  the next save of that day, on a field the teacher did not touch. Accepted —
+  the message «Посилання має починатися з http:// або https://» has always said
+  this rule, so the old check was the one that disagreed with the product — and
+  pinned on both sides: `templateDay.test.ts` («refuses a Zoom link that is not
+  an `http(s)` link») and `dayOverride.test.ts`;
 - `kind` accepts `EDIT` and `SUBSTITUTION` only. `CLEARED` carries no payload at
   all, so it is written by its own action and cannot arrive through this form;
 - an all-blank submission is **refused**, on `subject`. This is where the
@@ -146,10 +169,11 @@ payload is stored, so unknown keys never reach the `jsonb` (schema §7).
 | Suite | What it pins |
 |---|---|
 | `lib/validation/dayOverride.test.ts` | the payload per view, absent optional keys (§8.8), the refusals, the two kinds, `parseLessonNumber()` |
+| `lib/validation/templateDay.test.ts` | that the shared `http(s)` rule reaches the template editor too (§5) |
 | `lib/domain/calendar/days.test.ts` | `buildPlannedDays()` on 10-13, 11-05 (equals the pinned `replacedOriginal`), 10-19 (equals `cancelled`), 10-17 (non-teaching gives nothing) |
 | `components/calendar/lessonNumbers.test.ts` | which numbers «додати урок» offers |
 | `components/calendar/links.test.ts` | `lessonHref()`, and that `CLASS` survives the link |
-| `components/calendar/labels.test.ts` | the §5.4 hint, and a removal label for every kind |
+| `components/calendar/labels.test.ts` | the §5.4 hint, a removal label for every kind, and that the two conditional hints promise opposite things |
 | `components/forms/slot-labels.test.ts` | a label for every field of both views |
 | `lib/db/queries/overrides.integration.test.ts` | the three states, the parsed payload, another teacher's rows |
 
