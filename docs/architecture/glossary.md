@@ -95,8 +95,8 @@
 ## 7. Терміни, що лишаються тільки в коді
 
 Не мають продуктового відповідника й **не повинні** з'являтися в українських продуктових текстах: `requireUser()`, `id`, `userId`, `createdAt`, `updatedAt`, `Server Action`, `Route Handler`, `payload`, `tombstone`, `copy-on-write`, `EXCLUDE USING gist`, `unstable_cache`, `ScheduleInput` (вхід `expand()`), `IsoDate`, `CalendarDay`
-(`ResolvedDay` плюс те, що потрібно екрану календаря: скасовані уроки й назва
-`NonTeachingPeriod` — `architect-overview.md` §5), `LessonRow` (рядок сітки
+(`ResolvedDay` плюс те, що потрібно екрану календаря: скасовані уроки, назва
+`NonTeachingPeriod` і події на цю дату — `architect-overview.md` §5), `LessonRow` (рядок сітки
 редактора шаблону: номер уроку плюс час із `BellSchedule`), `DayEditing`
 (те, що потрібно рядку календаря, щоб із нього можна було відкрити правку дня:
 вид календаря, вид розкладу й `BellSchedule` — `design/T-011-day-overrides.md`).

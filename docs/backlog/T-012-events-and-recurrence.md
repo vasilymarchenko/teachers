@@ -50,7 +50,10 @@ its only home.
 
 Done. Mechanics — `docs/architecture/design/T-012-events.md`; the rule for a
 recurrence whose date does not exist in a month or a year —
-`docs/architecture/decisions/ADR-009-recurrence-skips-a-date-that-does-not-exist.md`.
+`docs/architecture/decisions/ADR-009-recurrence-skips-a-date-that-does-not-exist.md`;
+why the «виконано» toggle is a form on the grid rather than a route, which
+ADR-008 would otherwise have required —
+`docs/architecture/decisions/ADR-010-one-write-control-on-the-calendar-grid.md`.
 `CalendarDay` gained an `events` field, which `architect-overview.md` §5 now
 states.
 

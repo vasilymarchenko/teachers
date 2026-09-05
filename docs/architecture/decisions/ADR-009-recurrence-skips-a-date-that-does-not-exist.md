@@ -8,7 +8,8 @@ ticket: T-012
 
 ## Context
 
-`Event.recurrenceKind` is `WEEKLY | MONTHLY | YEARLY` (schema §4.10), and T-012
+`Event.recurrenceKind` is `NONE | WEEKLY | MONTHLY | YEARLY` (schema §4.10), and
+T-012
 writes the function that turns a repeating event into the dates it falls on.
 Two of the three periods have dates that do not exist in every period:
 

@@ -151,8 +151,11 @@ Both actions write `boundaryDate` **and** `boundaryKind` on every save,
 
 A deadline that is done is struck through; one that is overdue is in the
 destructive colour and says «прострочено» (specification §6.3). The toggle is
-offered in the day and week views only — the two views ADR-008 edits from; a
-month or year cell opens the day instead.
+offered in the day and week views only — the two views T-011 edits from — and a
+month or year cell opens the day instead. It is the one write control on the
+grid, and the only one: ADR-008 gave every calendar edit its own route, and
+`decisions/ADR-010-one-write-control-on-the-calendar-grid.md` is why a write
+whose whole input is the click that submits it is the exception.
 
 ## 8. What this ticket deliberately leaves out
 

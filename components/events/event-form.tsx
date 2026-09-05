@@ -96,11 +96,26 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
   );
 
   // The boundary fields are meaningless without a repetition, so they follow the
-  // select rather than sitting there greyed out. The state is the submitted
-  // value when there is one, exactly as `fieldValue()` decides for every input.
-  const [recurrenceKind, setRecurrenceKind] = useState(
-    fieldValue(state, EVENT_FIELD.recurrenceKind, event?.recurrenceKind ?? "NONE"),
+  // select rather than sitting there greyed out. That needs the chosen value in
+  // React state, and the state has to follow every action result the way an
+  // uncontrolled input does: `fieldValue()` shows the submission after a refusal
+  // and the fallback after a success, and React clears the rest of the form
+  // once the action resolves. Held state alone would keep «щотижня» standing in
+  // a form whose every other field has just cleared, and the next event added
+  // from it would repeat without anyone choosing that. So the state is re-seeded
+  // whenever `useActionState` hands back a new result — the render-time reset
+  // React documents, no effect involved.
+  const chosen = fieldValue(
+    state,
+    EVENT_FIELD.recurrenceKind,
+    event?.recurrenceKind ?? "NONE",
   );
+  const [recurrenceKind, setRecurrenceKind] = useState(chosen);
+  const [seenState, setSeenState] = useState(state);
+  if (seenState !== state) {
+    setSeenState(state);
+    setRecurrenceKind(chosen);
+  }
   const repeats = recurrenceKind !== "NONE";
 
   return (

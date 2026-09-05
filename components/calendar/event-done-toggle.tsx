@@ -16,8 +16,12 @@ import { DONE_LABELS } from "@/components/events/labels";
  * button that appears to do nothing.
  *
  * Offered in the day and week views only — the two views a lesson and its date
- * are legible in, and the two T-011 edits from (ADR-008). A month cell and a
- * year cell open the day instead.
+ * are legible in, and the two T-011 edits from. A month cell and a year cell
+ * open the day instead.
+ *
+ * It is the one write control on the calendar grid: ADR-008 gave every calendar
+ * edit its own route, and ADR-010 draws the line at the shape of the write —
+ * one whose entire input is the click that submits it may stay on the grid.
  */
 export function EventDoneToggle({
   eventId,

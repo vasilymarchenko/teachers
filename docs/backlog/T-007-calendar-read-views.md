@@ -58,11 +58,11 @@ did not run there. It has since been run against a migrated, seeded database:
 33 tests, all passing.
 
 **Events are not this ticket's.** The first criterion originally also required an
-`Event` query over the range. `getEventsInRange()` (T-008) is not called by this
-screen: placing a recurring `Event` on its dates is T-012's `recurrence.ts`, and
-showing one-off events while silently dropping repeating ones would mislead
-rather than help. The day components take a `CalendarDay`, so the markers attach
-to that type when T-012 lands.
+`Event` query over the range. `getEventsInRange()` (T-008) was left uncalled by
+this screen: placing a recurring `Event` on its dates is T-012's `recurrence.ts`,
+and showing one-off events while silently dropping repeating ones would mislead
+rather than help. The day components take a `CalendarDay`, so the markers
+attached to that type when T-012 landed — which it has, `design/T-007-calendar-views.md` §4.
 
 The criterion was therefore dropped from here rather than left unchecked. It was
 being carried by both tickets at once — T-012's own list has owned it verbatim
