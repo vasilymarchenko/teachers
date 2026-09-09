@@ -111,6 +111,16 @@ agent — the gate's exit code and `gh pr checks`.
       `ci.yml` keep a single check definition, held in step by a test rather than
       by one calling the other — referencing `ADR-007` and `ADR-001` instead of
       re-arguing either.
+- [ ] The loop is exercised once by a session that loaded the new skills — a
+      different ticket, in a fresh session, after this one is merged — and this
+      ticket is not `done` until it has been. **The session that writes the loop
+      cannot run it:** a skill's text enters context when it is invoked, so
+      phases 6 and 7 of that session execute the version loaded before phase 5
+      edited it. Whatever it reports about the loop describes the loop rather
+      than evidencing it, and a round it narrates was hand-simulated from the
+      conversation — which is where both of T-026's own worst defects came from,
+      a disposition recorded `fixed` on code that did not exist and a round
+      reported complete while it was still running.
 
 ## Notes
 
