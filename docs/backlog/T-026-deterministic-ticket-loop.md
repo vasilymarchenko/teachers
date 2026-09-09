@@ -157,7 +157,8 @@ compacted context, and drops the policing.
 
 The implementation is PR #22 on `claude/ticket-t-026-deterministic-ticket-loop`
 — ~2,100 lines under `scripts/gate/` against an application of ~19,800. It is
-kept as the record of what was tried and is not merged. `T-028`, the unexplained
-CI integration failure filed from it, lives on that branch and is not on `main`.
-`ADR-011` was written on that branch and is not merged either; the ADR `T-029`
-asks for is the one decision worth keeping from it.
+kept as the record of what was tried and is not merged. The `T-028` filed from it
+— one unexplained CI integration failure — is superseded: that failure is now
+diagnosed and reproducible, and `main`'s `T-028` carries it. `ADR-011` was
+written on that branch and is not merged either; the ADR `T-029` asks for is the
+one decision worth keeping from it.

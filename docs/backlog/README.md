@@ -37,6 +37,7 @@ for reading. Order is priority; the ID number is not.
 | [T-025](T-025-enable-branch-protection.md) | Enable branch protection on `main` so the CI gate blocks rather than reports | todo | T-024 |
 | [T-026](T-026-deterministic-ticket-loop.md) | Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop | declined | T-017, T-024 |
 | [T-027](T-027-backlog-contract-convention-tests.md) | Convention tests for the backlog and document contract | todo | T-017 |
+| [T-028](T-028-index-invariant-composite-fk-join.md) | Make the index-usage invariant accept the composite-FK join | todo | T-008 |
 | [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | todo | T-017, T-024 |
 
 ## Open questions
@@ -92,7 +93,9 @@ tooling every other ticket is worked and checked by, not the application. T-027
 hangs off T-017 like T-019 and T-022 — a check the review skill may only
 propose, promoted into the suite. T-029 hangs off T-017 for the review loop it
 bounds and off T-024 for the check list that loop must agree with. T-026 carried
-those same edges and is `declined`; T-029 replaces it.
+those same edges and is `declined`; T-029 replaces it. T-028 hangs off T-008 and
+is not drawn either: it is a defect in the invariant test that ticket's last
+criterion produced, not new work off it.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency they
