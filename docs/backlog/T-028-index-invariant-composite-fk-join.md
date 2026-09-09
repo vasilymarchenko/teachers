@@ -2,7 +2,7 @@
 id: T-028
 type: ticket
 title: Make the index-usage invariant accept the composite-FK join
-status: todo
+status: done
 depends_on: [T-008]
 refs:
   - lib/db/queries/indexUsage.integration.test.ts
@@ -27,28 +27,28 @@ the planner picks on the day.
 
 ## Acceptance criteria
 
-- [ ] `lib/db/queries/indexUsage.integration.test.ts` passes for
+- [x] `lib/db/queries/indexUsage.integration.test.ts` passes for
       `getTemplateVersions` against a migrated Postgres, in CI and locally.
-- [ ] The rule the test asserts distinguishes a scan that cannot cross tenants
+- [x] The rule the test asserts distinguishes a scan that cannot cross tenants
       from one that can, rather than matching on the index's leading column
       alone. `schedule_template_id_user_uq` is the composite-FK target
       `design/schema.md` §8 introduces so a `template_slot` cannot be attached to
       another user's template, and `templates.ts` joins through both of its
       columns.
-- [ ] The assertion does not depend on which of several tenant-safe indexes the
+- [x] The assertion does not depend on which of several tenant-safe indexes the
       planner chooses. With `enable_seqscan = off` over ~200 fixture rows the
       planner is picking between near-equal index-only scans, and the row counts
       a later ticket adds must not decide whether the suite is green.
-- [ ] A read that genuinely scans by an index no `user_id` predicate binds still
+- [x] A read that genuinely scans by an index no `user_id` predicate binds still
       fails the test, proven by a case that goes red when the rule is relaxed too
       far. The invariant of `architect-overview.md` §8.4 is not weakened to make
       this one query pass.
-- [ ] `architect-overview.md` §8.4 and `design/schema.md` §8 agree with what the
+- [x] `architect-overview.md` §8.4 and `design/schema.md` §8 agree with what the
       test asserts. If the rule as written in the documents is narrower than the
       one the code needs, the documents change too — the composite FK and the
       `user_id`-led index are two mechanisms for one guarantee, and §8.4 names
       only the second.
-- [ ] The other seven reads in the suite still pass.
+- [x] The other seven reads in the suite still pass.
 
 ## Notes
 
@@ -92,3 +92,46 @@ which asked what the failure was and how to read a CI log. The first question is
 answered above. The second is moot: `gh run view --log-failed` returns the log
 on this repository — the 403 recorded there was against a run on a branch, and
 the output quoted above was read with that command.
+
+**Done.** The rule is restated as "every relation the plan reads is restricted
+to one owner", and the leading-column property is asserted separately against
+the catalog, where no planner is involved — `ADR-011`, with overview §8.4,
+`design/schema.md` §8 and `design/T-008-calendar-read-queries.md` §6 changed to
+match. The rule itself is `lib/db/planBinding.ts`, so the plan shapes a 200-row
+fixture will not produce can be stated as data in `lib/db/planBinding.test.ts`
+rather than coaxed out of a planner.
+
+**What the investigation found, and what it cost.** The first restatement —
+every index scan binds `user_id` in its `Index Cond` — accepted the composite-FK
+join and was committed. It then failed about one run in five: at fixture size
+the slots statement has no stable plan, and three were observed for it. Only one
+applies `user_id` through the index; the other two apply it as a `Filter` after
+reading a table small enough that Postgres is right to read it whole. Requiring
+the index to carry the restriction asserts the planner's cost model at a size
+that says nothing about production, which is why the original failure looked
+like a flake for three sessions. Thirty consecutive runs pass under the rule as
+shipped, before and after `ANALYZE`; `ANALYZE` itself is not used, for the
+reason this ticket gave for not using it.
+
+Every clause was checked by removing it and watching a case go red: the value
+clause, the foreign-key clause, the parent-must-be-restricted check inside it,
+the equality requirement, and the reporting of an unrestricted relation.
+
+**Review of the pull request closed three holes in the rule**, each a way for a
+plan that reads a foreign row to come out clean, and each now a case in
+`planBinding.test.ts` that goes red when the clause is removed:
+
+- the fixpoint was seeded from "`user_id` is equated to something", so a
+  relation bound to a `VALUES` list counted as restricted whenever any other
+  relation in the plan reached a literal. It is seeded from the value clause;
+- binding was recorded per alias, so the restricted branch of an `Append`
+  answered for the unrestricted one;
+- the arms of a `BitmapOr` were concatenated into the conjunction the other
+  conditions form, which reads an alternative as a restriction.
+
+`foreignKeysToAKey()` also accepted a partial unique index as proof that a
+parent column identifies one row, where the catalog case in the same file
+excludes them and says why. The unit fixture claimed to be what that query
+returns and was not: it carried a `user_id -> user_id` pair the query cannot
+produce, and named `template_slot` as the schema's only composite-FK child when
+`semester` and `non_teaching_period` are two more.

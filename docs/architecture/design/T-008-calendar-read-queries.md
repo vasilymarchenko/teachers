@@ -29,6 +29,7 @@ plain data: no Drizzle row type reaches `lib/domain` or a component.
 | `lib/db/fixtures/scenarioRows.ts` | `insertFixtureScenario(userId, db)` — fixtures §3 as rows, shared by the seed and the integration suite |
 | `lib/db/client.ts` | `closeDb()` — added for scripts and tests; the application never calls it |
 | `lib/db/testDatabase.ts` | `createRecordingDatabase()` — test support for the index-usage check |
+| `lib/db/planBinding.ts` | `violationsOf(plan, foreignKeys)` — the rule §6 measures a plan against (T-028) |
 
 `range` is the domain's `DateRange` (`{ from, to }`, **both ends inclusive**).
 
@@ -115,11 +116,31 @@ mistake worth seeing.
 
 `lib/db/queries/indexUsage.integration.test.ts` captures the SQL each module
 actually sends (Drizzle's logger, through `createRecordingDatabase()`), runs
-`EXPLAIN (FORMAT JSON)` on it with `enable_seqscan = off`, and asserts two
-things: no `Seq Scan`, and every index chosen has `user_id` as its leading
-column. Sequential scans are disabled because on the ~200 fixture rows the
-planner would rightly read the table; the question being asked is whether a
-usable index exists, not what the planner does at this size.
+`EXPLAIN (FORMAT JSON)` on it with `enable_seqscan = off`, and measures each
+plan against `lib/db/planBinding.ts`. Three files, and the split is the point
+(`ADR-011`):
+
+| File | Asserts | Needs |
+|---|---|---|
+| `lib/db/planBinding.ts` | the rule itself — which relations of a plan are restricted to one owner | nothing |
+| `lib/db/planBinding.test.ts` | the rule's verdict on the plan shapes a 200-row fixture will not produce | the unit suite |
+| `lib/db/queries/indexUsage.integration.test.ts` | the catalog claim, the eight reads' real plans, and three real unbound reads | a migrated Postgres |
+
+The catalog claim is that every table carrying a `user_id` column has a valid,
+non-partial index whose leading column is `user_id` — read from `pg_index`, so
+no planner is involved. The plan claim is that no relation is read without a
+restriction to one owner: `user_id` equated to a value or to an already
+restricted relation, or a foreign key equated to a key of an already restricted
+parent, which is the composite FK of `schema.md` §8. `Index Cond` and `Filter`
+count alike, because at this size the planner decides between them and the same
+statement is planned three different ways as statistics move; that an index
+could carry the restriction is what the catalog claim covers. Sequential scans
+are disabled because on the ~200 fixture rows the planner would rightly read the
+table; the question being asked is whether a usable index exists, not what the
+planner does at this size.
+
+Until T-028 the plan claim matched index *names* against the set whose leading
+column is `user_id`, which no plan of the slots join could satisfy reliably.
 
 The indexes the reads land on, all defined in `docs/architecture/design/schema.md`:
 
@@ -136,9 +157,10 @@ The indexes the reads land on, all defined in `docs/architecture/design/schema.m
 | `academic_year` | `academic_year_no_overlap_ex`, the same shape as `schedule_template` above |
 | `semester` | `semester_year_index_uq` |
 
-Every one of them has `user_id` as its first column, which is the property the
-test asserts — the index names themselves are what the planner happened to pick
-at this size and are recorded here as observation, not as a contract.
+The names are observation, not contract, and the slots join is the proof: at
+this size the planner builds it three different ways depending on whether the
+table has been analysed, all three returning one teacher's rows. `ADR-011`
+tabulates them and is the place that fact lives.
 
 ## 7. Fixture rows
 

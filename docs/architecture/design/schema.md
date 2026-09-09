@@ -705,6 +705,16 @@ another user's template, because no such `(id, user_id)` pair exists. Without th
 composite key, `user_id` on a child table is a value the application sets and can
 therefore set wrongly.
 
+**The composite key is also a read-path mechanism, not only an integrity one.**
+A child row reached through it — `(template_id = schedule_template.id)`, which
+is how `lib/db/queries/templates.ts` reaches a version's slots — belongs to
+whichever owner the parent's own scan was restricted to, because `id` identifies
+one parent row. That is the same guarantee the `user_id`-led index of this
+section's table gives directly, reached the other way round: the index restricts
+a table by its own column, the composite key restricts it by its parent's.
+Overview §8.4 asks that no read return another teacher's row, and
+`lib/db/planBinding.ts` accepts both mechanisms and nothing else (`ADR-011`).
+
 ---
 
 ## 9. Migration order
