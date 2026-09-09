@@ -17,9 +17,10 @@ refs:
 
 Give `/teachers-ticket` one command that decides whether a change is checked,
 one file that remembers what that command said, and a phase 7 that loops to a
-stated exit criterion instead of running once. The check list is held in step
-with `ci.yml`; the memory survives a compacted context; the authority for *done*
-stays outside the agent — the gate's exit code and `gh pr checks`.
+stated exit criterion instead of running once, under caps that are counted in
+files rather than remembered. The check list is held in step with `ci.yml`; the
+memory survives a compacted context; the authority for *done* stays outside the
+agent — the gate's exit code and `gh pr checks`.
 
 ## Acceptance criteria
 
@@ -42,7 +43,10 @@ stays outside the agent — the gate's exit code and `gh pr checks`.
       `lib/db/postgresImage.test.ts` pattern, which already holds one value
       across two files. Scoped to those jobs rather than to the whole workflow:
       a future job that runs an npm script for some other purpose must not have
-      to become a gate check to keep the suite green.
+      to become a gate check to keep the suite green. There is no YAML parser in
+      this project and this does not justify adding one — slice the file at its
+      job headers and say so in a comment, which is a few lines more than
+      matching the whole file and is the reason to prefer it.
 - [ ] A check the gate cannot run here — no Docker daemon, no `DATABASE_URL` —
       is reported as `skipped` with the reason, in the table and in the pull
       request body. A skip is never reported as a pass.
@@ -55,8 +59,20 @@ stays outside the agent — the gate's exit code and `gh pr checks`.
       has, and nothing refuses to run a check on account of what it says.
 - [ ] Phase 7 is a loop with a written exit criterion — review → triage → fix →
       gate → re-review, ending when the latest round leaves no finding
-      undisposed — and one cap: **at most three review rounds**. Hitting it stops
-      the loop and reports what is still open rather than opening a fourth.
+      undisposed — and three caps, all of them **three**: at most three review
+      rounds; at most three gate runs within one round; at most three pushes to
+      the pull request after the one that opened it. The second and third are the
+      loops T-026 left unbounded and this ticket nearly did too — a red check
+      fixed and re-gated inside a round, and a red CI run fixed and re-pushed
+      after it.
+- [ ] Re-running the gate against an unchanged tree in the hope of a different
+      answer is not one of those three attempts. It is not permitted and the
+      skill says so — as a rule the skill states, not as a refusal the gate
+      enforces.
+- [ ] Hitting any cap stops the loop and reports what is still open, rather than
+      opening a fourth. The gate names the count it is on in its own output, so a
+      cap being approached is visible in the terminal without anyone reading a
+      file for it.
 - [ ] A round is recorded in `.gate/findings.json` as a list, each finding
       carrying an id, a `file:line`, the rule quoted from the document it comes
       from, a one-sentence summary and which pass found it, so round *N* and
@@ -65,6 +81,22 @@ stays outside the agent — the gate's exit code and `gh pr checks`.
       `deferred` to a `T-NNN` that exists, or `accepted` by the user. The skill
       states the vocabulary and what each disposition costs; no code validates
       the file.
+- [ ] The cap numbers live in code — one module exports them — and both skills
+      reference that module rather than restating a number that then drifts out
+      of step with it.
+- [ ] Each count is derived from a record the agent did not author, wherever one
+      exists: the gate runs in the current round from the distinct run ids the
+      gate itself appended to `.gate/ledger.jsonl` since that round's timestamp,
+      and the pushes from the commits on the branch. Only the review-round number
+      is agent-written, in `.gate/findings.json`. A count held in the
+      conversation is not a count — that is the one thing compaction is
+      guaranteed to take.
+- [ ] `npm run gate -- --report` exits non-zero and refuses to report the ticket
+      done when a cap is exceeded, naming which. **Nothing refuses to run a
+      check.** A refused measurement blocks the recovery — the check is what
+      tells the truth, and an environment fix changes no file — while a refused
+      conclusion blocks only the claim, and stopping to report what is open is
+      the right answer at a cap anyway.
 - [ ] The acceptance-criteria checkboxes are ticked in phase 7, after the gate is
       green, and only where the evidence names a `file:line` or a test. They are
       ticked in phase 5 today, before phase 6 has run a single check.
@@ -90,18 +122,25 @@ T-026's minus that layer.
 `claude/ticket-t-026-deterministic-ticket-loop` (PR #22), and each is why that
 branch reached ~2,100 lines under `scripts/gate/`:
 
-- **Re-run counting, working-tree hashing, and any refusal to run a check.**
-  T-026 asked for "exactly one re-run", keyed on a hash of the working tree. An
-  environment fix — starting Postgres, exporting a variable — changes no file, so
-  the gate refuses to run a check the developer has just repaired and the escape
-  is a no-op edit. Whether a red check was a flake is a judgment the developer
-  makes; the ledger records what happened and does not police it.
+- **Working-tree hashing, and any refusal to run a check.** Counting attempts is
+  in scope and the criteria above ask for it; keying that count on a hash of the
+  working tree is not. An environment fix — starting Postgres, exporting a
+  variable — changes no file, so T-026's gate refused to run a check the
+  developer had just repaired and the escape was a no-op edit. Refuse the
+  conclusion, never the measurement.
+- **Deciding for the developer whether a red check was a flake.** T-026 made
+  green-on-the-second-run a `flake` row owing a ticket, which requires knowing
+  that the two runs asked about the same tree. The ledger records that a check
+  was red and then green; what that means is a judgment, and `T-028` is what one
+  looks like when it is made properly.
 - **A validator over `.gate/findings.json`.** It can check that a field is not
   empty, never that it is true. T-026's own second round recorded a finding
   `fixed` on evidence naming code that did not exist, with the validator in
   place.
-- **A per-check fix cap.** One round cap is an integer in a file; a per-check cap
-  needs the attempt counting above.
+- **A per-check fix cap.** Attributing attempts to a particular check is what
+  forces the tree hashing above — the count has to know when an edit reset it.
+  Counting gate runs within a round needs no attribution at all: the run ids are
+  already in the ledger and the round boundary is already in the findings file.
 - **A second implementation of `scripts/verify-schema.sql`.** Run the file the
   way CI runs it — `psql`, from the Postgres container that is already up —
   rather than through a driver, which constrains what may be written in it and
@@ -120,6 +159,14 @@ find the previous one; the pull request body carries the summary.
 `/teachers-review` keeps its own gate run, because that run is against the
 checked-out target — the bug `T-017` found the hard way — and a caller's ledger
 row would reinstate it the first time it was written against a different tree.
+
+**How hard the caps actually are.** Durable, not unskippable. The numbers live
+in code and the counts in files the agent mostly did not write, so a compacted
+session cannot lose them and `--report` will not say `done` past a cap. Nothing
+compels the agent to run `--report` at all, and the honest backstops past that
+point are both outside the session: `gh pr checks`, and the person reading the
+report. The `Stop` hook above is the only thing that would close it, and it is
+deferred. The ticket says so rather than implying a guarantee it does not have.
 
 **A size expectation, not a criterion.** All of `scripts/gate/` should be a few
 hundred lines. A criterion above that appears to need a thousand is being read as
