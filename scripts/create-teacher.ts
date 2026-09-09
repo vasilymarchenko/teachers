@@ -13,17 +13,24 @@ config({ path: ".env", quiet: true });
 
 const email = process.env.TEACHER_EMAIL;
 const password = process.env.TEACHER_PASSWORD;
-const name = process.env.TEACHER_NAME ?? email;
 
 if (!email || !password) {
   throw new Error("Set TEACHER_EMAIL and TEACHER_PASSWORD before running this script.");
 }
 
+// Built here, after the guard, rather than read inside `main`: the guard
+// narrows these two to `string` at module scope, and that narrowing does not
+// reach into a function body. better-auth requires a name, and the address is
+// the sensible stand-in when none is given.
+const credentials = {
+  email,
+  password,
+  name: process.env.TEACHER_NAME ?? email,
+};
+
 async function main() {
-  const signUp = await getAuth().api.signUpEmail({
-    body: { email, password, name: name! },
-  });
-  console.log(`Created teacher ${email} (user ${signUp.user.id}).`);
+  const signUp = await getAuth().api.signUpEmail({ body: credentials });
+  console.log(`Created teacher ${credentials.email} (user ${signUp.user.id}).`);
 }
 
 main()
