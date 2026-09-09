@@ -34,7 +34,7 @@ carries no priority meaning — order lives in `README.md`.
 id: T-001
 type: ticket          # ticket | question
 title: Short imperative title
-status: todo          # tickets:   todo | in-progress | blocked | done
+status: todo          # tickets:   todo | in-progress | blocked | done | declined
                       # questions: open | answered
 depends_on: []        # list of ids, e.g. [T-002, Q-002]
 refs: []              # paths into docs/, with a section reference where useful
@@ -46,6 +46,12 @@ refs: []              # paths into docs/, with a section reference where useful
 its full text, so `...md#3.2` resolves to nothing at all; `§3.2` is unambiguous
 and survives a reworded heading. The section numbers in `architect-overview.md`
 and `specification.md` are stable — the prose around them is not.
+
+`declined` is a ticket that will not be done as written. The file stays — the id
+is never reused and the reasoning is the record — with a closing paragraph in
+`## Notes` saying what was declined, why, and which ticket carries whatever
+survived. A ticket that was merely dropped for now is `todo`; `declined` is a
+decision.
 
 `status` lives **only** in the frontmatter — that is the authoritative value.
 `README.md` is derived data: it mirrors `id`, `title`, `status` and `depends_on`

@@ -2,7 +2,7 @@
 id: T-026
 type: ticket
 title: Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop
-status: todo
+status: declined
 depends_on: [T-017, T-024]
 refs:
   - .claude/skills/teachers-ticket/SKILL.md
@@ -136,3 +136,28 @@ Two things the implementation has to decide, neither settled here:
   ledger row instead would restore exactly that bug if the row was written
   against a different tree, so the second run should probably stay and the
   ticket should say so rather than dedupe it.
+
+**Declined on 2026-09-09. Superseded by `T-029`,** which carries the criteria
+above minus one layer.
+
+What this ticket asked for splits in two. The check-definition half — one gate
+command, the routing stated once, held in step with `ci.yml` by a test — was
+right, and `T-029` keeps it unchanged; the drift it named was real, with `build`
+and `scripts/verify-schema.sql` in `ci.yml` and in neither skill.
+
+The self-attestation half asked a script to make the agent's own record
+trustworthy: a re-run counter keyed on a hash of the working tree, a per-check
+fix cap, a validator over the dispositions and a computed convergence. A
+validator can check that a field is not empty, never that it is true, and the
+implementation demonstrated it — a finding was recorded `fixed`, with the
+validator in place, on evidence naming code that did not exist. The authority
+that does hold is outside the agent and was already available: the gate's exit
+code and `gh pr checks`. `T-029` keeps those, keeps the ledger as memory across a
+compacted context, and drops the policing.
+
+The implementation is PR #22 on `claude/ticket-t-026-deterministic-ticket-loop`
+— ~2,100 lines under `scripts/gate/` against an application of ~19,800. It is
+kept as the record of what was tried and is not merged. `T-028`, the unexplained
+CI integration failure filed from it, lives on that branch and is not on `main`.
+`ADR-011` was written on that branch and is not merged either; the ADR `T-029`
+asks for is the one decision worth keeping from it.

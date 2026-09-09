@@ -35,8 +35,9 @@ for reading. Order is priority; the ID number is not.
 | [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | done | T-002, T-004 |
 | [T-024](T-024-ci-gate-on-every-commit.md) | CI — run the full gate on every pushed commit, and gate the image publish on it | done | T-015 |
 | [T-025](T-025-enable-branch-protection.md) | Enable branch protection on `main` so the CI gate blocks rather than reports | todo | T-024 |
-| [T-026](T-026-deterministic-ticket-loop.md) | Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop | todo | T-017, T-024 |
+| [T-026](T-026-deterministic-ticket-loop.md) | Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop | declined | T-017, T-024 |
 | [T-027](T-027-backlog-contract-convention-tests.md) | Convention tests for the backlog and document contract | todo | T-017 |
+| [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | todo | T-017, T-024 |
 
 ## Open questions
 
@@ -85,12 +86,13 @@ code: it turns a rule that ticket's review had to enforce by hand into one the
 test suite enforces, so it is review tooling in the same sense as T-017. T-023
 is the same shape and hangs off both T-009 and T-010, because one defect turned
 up in both reviews and was fixed by hand each time — the `*` in the diagram
-marks that second edge, which the tree has no room to draw. T-026 and T-027
+marks that second edge, which the tree has no room to draw. T-027 and T-029
 are absent from the diagram for the reason T-017 and T-018 are: they change the
 tooling every other ticket is worked and checked by, not the application. T-027
 hangs off T-017 like T-019 and T-022 — a check the review skill may only
-propose, promoted into the suite. T-026 hangs off T-017 for the review loop it
-bounds and off T-024 for the check list that loop must agree with.
+propose, promoted into the suite. T-029 hangs off T-017 for the review loop it
+bounds and off T-024 for the check list that loop must agree with. T-026 carried
+those same edges and is `declined`; T-029 replaces it.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency they
@@ -101,7 +103,7 @@ T-021, the two open tickets off T-007, are what remain of the calendar work.
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-026 and T-027 are
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027 and T-029 are
 not product scope: they are the review tooling those tickets are checked by, and
 the documents that tooling reads. T-024 is not product scope either, and is not review tooling: it
 is the deployment path checking itself, which is why it hangs off T-015 rather
