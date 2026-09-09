@@ -55,7 +55,7 @@ export function runTable(summary: RunSummary): string {
   lines.push(
     `${counted("pass")} passed, ${counted("fail")} failed, ` +
       `${counted("flake")} flaky, ${counted("skipped")} skipped — ` +
-      `${summary.commit} on ${summary.branch}, against ${summary.base}`,
+      `${summary.tree} on ${summary.branch}, against ${summary.base}`,
   );
   return lines.join("\n");
 }
@@ -67,19 +67,23 @@ export function skipNotes(summary: RunSummary): string[] {
     .map((row) => `${row.name}: ${row.detail ?? "skipped"}`);
 }
 
+/** The latest row for each check, in the order the checks were first seen. */
+function latestByName(rows: readonly LedgerRow[]): Map<string, LedgerRow> {
+  const latest = new Map<string, LedgerRow>();
+  for (const row of rows) latest.set(row.name, row);
+  return latest;
+}
+
 /** The markdown block the pull request body carries under **Tests**. */
 export function markdownSummary(
   rows: readonly LedgerRow[],
   findings: FindingsFile | null,
 ): string {
-  const latest = new Map<string, LedgerRow>();
-  for (const row of rows) latest.set(row.name, row);
-
   const lines = ["| Check | Result | Commit | When |", "|---|---|---|---|"];
-  for (const row of latest.values()) {
+  for (const row of latestByName(rows).values()) {
     const note = row.result === "skipped" ? ` — ${row.detail ?? "not run here"}` : "";
     lines.push(
-      `| \`${row.name}\` | ${MARK[row.result]}${note} | \`${row.commit}\` | ${row.at} |`,
+      `| \`${row.name}\` | ${MARK[row.result]}${note} | \`${row.tree}\` | ${row.at} |`,
     );
   }
 
@@ -113,7 +117,26 @@ export function markdownSummary(
 }
 
 /**
- * `npm run gate --report`: the loop's state, computed from the ledger.
+ * What `--report` needs to know that the ledger alone cannot say.
+ *
+ * `.gate/` outlives a branch and a ticket. Without this the report reads
+ * whatever the last ticket left behind: another branch's converged rounds and
+ * its green rows for every check the current diff does not route, and it prints
+ * "converged" before the current ticket has had a single review round. That is
+ * the self-attestation the ledger replaced, wearing the ledger's clothes.
+ */
+export type ReportContext = {
+  readonly ticket: string | null;
+  /** What is checked out right now, from `treeId`. */
+  readonly tree: string;
+  /** The checks this diff routes to — every one of them needs a row. */
+  readonly expected: readonly string[];
+  /** Ledger lines that were not JSON, so a damaged file is visible. */
+  readonly damaged?: number;
+};
+
+/**
+ * `npm run gate -- --report`: the loop's state, computed from the ledger.
  *
  * Returns the text and whether the loop may report the ticket done. Everything
  * that says "not yet" here is a fact about a file, not a judgement about the
@@ -122,18 +145,42 @@ export function markdownSummary(
 export function loopReport(
   rows: readonly LedgerRow[],
   findings: FindingsFile | null,
+  context: ReportContext,
 ): { text: string; done: boolean } {
   const blockers: string[] = [];
   const lines: string[] = [];
 
-  if (rows.length === 0) {
+  if (context.damaged) {
+    blockers.push(
+      `${context.damaged} unreadable line(s) in .gate/ledger.jsonl — they were skipped`,
+    );
+  }
+
+  // Only rows for the tree that is checked out right now count. A green row
+  // from three commits ago is a statement about a tree nobody has.
+  const here = rows.filter((row) => row.tree === context.tree);
+  if (here.length === 0) {
     return {
-      text: "The ledger is empty: no gate has run. `npm run gate` first.",
+      text: `NOT DONE — no gate has run against ${context.tree}. \`npm run gate\` first.`,
       done: false,
     };
   }
 
-  const red = currentlyRed(rows);
+  const latest = latestByName(here);
+  for (const name of context.expected) {
+    const row = latest.get(name);
+    if (!row) {
+      blockers.push(`\`${name}\` is routed by this diff and has no row for ${context.tree}`);
+    } else if (row.result === "skipped") {
+      // A skip is never a pass. CI has the Docker daemon and the database this
+      // machine may not, so `gh pr checks` on the pushed head is what clears it.
+      blockers.push(
+        `\`${name}\` was skipped (${row.detail ?? "no reason recorded"}) — CI runs it; read \`gh pr checks\``,
+      );
+    }
+  }
+
+  const red = currentlyRed(here);
   if (red.length > 0) blockers.push(`red check(s): ${red.join(", ")}`);
 
   const capped = cappedChecks(rows);
@@ -143,20 +190,20 @@ export function loopReport(
     );
   }
 
-  const flaked = flakes(rows);
+  const flaked = flakes(here);
   if (flaked.length > 0) {
-    lines.push(
-      `Flakes to file as tickets: ${flaked.map((row) => row.name).join(", ")}.`,
-    );
+    lines.push(`Flakes to file as tickets: ${flaked.map((row) => row.name).join(", ")}.`);
   }
 
   if (findings === null) {
     blockers.push("no findings file: phase 7 has not recorded a review round");
+  } else if (context.ticket && findings.ticket !== context.ticket) {
+    blockers.push(
+      `the findings file is for ${findings.ticket}, not ${context.ticket} — it is another ticket's evidence`,
+    );
   } else {
     const state = convergence(findings);
-    lines.push(
-      `Rounds: ${state.rounds}; findings per round: ${state.counts.join(", ")}.`,
-    );
+    lines.push(`Rounds: ${state.rounds}; findings per round: ${state.counts.join(", ")}.`);
     for (const problem of state.problems) blockers.push(problem);
     if (state.openInLastRound > 0) {
       blockers.push(
@@ -171,12 +218,15 @@ export function loopReport(
   }
 
   lines.push("");
-  lines.push(markdownSummary(rows, findings));
+  lines.push(markdownSummary(here, findings));
 
   if (blockers.length > 0) {
     lines.unshift(...blockers.map((blocker) => `NOT DONE — ${blocker}`), "");
   } else {
-    lines.unshift("Loop converged: every check green and every finding disposed.", "");
+    lines.unshift(
+      `Loop converged against ${context.tree}: every routed check green and every finding disposed.`,
+      "",
+    );
   }
 
   return { text: lines.join("\n"), done: blockers.length === 0 };

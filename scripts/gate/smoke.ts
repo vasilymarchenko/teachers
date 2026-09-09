@@ -119,7 +119,9 @@ export async function migratorSmoke(): Promise<Executed> {
         "-e", "POSTGRES_USER=teachers",
         "-e", "POSTGRES_PASSWORD=teachers",
         "-e", "POSTGRES_DB=teachers",
-        "-p", `${hostPort}:5432`,
+        // Loopback only: the database carries fixed credentials and nothing
+        // outside this machine has any business reaching it.
+        "-p", `127.0.0.1:${hostPort}:5432`,
         "--health-cmd", "pg_isready -h 127.0.0.1 -U teachers -d teachers",
         "--health-interval", "5s",
         "--health-timeout", "5s",

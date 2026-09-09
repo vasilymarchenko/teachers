@@ -113,6 +113,16 @@ describe("an env file", () => {
   it("leaves .env.example alone", () => {
     expect(hygieneProblems({ ...clean, changedPaths: [".env.example"] })).toEqual([]);
   });
+
+  it("leaves .envrc alone — it is direnv's file, not an env file", () => {
+    // The pattern claimed it before `(?:$|\.)` was added. Flagging a real file
+    // a developer legitimately commits is the check being wider than its rule.
+    expect(hygieneProblems({ ...clean, changedPaths: [".envrc"] })).toEqual([]);
+  });
+
+  it("still catches one in a subdirectory", () => {
+    expect(hygieneProblems({ ...clean, changedPaths: ["config/.env"] })).toHaveLength(1);
+  });
 });
 
 describe("the block next dev re-adds to CLAUDE.md", () => {

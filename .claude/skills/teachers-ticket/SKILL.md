@@ -225,10 +225,12 @@ A check the gate could not run is recorded as `skipped` with the reason and is
 `--all` and `--base` are there for narrowing while you work; the run that
 precedes the PR is the plain one.
 
-If a check is red, fix it and run the gate again. If it is red once and you
-suspect the environment rather than the code, `npm run gate -- --rerun <check>`
-is the single re-run you get: green makes it a flake, which is recorded as one
-and owes a backlog ticket; red again is a finding. A third attempt is refused.
+If a check is red, fix it and run the gate again. If you suspect the environment
+rather than the code, running the gate again **with nothing edited** is the one
+re-run you get — there is no flag, because the ledger counts attempts against
+the working tree. Green makes it a flake, recorded as one, owing a backlog
+ticket; red again is a finding; a third attempt against the same tree is refused
+without being run. Mechanics: `docs/architecture/design/T-026-gate-and-ledger.md` §6.
 
 Push with `git push -u origin <branch>`, then open the PR. Check for a PR
 template first (`.github/pull_request_template.md`,
@@ -266,7 +268,9 @@ session had patience for.
 - **At most three fix attempts per failing check.**
 
 Both are counted from `.gate/ledger.jsonl`, not from memory, and
-`npm run gate -- --report` names the one that was reached. **Hitting a cap stops
+`npm run gate -- --report` names the one that was reached. The numbers live in
+`scripts/gate/ledger.ts`; `docs/architecture/design/T-026-gate-and-ledger.md` §8
+says how each is computed. **Hitting a cap stops
 the loop.** Report the ledger and everything still open to the user; do not open
 another round, and do not report the ticket done.
 
@@ -299,9 +303,9 @@ to it.
       "findings": [
         {
           "id": "R1-1",
-          "file": "lib/domain/schedule/expand.ts:42",
-          "rule": "architect-overview.md §8.5 — no new Date() in domain code",
-          "summary": "expand() reads the clock instead of taking today",
+          "file": "<path:line>",
+          "rule": "<document> §N — the sentence the code violates, quoted>",
+          "summary": "<one sentence: the defect>",
           "source": "contract"
         }
       ]
@@ -316,6 +320,11 @@ that cannot tell whether it converged has no exit criterion.
 
 **3. Triage.** Every finding takes exactly one of four dispositions, written
 back into its entry with the evidence that disposition costs:
+
+The field names are `docs/architecture/design/T-026-gate-and-ledger.md` §7's,
+and `--report` refuses a disposition that is missing its evidence, so a
+disagreement between this table and that one shows up as a refusal rather than
+as a wrong answer.
 
 | Disposition | Evidence field | What it means |
 |---|---|---|
@@ -375,8 +384,12 @@ passed.
 ### The report
 
 ```sh
-npm run gate -- --report
+npm run gate -- --report --ticket T-NNN
 ```
+
+Pass the ticket: `.gate/` outlives a branch, and without it the report will
+happily read the previous ticket's converged rounds. It reads only the rows for
+the tree that is checked out now, for the same reason.
 
 Derived from the ledger and the findings file: what ran, against which commit,
 what each round found, how each finding was disposed of, and what is still open.

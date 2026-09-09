@@ -12,8 +12,8 @@
  * undisposed is the end. ADR-011.
  */
 
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { FINDINGS_PATH, MAX_REVIEW_ROUNDS } from "./ledger";
 
@@ -153,10 +153,4 @@ export function readFindings(root = process.cwd()): FindingsFile | null {
   } catch {
     return null;
   }
-}
-
-export function writeFindings(file: FindingsFile, root = process.cwd()): void {
-  const path = join(root, FINDINGS_PATH);
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(file, null, 2) + "\n");
 }

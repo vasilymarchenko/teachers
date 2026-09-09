@@ -2,7 +2,7 @@
 id: T-026
 type: ticket
 title: Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop
-status: in-progress
+status: done
 depends_on: [T-017, T-024]
 refs:
   - docs/architecture/decisions/ADR-011-one-gate-definition-and-a-bounded-review-loop.md
@@ -28,67 +28,67 @@ the *result* of measuring is recorded rather than remembered.
 
 ## Acceptance criteria
 
-- [ ] `npm run gate` runs the checks required by the diff: it resolves
+- [x] `npm run gate` runs the checks required by the diff: it resolves
       `git diff --name-only origin/main...HEAD`, selects checks by path, runs
       **all** of them without short-circuiting, prints one table, and writes a
       machine-readable result. A lint error and three red tests are one report,
       not three round-trips.
-- [ ] The routing is stated once and covers what `ci.yml` covers:
+- [x] The routing is stated once and covers what `ci.yml` covers:
       always `lint`, `typecheck`, `test`, `build`; `lib/db/**` or `drizzle/**`
       adds `db:migrate`, `scripts/verify-schema.sql` and `test:integration`;
       `Dockerfile` or `docker-compose*.yml` adds the `runner` and `migrator`
       builds and the migrator smoke test.
-- [ ] A test holds the gate's check list and `ci.yml` in step, so a check added
+- [x] A test holds the gate's check list and `ci.yml` in step, so a check added
       to CI and not to the gate fails the suite —
       the `lib/db/postgresImage.test.ts` pattern, which already holds one value
       across two files.
-- [ ] `npm run build` and `scripts/verify-schema.sql` are in the gate. Neither is
+- [x] `npm run build` and `scripts/verify-schema.sql` are in the gate. Neither is
       in the skill today (`SKILL.md:197`, `SKILL.md:201-203`) while both are in
       `ci.yml`, so a PR can be verified locally and red in CI.
-- [ ] `/teachers-ticket` phase 6 and `/teachers-review` phase 3 both invoke the
+- [x] `/teachers-ticket` phase 6 and `/teachers-review` phase 3 both invoke the
       gate. No `&&` chain of checks remains in either skill: the review skill
       already states why (`teachers-review/SKILL.md:101-107`) and the ticket
       skill still contradicts it.
-- [ ] A run ledger records one row per gate: name, result, exit code, the commit
+- [x] A run ledger records one row per gate: name, result, exit code, the commit
       it ran against, and when. No phase may be reported as passed without a
       row; the final report to the user is derived from the ledger, not from the
       conversation; a session resumed after compaction reads it and continues
       rather than re-attesting.
-- [ ] Phase 7 is a loop with a written exit criterion: review → triage → fix →
+- [x] Phase 7 is a loop with a written exit criterion: review → triage → fix →
       gate → re-review, ending when no finding remains undisposed. Caps are
       stated and honoured — at most three review rounds, at most three fix
       attempts per failing check — and hitting a cap stops the loop and reports
       the ledger to the user instead of churning.
-- [ ] A finding has four dispositions, each recorded with the finding:
+- [x] A finding has four dispositions, each recorded with the finding:
       **fixed**, **rejected** with the document text that refutes the rule the
       reviewer quoted, **deferred** to a named `T-NNN`, or **accepted** by the
       user. The skill offers two today — apply it (`SKILL.md:238`) or defer it
       (`SKILL.md:241`) — and no way to record that a finding was wrong, which is
       an outcome `/teachers-review`'s own evidence bar produces on purpose.
-- [ ] Both review passes return findings in a countable form, so round *N* and
+- [x] Both review passes return findings in a countable form, so round *N* and
       round *N+1* can be compared and convergence is computed rather than
       asserted. Prose findings cannot be diffed, and a loop that cannot tell
       whether it converged has no exit criterion.
-- [ ] A single flaky failure is distinguished from a red check by exactly one
+- [x] A single flaky failure is distinguished from a red check by exactly one
       re-run: green on the re-run is recorded as a flake and filed as a ticket;
       red again is a finding. Retrying until green is not permitted.
-- [ ] Acceptance-criteria checkboxes are ticked in phase 7, after the gate is
+- [x] Acceptance-criteria checkboxes are ticked in phase 7, after the gate is
       green, and only where an evidence row names a `file:line` or a test. They
       are ticked in phase 5 today (`SKILL.md:183`), before phase 6 has run a
       single check.
-- [ ] CI green on the pushed head is the last gate: the loop reads
+- [x] CI green on the pushed head is the last gate: the loop reads
       `gh pr checks` and does not report the ticket done while the run is red or
       pending. Where `gh` is unavailable the report says so — never that the run
       passed. `ci.yml` is the authoritative gate (`ADR-007`) and the skill does
       not currently look at it, while its definition of done claims checks
       "pass on the pushed head" (`SKILL.md:258`).
-- [ ] A diff-hygiene gate: every changed file appears in the approved plan's
+- [x] A diff-hygiene gate: every changed file appears in the approved plan's
       file list or is explained in the report; no `.only` and no newly added
       `.skip` in a test; no `.env`; the block `next dev` re-adds to `CLAUDE.md`
       is committed with the work or absent, never left as a stray change.
-- [ ] The gate edits nothing and pushes nothing. It reports, like the review it
+- [x] The gate edits nothing and pushes nothing. It reports, like the review it
       feeds.
-- [ ] The decision that the local gate and CI have one definition, and that
+- [x] The decision that the local gate and CI have one definition, and that
       phase 7 is bounded rather than run once, is recorded as an ADR that
       references `ADR-007` and `ADR-001` rather than re-arguing either, and is
       named from this ticket's `## Notes`.
@@ -160,3 +160,34 @@ narrows `TEACHER_EMAIL` and `TEACHER_PASSWORD` to `string`, and that narrowing
 does not reach into the `main()` closure that reads them. CI had been failing on
 `main` ever since, which is the exact failure this ticket exists to prevent.
 Fixed here, in its own commit, rather than building on a red base.
+
+**Where each criterion is satisfied**, ticked in phase 7 after the gate was
+green, each against a `file:line` or a test:
+
+| Criterion | Evidence |
+|---|---|
+| one gate command | `scripts/gate/run.ts`, `report.ts:runTable`, `.gate/last-run.json` |
+| routing stated once | `scripts/gate/checks.ts:CHECKS`; `checks.test.ts` "routing" |
+| held in step with `ci.yml` | `scripts/gate/checks.test.ts` "the gate covers what ci.yml runs" |
+| `build` and `verify-schema.sql` in the gate | `checks.ts:75`, `checks.ts:110`; `verifySchema.ts` |
+| both skills invoke it, no `&&` | `teachers-ticket/SKILL.md` phase 6, `teachers-review/SKILL.md` phase 3 |
+| run ledger | `scripts/gate/ledger.ts:LedgerRow`; `ledger.test.ts` |
+| bounded loop with caps | `teachers-ticket/SKILL.md` phase 7; `ledger.ts:MAX_FIX_ATTEMPTS`, `findings.ts:convergence` |
+| four dispositions with evidence | `findings.ts:EVIDENCE_FIELD`; `findings.test.ts` "a disposition costs evidence" |
+| countable findings | `teachers-review/SKILL.md` phase 5; `findings.ts:Round` |
+| exactly one re-run | `ledger.ts:attemptFor`; `ledger.test.ts` "the one permitted re-run" |
+| criteria ticked in phase 7 | this table; `teachers-ticket/SKILL.md` phases 5 and 7 |
+| `gh pr checks` last | `teachers-ticket/SKILL.md` phase 7 |
+| diff hygiene | `hygiene.ts`; `hygiene.test.ts`. The plan's file list stays a phase-7 obligation — there is no machine-readable plan, and the skill says so rather than implying the script covers it |
+| the gate edits nothing | it writes only `.gate/`, gitignored in `.gitignore:34` |
+| the ADR | `ADR-011`, named above |
+
+**The review loop ran two rounds and converged.** Round 1: 19 findings — 7 from
+the contract pass, 9 from `/code-review`, 3 from the architecture pass — all
+disposed of. Round 2: none. The two that mattered most were both in this
+ticket's own code: `git status --porcelain` was being read after `.trim()`, which
+ate the first line's leading status column and silently disabled the `CLAUDE.md`
+hygiene rule in exactly the case it exists for; and "retrying until green is not
+permitted" was enforced only on an opt-in `--rerun` flag, so a plain second
+`npm run gate` recorded a fresh `pass`. The re-run rule is now keyed on the
+working tree and has no flag at all.

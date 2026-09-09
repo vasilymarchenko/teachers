@@ -35,6 +35,13 @@ export type LedgerRow = {
   /** `null` when the check never started — a missing requirement. */
   readonly exitCode: number | null;
   readonly commit: string;
+  /**
+   * What was actually checked: the commit when the tree was clean, the commit
+   * plus a digest of the uncommitted change when it was not (`git.ts`). The
+   * commit above is for reading; the attempt count and the staleness check key
+   * on this.
+   */
+  readonly tree: string;
   readonly branch: string;
   /** ISO 8601, UTC. When the check finished. */
   readonly at: string;
@@ -45,7 +52,13 @@ export type LedgerRow = {
   readonly detail?: string;
 };
 
-/** How many times a red check may be fixed and re-gated before the loop stops. */
+/**
+ * How many times a red check may be fixed and re-gated before the loop stops.
+ *
+ * Distinct from the single re-run of `attemptFor`: that asks the same question
+ * of the same tree twice, to tell a flake from a red check. This counts how
+ * many *different* trees have failed the check in a row.
+ */
 export const MAX_FIX_ATTEMPTS = 3;
 
 /** How many review rounds phase 7 may run before it stops and reports. */
@@ -58,10 +71,40 @@ export function readLedger(root = process.cwd()): LedgerRow[] {
   } catch {
     return [];
   }
-  return raw
-    .split("\n")
-    .filter((line) => line.trim() !== "")
-    .map((line) => JSON.parse(line) as LedgerRow);
+  return readLedgerLines(raw).rows;
+}
+
+/**
+ * Parses the ledger, surviving a line that is not JSON.
+ *
+ * An `appendFileSync` interrupted mid-write, or a hand edit, otherwise makes
+ * every later `npm run gate` and every `--report` throw — and this file is the
+ * loop's only memory, so the failure mode is the loop losing everything it
+ * knows over one truncated line. A damaged line is skipped and counted.
+ */
+export function readLedgerLines(raw: string): { rows: LedgerRow[]; damaged: number } {
+  const rows: LedgerRow[] = [];
+  let damaged = 0;
+  for (const line of raw.split("\n")) {
+    if (line.trim() === "") continue;
+    try {
+      rows.push(JSON.parse(line) as LedgerRow);
+    } catch {
+      damaged += 1;
+    }
+  }
+  return { rows, damaged };
+}
+
+export function readLedgerWithDamage(root = process.cwd()): {
+  rows: LedgerRow[];
+  damaged: number;
+} {
+  try {
+    return readLedgerLines(readFileSync(join(root, LEDGER_PATH), "utf8"));
+  } catch {
+    return { rows: [], damaged: 0 };
+  }
 }
 
 export function appendRows(rows: readonly LedgerRow[], root = process.cwd()): void {
@@ -74,6 +117,8 @@ export function appendRows(rows: readonly LedgerRow[], root = process.cwd()): vo
 export type RunSummary = {
   readonly run: string;
   readonly commit: string;
+  /** The tree identity every row in this run was written against. */
+  readonly tree: string;
   readonly branch: string;
   readonly at: string;
   readonly base: string;
@@ -86,14 +131,6 @@ export function writeLastRun(summary: RunSummary, root = process.cwd()): void {
   const path = join(root, LAST_RUN_PATH);
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, JSON.stringify(summary, null, 2) + "\n");
-}
-
-export function readLastRun(root = process.cwd()): RunSummary | null {
-  try {
-    return JSON.parse(readFileSync(join(root, LAST_RUN_PATH), "utf8")) as RunSummary;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -119,25 +156,30 @@ export function consecutiveFailures(
   return count;
 }
 
+/** 1, 2, or refused. `attemptFor` is the whole of the one-re-run rule. */
+export type Attempt = 1 | 2 | "capped";
+
 /**
- * Whether one more re-run of this check against this commit is permitted.
+ * Which attempt this run of a check is, against this tree.
  *
- * Exactly one. Green on the re-run is a flake and owes a ticket; red again is a
- * finding. Retrying until green is how a suite that is lying to you keeps its
- * job, so the third attempt is refused by the tool rather than by a rule
- * somebody has to remember.
+ * Exactly one re-run. Green on it is a flake and owes a ticket; red again is a
+ * finding; a third is refused. The rule is keyed on the *tree*, not on the
+ * invocation, because that is what makes it enforceable: an ordinary second
+ * `npm run gate` with nothing edited is the re-run, and there is no honest way
+ * to ask a third time without changing something. An earlier version made the
+ * re-run an opt-in flag, which capped only the path an agent volunteered into
+ * and left plain repetition — the thing the rule forbids — entirely uncounted.
  */
-export function mayRerun(
+export function attemptFor(
   rows: readonly LedgerRow[],
   name: string,
-  commit: string,
-): boolean {
-  const forCommit = rows.filter(
-    (row) => row.name === name && row.commit === commit,
-  );
-  if (forCommit.length === 0) return false;
-  if (forCommit.some((row) => row.attempt === 2)) return false;
-  return forCommit[forCommit.length - 1].result === "fail";
+  tree: string,
+): Attempt {
+  const forTree = rows.filter((row) => row.name === name && row.tree === tree);
+  const last = forTree[forTree.length - 1];
+  // Green, skipped, or already recorded as a flake: nothing is being retried.
+  if (!last || last.result !== "fail") return 1;
+  return forTree.some((row) => row.attempt === 2) ? "capped" : 2;
 }
 
 /** The checks that are red as of the last row written for each of them. */
@@ -161,6 +203,6 @@ export function cappedChecks(rows: readonly LedgerRow[]): string[] {
   );
 }
 
-export function newRunId(now: Date, commit: string): string {
-  return `${now.toISOString().replace(/[:.]/g, "-")}-${commit}`;
+export function newRunId(now: Date, tree: string): string {
+  return `${now.toISOString().replace(/[:.]/g, "-")}-${tree}`;
 }

@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  attemptFor,
+  readLedgerLines,
   cappedChecks,
   consecutiveFailures,
   currentlyRed,
   flakes,
-  mayRerun,
   MAX_FIX_ATTEMPTS,
   type CheckResult,
   type LedgerRow,
@@ -34,6 +35,7 @@ function row(
     result,
     exitCode: result === "fail" ? 1 : result === "skipped" ? null : 0,
     commit: "abc1234",
+    tree: "abc1234",
     branch: "claude/ticket-t-026-x",
     at: new Date(Date.UTC(2026, 8, 9, 12, 0, sequence)).toISOString(),
     durationMs: 1000,
@@ -87,35 +89,47 @@ describe("the fix cap", () => {
 });
 
 describe("the one permitted re-run", () => {
-  it("is offered for a check that is red on its first attempt", () => {
-    expect(mayRerun([row("test", "fail")], "test", "abc1234")).toBe(true);
+  it("is attempt 1 for a check that has never run against this tree", () => {
+    expect(attemptFor([], "test", "abc1234")).toBe(1);
   });
 
-  it("is refused a second time — retrying until green is not permitted", () => {
+  it("is attempt 2 for a check that is red on its first attempt", () => {
+    expect(attemptFor([row("test", "fail")], "test", "abc1234")).toBe(2);
+  });
+
+  it("is capped the third time — retrying until green is not permitted", () => {
     const rows = [row("test", "fail"), row("test", "fail", { attempt: 2 })];
 
-    expect(mayRerun(rows, "test", "abc1234")).toBe(false);
+    expect(attemptFor(rows, "test", "abc1234")).toBe("capped");
   });
 
-  it("is refused for a check that passed", () => {
-    expect(mayRerun([row("test", "pass")], "test", "abc1234")).toBe(false);
+  it("counts a plain second run, not only an opt-in one", () => {
+    // The whole point. An earlier version made the re-run a flag, so a second
+    // ordinary `npm run gate` at the same tree recorded a fresh `pass` and the
+    // rule applied only to the path a careful caller volunteered into.
+    const rows = [row("test", "fail")];
+
+    expect(attemptFor(rows, "test", "abc1234")).toBe(2);
   });
 
-  it("is refused against a commit the check has not run on", () => {
-    // The point of a re-run is to ask the same question of the same tree twice.
-    // Against a different commit it is a first run, and a green answer proves
-    // the fix rather than a flake.
-    expect(mayRerun([row("test", "fail")], "test", "def5678")).toBe(false);
+  it("is attempt 1 again once the check has gone green", () => {
+    const rows = [row("test", "fail"), row("test", "pass", { attempt: 2 })];
+
+    expect(attemptFor(rows, "test", "abc1234")).toBe(1);
   });
 
-  it("is offered again once the check is red on a later commit", () => {
-    const rows = [
-      row("test", "fail"),
-      row("test", "fail", { attempt: 2 }),
-      row("test", "fail", { commit: "def5678" }),
-    ];
+  it("is attempt 1 for a tree the check has not failed on", () => {
+    // An edit changes the tree, so fixing the code resets the count — which is
+    // why the rule is keyed on the tree and not on the commit or the run.
+    const rows = [row("test", "fail"), row("test", "fail", { attempt: 2 })];
 
-    expect(mayRerun(rows, "test", "def5678")).toBe(true);
+    expect(attemptFor(rows, "test", "abc1234+deadbeef")).toBe(1);
+  });
+
+  it("does not let another check's failures cap this one", () => {
+    const rows = [row("lint", "fail"), row("lint", "fail", { attempt: 2 })];
+
+    expect(attemptFor(rows, "test", "abc1234")).toBe(1);
   });
 });
 
@@ -131,5 +145,25 @@ describe("what the report reads back", () => {
 
     expect(currentlyRed(rows)).toEqual([]);
     expect(flakes(rows).map((r) => r.name)).toEqual(["test"]);
+  });
+});
+
+describe("reading a damaged ledger", () => {
+  it("keeps the rows it can read and counts the ones it cannot", () => {
+    // The ledger is the loop's only memory. An appendFileSync interrupted
+    // mid-write would otherwise make every later gate and every report exit 2
+    // on a bare "Unexpected end of JSON input", with nothing to recover from.
+    const good = JSON.stringify(row("lint", "pass"));
+    const truncated = '{"kind":"check","name":"tes';
+    const raw = [good, truncated, good, ""].join("\n");
+
+    const { rows, damaged } = readLedgerLines(raw);
+
+    expect(rows).toHaveLength(2);
+    expect(damaged).toBe(1);
+  });
+
+  it("reads an empty ledger as no rows and no damage", () => {
+    expect(readLedgerLines("\n\n")).toEqual({ rows: [], damaged: 0 });
   });
 });

@@ -108,10 +108,13 @@ never narrower. `diff-hygiene` is the one gate-only check, because everything it
 looks at is a property of the change rather than of the commit CI receives.
 
 **The ledger is `.gate/`, gitignored.** One row per check — name, result, exit
-code, commit, branch, time, attempt — in `ledger.jsonl`, the review's rounds and
-dispositions in `findings.json`. No phase may be reported as passed without a
-row, and the final report is rendered from these files rather than from the
-conversation. The pull request body carries the summary, because the ledger's
+code, commit, branch, time, attempt, and the *tree* it ran against — in
+`ledger.jsonl`, the review's rounds and dispositions in `findings.json`. The
+tree, not the commit, is the identity: the gate runs against the working tree,
+so on a dirty one a row naming only `HEAD` claims a tree that was never
+committed. No phase may be reported as passed without a row for the tree that is
+checked out, and the final report is rendered from these files rather than from
+the conversation. The pull request body carries the summary, because the ledger's
 reader is the resuming agent and the body's reader is a human.
 
 **Phase 7 is a loop with a computed exit criterion** — review, triage, fix,
@@ -125,9 +128,13 @@ the reviewer quoted, `deferred` with a `T-NNN` that exists, `accepted` with what
 the user said. Findings are returned as a countable list so two rounds can be
 compared.
 
-**A red check gets exactly one re-run.** Green on it is recorded as `flake`,
-never as `pass`, and owes a ticket; red again is a finding. The third attempt is
-refused by the gate rather than by a rule someone has to remember.
+**A red check gets exactly one re-run**, counted against the *working tree*
+rather than the commit or an opt-in flag: running the gate again with nothing
+edited is the re-run, and a third attempt is refused without being run. Green on
+the second is recorded as `flake`, never as `pass`, and owes a ticket; red again
+is a finding. Keying it on the invocation was tried first and caps only the path
+a careful caller volunteers into — the plain repetition the rule actually
+forbids went uncounted.
 
 ## Consequences
 

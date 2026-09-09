@@ -58,8 +58,12 @@ const DISABLED = new RegExp(`${LEAD}${RUNNER}\\.(?:skip|todo)\\s*\\(`);
 /**
  * A `.env` in the diff. `.env.example` is the committed template and is fine;
  * everything else under that name is a secret or a machine-local override.
+ *
+ * The `(?:$|\.)` matters: without it the pattern also claims `.envrc`, which is
+ * direnv's file and not an env file at all — wider than the rule it comes from,
+ * which is how a check starts producing confident nonsense.
  */
-const ENV_FILE = /(?:^|\/)\.env(?!\.example$)/;
+const ENV_FILE = /(?:^|\/)\.env(?:$|\.(?!example$))/;
 
 export function hygieneProblems(input: HygieneInput): string[] {
   const problems: string[] = [];

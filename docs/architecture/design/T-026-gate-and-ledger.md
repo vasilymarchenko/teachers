@@ -7,8 +7,17 @@ Rationale lives in `docs/architecture/decisions/ADR-011-one-gate-definition-and-
 which references `ADR-007` (CI is the authoritative gate) and `ADR-001` (the
 review reads the documents). This document adds no reasoning: it states the
 check table, the routing, the ledger row shapes, the disposition vocabulary and
-the caps, so `.claude/skills/**` and `scripts/gate/checks.test.ts` reference one
-description instead of three.
+the caps.
+
+**What is authoritative here, and what a skill may repeat.** `scripts/gate/` is
+the implementation and this document describes it; where the two disagree, the
+code is right and this file is a bug. `.claude/skills/**` may state the four
+disposition *names* and the two caps, because an agent has to know them to work
+and a skill that only pointed here would be unusable — but the exact JSON field
+names, the routing patterns and the row shapes live only here, and the skills
+link to the section rather than copying it. What makes that safe rather than
+merely tidy is that `--report` validates every one of them: a skill that drifts
+produces a loud refusal, not a quiet wrong answer.
 
 ## 1. Files
 
@@ -17,6 +26,7 @@ description instead of three.
 | `scripts/gate/checks.ts` | `CHECKS` — the single statement of the check table and its routing |
 | `scripts/gate/run.ts` | the CLI: resolve the diff, select, run, record, print |
 | `scripts/gate/exec.ts` | child processes; capture rather than inherit |
+| `scripts/gate/git.ts` | porcelain parsing and the tree identity |
 | `scripts/gate/ledger.ts` | `.gate/` paths, row shapes, the two counters the caps read |
 | `scripts/gate/findings.ts` | findings, dispositions, convergence |
 | `scripts/gate/hygiene.ts` | the diff-hygiene check |
@@ -29,7 +39,7 @@ they run in `npm test` — which is itself one of the gate's checks.
 
 ## 2. The check table
 
-Ten checks. `ci` names the step in `.github/workflows/ci.yml` the check stands
+Eleven checks — ten that `ci.yml` also runs, and `diff-hygiene`. `ci` names the step in `.github/workflows/ci.yml` the check stands
 for; `checks.test.ts` asserts the two sets are equal in both directions for
 every family it can extract generically (npm scripts, Docker build targets, SQL
 scripts under `scripts/`) and that every other `ci` value occurs literally in
@@ -58,14 +68,28 @@ never narrower.
 `ci: null` marks a gate-only check. `GATE_ONLY` in `checks.test.ts` lists them,
 so adding one is a deliberate edit in two places.
 
-## 3. The changed set
+## 3. The changed set and the tree identity
 
 ```
 git diff --name-only <base>...HEAD      ∪      git status --porcelain
 ```
 
 `<base>` is `origin/main` unless `--base` says otherwise. When it does not
-resolve, every check runs and the run's `base` label says so.
+resolve, every check runs and the run's `base` label says so. Porcelain output
+is parsed by `git.ts`, never by trimming and counting characters: either status
+column may be a space, so trimming the output eats the first line's.
+
+**The tree identity** (`treeId`) is what a row is actually about:
+
+| Working tree | `tree` |
+|---|---|
+| clean | the short HEAD sha, e.g. `20e0ff6` |
+| dirty | `20e0ff6+<8 hex>`, the digest of `git status --porcelain` and `git diff HEAD` |
+
+The commit alone will not do: the gate runs against the working tree, so on a
+dirty tree a row naming only HEAD claims a tree that was never committed. The
+identity is also what makes §6 enforceable — an edit changes it, so the attempt
+count resets on the fix rather than on the commit.
 
 ## 4. `npm run gate`
 
@@ -73,14 +97,18 @@ resolve, every check runs and the run's `base` label says so.
 |---|---|
 | `npm run gate` | the routed checks |
 | `npm run gate -- --all` | every check |
-| `npm run gate -- --only a,b` | just these |
+| `npm run gate -- --only a,b` | just these; an empty list is an error, not zero checks |
 | `npm run gate -- --base <ref>` | a different base |
-| `npm run gate -- --rerun <name>` | the one permitted re-run |
+| `npm run gate -- --ticket T-NNN` | with `--report`, the ticket the findings file must be for |
 | `npm run gate -- --report` | the loop state; exit 1 while anything is open |
 | `npm run gate -- --json` | the run summary as JSON |
 
-Exit code: 0 when no check failed, 1 when one did, 2 on a bad argument. Every
-selected check runs — there is no short-circuit. The gate writes only `.gate/`.
+There is deliberately **no re-run flag** — see §6.
+
+Exit code: 0 when no check failed, 1 when one did, 2 on a bad argument, set
+through `process.exitCode` rather than `process.exit()` so a large report is not
+truncated on a platform with asynchronous stdout. Every selected check runs —
+there is no short-circuit. The gate writes only `.gate/`.
 
 ## 5. The ledger
 
@@ -88,36 +116,48 @@ selected check runs — there is no short-circuit. The gate writes only `.gate/`
 
 ```json
 {
-  "kind": "check", "run": "<iso>-<commit>", "name": "test",
+  "kind": "check", "run": "<iso>-<tree>", "name": "test",
   "result": "pass | fail | skipped | flake",
-  "exitCode": 0, "commit": "abc1234", "branch": "claude/ticket-t-026-x",
+  "exitCode": 0, "commit": "20e0ff6", "tree": "20e0ff6",
+  "branch": "claude/ticket-t-026-x",
   "at": "2026-09-09T12:00:00.000Z", "durationMs": 5900, "attempt": 1,
-  "detail": "the skip reason, or the last 40 lines of a failure"
+  "detail": "the skip reason, the refusal, or the last 40 lines of a failure"
 }
 ```
 
 `.gate/last-run.json` holds the same rows plus `base`, `changedPaths` and `ok`.
 
 `result` is `skipped` — with `exitCode: null` and a `detail` saying why — when a
-requirement is absent. A skip is never a pass.
+requirement is absent. **A skip is never a pass**, and §8 treats it as a blocker:
+CI has the Docker daemon and the database the machine may not, so `gh pr checks`
+on the pushed head is what clears it.
+
+A line that is not JSON is skipped and counted rather than thrown on. The ledger
+is the loop's only memory, and losing all of it to one truncated line is a worse
+failure than reporting the damage.
 
 Two counters are derived from the rows:
 
 - **`consecutiveFailures(name)`** — failures counting back from the latest row
   for that check, stopping at anything that is not a failure. Reaching
-  `MAX_FIX_ATTEMPTS` (3) caps the check.
-- **`mayRerun(name, commit)`** — true only when the latest row for that check
-  *at that commit* is `fail` and no row for that pair has `attempt: 2`.
+  `MAX_FIX_ATTEMPTS` (3) caps the check: three *different* trees have failed it.
+- **`attemptFor(name, tree)`** — §6.
 
 ## 6. The flake rule
 
-A red check gets exactly one re-run, against the same commit.
+A red check gets exactly one re-run **against the same tree**, and which attempt
+a run is comes from the ledger rather than from a flag:
 
-| Second attempt | Recorded as | Consequence |
-|---|---|---|
-| green | `flake` | a ticket is owed; `--report` names it |
-| red | `fail` | a finding |
-| a third | refused | the gate exits 1 with the reason |
+| Rows for (check, tree) | `attemptFor` | If it passes | If it fails |
+|---|---|---|---|
+| none, or the last is not `fail` | `1` | `pass` | `fail` |
+| the last is `fail`, no attempt 2 yet | `2` | `flake` — a ticket is owed | `fail` |
+| an attempt 2 exists and the last is `fail` | `"capped"` | — | not run; `fail` with the refusal in `detail` |
+
+Keyed on the tree and not on the invocation, because that is what makes it
+enforceable: an ordinary second `npm run gate` with nothing edited **is** the
+re-run. An opt-in flag capped only the path a careful caller volunteered into
+and left plain repetition — the thing the rule forbids — entirely uncounted.
 
 `flake` is deliberately not `pass`: a row that says `pass` loses the fact that
 the check was red once.
@@ -158,9 +198,17 @@ A finding with no `disposition` is open.
   round. A round whose findings were all `rejected` converges;
 - `cappedOut` — `MAX_REVIEW_ROUNDS` (3) reached with findings still open.
 
-`--report` exits 1 while any of these holds: a check is currently red, a check
-is capped, no findings file exists, a disposition lacks its evidence, a finding
-is open, or the round cap was reached with findings open.
+`--report` reads **only the rows for the tree that is checked out now**, because
+`.gate/` outlives a branch and a ticket: without that it reports the current
+ticket done on the last one's evidence. It exits 1 while any of these holds:
+
+- no row at all for this tree;
+- a routed check has no row for this tree, is red, or was skipped;
+- a check has reached the fix cap;
+- no findings file, or one belonging to a different ticket than `--ticket`;
+- a disposition lacks its evidence, or a finding is open;
+- the round cap was reached with findings still open;
+- the ledger had a damaged line.
 
 ## 9. `verify-schema` through a driver
 
@@ -176,7 +224,7 @@ strip.
 
 ## 10. The migrator smoke test
 
-Same three steps as `ci.yml`'s `images` job, arranged to run on any platform:
+What `ci.yml`'s `images` job does, arranged to run on any platform:
 
 1. build `--target migrator`;
 2. `docker network create`, then Postgres in that network with a host port the
