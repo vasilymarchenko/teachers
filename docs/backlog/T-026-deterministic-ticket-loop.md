@@ -219,3 +219,10 @@ local gate was green, for a suite the routing never selected. ADR-011 said the
 gate is "never narrower" than CI; that is true of the check *table* and false of
 per-diff *selection*, and the ADR now says which. `gh pr checks` is not
 optional, and the skill says so in two places.
+
+That failure did not recur — CI is green on `fa87ee0` — but it was never
+explained, and it is not recorded as a flake: the one-re-run rule compares the
+*same tree* twice, the next run was a different tree, and `366952f` could not be
+re-run because `gh` returns 401 on this repository. `T-028` carries it, together
+with the fact that `gh run view --log-failed` returns 403 here, so the log that
+would have settled it cannot be read from the terminal at all.

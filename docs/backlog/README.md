@@ -37,6 +37,7 @@ for reading. Order is priority; the ID number is not.
 | [T-025](T-025-enable-branch-protection.md) | Enable branch protection on `main` so the CI gate blocks rather than reports | todo | T-024 |
 | [T-026](T-026-deterministic-ticket-loop.md) | Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop | done | T-017, T-024 |
 | [T-027](T-027-backlog-contract-convention-tests.md) | Convention tests for the backlog and document contract | todo | T-017 |
+| [T-028](T-028-unexplained-integration-failure.md) | One unexplained CI integration failure, and no way to read the log that would explain it | todo | T-024 |
 
 ## Open questions
 
