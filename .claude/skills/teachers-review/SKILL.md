@@ -99,16 +99,29 @@ a review current with a project that is still moving.
 ## Phase 3 — The mechanical gate
 
 ```sh
-npm run lint; npm run typecheck; npm test
+npm run gate
 ```
 
-Separated deliberately: `&&` stops at the first failure, and a review that
-reports a lint error while three tests are also red costs the author three
-round-trips instead of one.
+One command. It selects the checks the diff needs, runs **all** of them without
+stopping at the first failure, and prints one table — a review that reports a
+lint error while three tests are also red costs the author three round-trips
+instead of one. Its check list is held in step with `.github/workflows/ci.yml`
+by `scripts/gate/checks.test.ts`, so what passes here is what CI asks
+(ADR-011). Do not assemble the commands by hand: a hand-written chain is how the
+two skills came to disagree about what "checked" means.
 
-Add `npm run test:integration` when the diff touches `lib/db` — it needs a
-migrated Postgres (`docker compose up -d`, then `npm run db:migrate`). If it
-cannot run here, say so; never imply it passed.
+A check the gate could not run — no Docker, no `DATABASE_URL` — is recorded as
+`skipped` with the reason. Repeat the reason in the report. Never imply a
+skipped check passed.
+
+**Run it here even when the caller already ran one.** In self-review
+`/teachers-ticket` phase 6 has just gated the same commit, and this looks like
+the same work twice. It is not: this run is against the *checked-out target*,
+which is the bug T-017 found the hard way — `gh pr diff` changes nothing on
+disk, so a gate run without a checkout tests whatever the session was already
+sitting on. Trusting the caller's ledger row instead would reinstate exactly
+that bug the first time the row was written against a different tree. Read the
+ledger to see what the caller got; do not substitute it for your own run.
 
 Nothing a rule can decide should cost a reviewer's attention. A failure here is
 a finding and does not stop the review — a broken build usually has more wrong
@@ -165,6 +178,13 @@ option, and do not file the cost as a defect. What *is* reportable is the diff
 having reached the condition under which that decision said it should be
 revisited, and code that contradicts a recorded default or implements it in a
 second place. Read the decision before you report against it.
+
+**Countable, not prose.** Report findings as a list of entries, each carrying
+the three things above plus which pass found it. The caller compares round *N*
+against round *N+1* to decide whether its loop has converged, and two paragraphs
+of narrative cannot be diffed. `ReportFindings` already produces this shape;
+where it is absent, keep the same one entry per finding in prose. An empty list
+is the most useful result this phase produces and must still be stated as one.
 
 **Reconcile** the two passes: one defect found by both is one finding, not two —
 two phrasings of one problem read as two problems. **Rank** by severity: a security or
@@ -252,8 +272,13 @@ method, same passes; four differences:
 
 - **The ticket is given, not inferred.** Phase 1 skips the search and never
   reports "no ticket id found".
-- **The findings are the output.** They go back to the caller, which fixes them
-  on the same branch and commits them. This skill still edits nothing.
+- **The findings are the output.** They go back to the caller, which disposes of
+  each one — fixed, rejected, deferred or accepted — and records the disposition
+  with its evidence. This skill still edits nothing, and it does not dispose of
+  its own findings: a reviewer who decides which of its findings count is not
+  reviewing. Expect some to come back `rejected` with the document text that
+  refutes the rule you quoted; that is phase 5's evidence bar working, not a
+  disagreement to relitigate.
 - **`--merge` defaults to `no`** — an author's own review is the last thing that
   should merge unattended — and **`--comment` to `--no-comment`**: inline
   comments on your own PR, which you are about to fix in the same session, are

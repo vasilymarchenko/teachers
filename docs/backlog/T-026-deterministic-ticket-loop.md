@@ -2,9 +2,11 @@
 id: T-026
 type: ticket
 title: Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop
-status: todo
+status: in-progress
 depends_on: [T-017, T-024]
 refs:
+  - docs/architecture/decisions/ADR-011-one-gate-definition-and-a-bounded-review-loop.md
+  - docs/architecture/design/T-026-gate-and-ledger.md
   - .claude/skills/teachers-ticket/SKILL.md
   - .claude/skills/teachers-review/SKILL.md
   - .github/workflows/ci.yml
@@ -136,3 +138,25 @@ Two things the implementation has to decide, neither settled here:
   ledger row instead would restore exactly that bug if the row was written
   against a different tree, so the second run should probably stay and the
   ticket should say so rather than dedupe it.
+
+**Named from here, as the last criterion asks:**
+`docs/architecture/decisions/ADR-011-one-gate-definition-and-a-bounded-review-loop.md`
+records the decision; `docs/architecture/design/T-026-gate-and-ledger.md` states
+the mechanics — the check table, the routing, the ledger row shapes, the
+disposition vocabulary and the caps.
+
+**Both open questions resolved.** The ledger lives in a gitignored `.gate/` in
+the repository rather than in the session scratchpad: `npm run gate` run by a
+human in a terminal has no scratchpad path, so the gate could not write its own
+ledger there, and a fresh session could not find the previous one. The pull
+request body carries the summary, exactly as the leaning wanted.
+`/teachers-review` keeps its own gate run, and phase 3 now says why — the
+review's run is against the checked-out target, and a caller's ledger row would
+reinstate the T-017 bug the first time it was written against a different tree.
+
+**The gate's first run found a red `main`.** `9c37c40` (2026-09-06) added
+`scripts/create-teacher.ts`, which does not typecheck: the module-scope guard
+narrows `TEACHER_EMAIL` and `TEACHER_PASSWORD` to `string`, and that narrowing
+does not reach into the `main()` closure that reads them. CI had been failing on
+`main` ever since, which is the exact failure this ticket exists to prevent.
+Fixed here, in its own commit, rather than building on a red base.

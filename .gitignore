@@ -28,6 +28,11 @@ pnpm-debug.log*
 pgdata/
 postgres-data/
 
+# The gate's run ledger (T-026, ADR-011). Not committed: its reader is the
+# resuming agent, not a reviewer, and a ledger in the diff is noise a reviewer
+# has to skip. What a reviewer reads is the summary in the pull request body.
+.gate/
+
 # Build / misc
 dist/
 build/

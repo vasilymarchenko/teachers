@@ -59,6 +59,31 @@ npm run dev                   # http://localhost:3000
 | `npm run db:migrate` | apply migrations — also an explicit deploy step |
 | `npm run db:seed` | reset the demo teacher and re-insert the fixture scenario |
 | `npm run db:studio` | Drizzle Studio |
+| `npm run gate` | every check this change needs, in one run (see below) |
+
+### The gate
+
+`npm run gate` is the local counterpart of CI. It works out which files the
+change touches, selects the checks those files need, runs **all** of them
+without stopping at the first failure, and prints one table — a lint error and
+three red tests are one report rather than three round-trips. Its check list is
+held in step with `.github/workflows/ci.yml` by `scripts/gate/checks.test.ts`,
+so a green gate is CI's answer rather than a subset of it.
+
+A check it cannot run here — no Docker daemon, no `DATABASE_URL` — is reported
+as **skipped**, with the reason, and never as passed.
+
+```sh
+npm run gate                     # the checks this change needs
+npm run gate -- --all            # every check
+npm run gate -- --only lint,test # just these
+npm run gate -- --report         # what the ledger says, once a review has run
+```
+
+Each run appends a row per check to `.gate/ledger.jsonl` — result, exit code,
+the commit it ran against, and when. `.gate/` is gitignored; the mechanics are
+in `docs/architecture/design/T-026-gate-and-ledger.md` and the reasoning in
+ADR-011.
 
 ### Migrations
 
