@@ -2,7 +2,7 @@
 id: T-028
 type: ticket
 title: Make the index-usage invariant accept the composite-FK join
-status: todo
+status: done
 depends_on: [T-008]
 refs:
   - lib/db/queries/indexUsage.integration.test.ts
@@ -27,28 +27,28 @@ the planner picks on the day.
 
 ## Acceptance criteria
 
-- [ ] `lib/db/queries/indexUsage.integration.test.ts` passes for
+- [x] `lib/db/queries/indexUsage.integration.test.ts` passes for
       `getTemplateVersions` against a migrated Postgres, in CI and locally.
-- [ ] The rule the test asserts distinguishes a scan that cannot cross tenants
+- [x] The rule the test asserts distinguishes a scan that cannot cross tenants
       from one that can, rather than matching on the index's leading column
       alone. `schedule_template_id_user_uq` is the composite-FK target
       `design/schema.md` §8 introduces so a `template_slot` cannot be attached to
       another user's template, and `templates.ts` joins through both of its
       columns.
-- [ ] The assertion does not depend on which of several tenant-safe indexes the
+- [x] The assertion does not depend on which of several tenant-safe indexes the
       planner chooses. With `enable_seqscan = off` over ~200 fixture rows the
       planner is picking between near-equal index-only scans, and the row counts
       a later ticket adds must not decide whether the suite is green.
-- [ ] A read that genuinely scans by an index no `user_id` predicate binds still
+- [x] A read that genuinely scans by an index no `user_id` predicate binds still
       fails the test, proven by a case that goes red when the rule is relaxed too
       far. The invariant of `architect-overview.md` §8.4 is not weakened to make
       this one query pass.
-- [ ] `architect-overview.md` §8.4 and `design/schema.md` §8 agree with what the
+- [x] `architect-overview.md` §8.4 and `design/schema.md` §8 agree with what the
       test asserts. If the rule as written in the documents is narrower than the
       one the code needs, the documents change too — the composite FK and the
       `user_id`-led index are two mechanisms for one guarantee, and §8.4 names
       only the second.
-- [ ] The other seven reads in the suite still pass.
+- [x] The other seven reads in the suite still pass.
 
 ## Notes
 
@@ -92,3 +92,21 @@ which asked what the failure was and how to read a CI log. The first question is
 answered above. The second is moot: `gh run view --log-failed` returns the log
 on this repository — the 403 recorded there was against a run on a branch, and
 the output quoted above was read with that command.
+
+**Done.** The rule is restated as binding rather than as the index's leading
+column — `ADR-011`, with overview §8.4 and `design/schema.md` §8 changed to name
+both mechanisms, and `design/T-008-calendar-read-queries.md` §6 rewritten to what
+the test now asserts. The leading-column property is still asserted, as a
+property of the DDL read from the catalog for every table carrying `user_id`.
+
+The failing plan is reproducible locally: with `enable_bitmapscan = off` the
+planner answers the slots query through `schedule_template_id_user_uq` with
+`Index Cond ((id = template_slot.template_id) AND (user_id = <param>))` — the
+plan CI failed on, and one the restated rule accepts. Over the eight reads, both
+statements each, under fourteen planner configurations (`enable_indexonlyscan`,
+`enable_nestloop`, `enable_hashjoin`, `enable_mergejoin`, `enable_bitmapscan`,
+`enable_material`/`enable_memoize`, and combinations), 140 plans over eleven
+distinct indexes produced no unbound scan and no `Seq Scan` — which is the
+third criterion's independence, measured rather than argued. That probe was a
+throwaway; what stays in the suite is the rule and the two negative controls.
+

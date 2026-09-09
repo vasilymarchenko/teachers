@@ -705,6 +705,15 @@ another user's template, because no such `(id, user_id)` pair exists. Without th
 composite key, `user_id` on a child table is a value the application sets and can
 therefore set wrongly.
 
+**The composite key is also a read-path mechanism, not only an integrity one.**
+Its `UNIQUE (id, user_id)` target is an index, and a join through both of its
+columns — which is what `lib/db/queries/templates.ts` does to reach a version's
+slots — is bound by `user_id` before a row is read, exactly as a `user_id`-led
+index is. Overview §8.4 asks that no scan can read another teacher's row; the
+index of the first column of this section's table and the composite key of this
+one are the two ways a table answers for it, and
+`lib/db/queries/indexUsage.integration.test.ts` asserts both (`ADR-011`).
+
 ---
 
 ## 9. Migration order

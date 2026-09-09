@@ -115,11 +115,24 @@ mistake worth seeing.
 
 `lib/db/queries/indexUsage.integration.test.ts` captures the SQL each module
 actually sends (Drizzle's logger, through `createRecordingDatabase()`), runs
-`EXPLAIN (FORMAT JSON)` on it with `enable_seqscan = off`, and asserts two
-things: no `Seq Scan`, and every index chosen has `user_id` as its leading
-column. Sequential scans are disabled because on the ~200 fixture rows the
-planner would rightly read the table; the question being asked is whether a
-usable index exists, not what the planner does at this size.
+`EXPLAIN (FORMAT JSON)` on it with `enable_seqscan = off`, and asserts that the
+plan holds no `Seq Scan`, that at least one index answers it, and that **every
+index scan in it binds `user_id` in its `Index Cond`** — to the statement's
+parameter, or to the `user_id` of a relation the same plan has already bound,
+which is what a composite-FK join does. A `Filter` does not count: the row is
+read first and discarded after. Sequential scans are disabled because on the
+~200 fixture rows the planner would rightly read the table; the question being
+asked is whether a usable index exists, not what the planner does at this size.
+
+Until T-028 the second assertion matched index *names* against the set whose
+leading column is `user_id`. That rejected `schedule_template_id_user_uq`, both
+of whose columns the slots join binds, and tied the suite's colour to which of
+several tenant-safe indexes the planner preferred (`ADR-011`). The leading-column
+property is still asserted, but as what it is — a property of the DDL, checked
+against the catalog for every table carrying a `user_id` column, with no planner
+involved. Two further cases `EXPLAIN` statements no module sends — one with no
+`user_id` predicate, one whose `user_id` can only reach the `Filter` — and
+require the rule to report them.
 
 The indexes the reads land on, all defined in `docs/architecture/design/schema.md`:
 
@@ -136,9 +149,12 @@ The indexes the reads land on, all defined in `docs/architecture/design/schema.m
 | `academic_year` | `academic_year_no_overlap_ex`, the same shape as `schedule_template` above |
 | `semester` | `semester_year_index_uq` |
 
-Every one of them has `user_id` as its first column, which is the property the
-test asserts — the index names themselves are what the planner happened to pick
-at this size and are recorded here as observation, not as a contract.
+The names are observation, not contract: they are what the planner happened to
+pick at this size, and the test asserts a property of the plan rather than this
+table. `schedule_template_id_user_uq` — the `UNIQUE (id, user_id)` composite-FK
+target of `schema.md` §8 — serves the slots join as legitimately as
+`template_slot_user_template_idx` does, and the planner chooses between them on
+row counts (T-028).
 
 ## 7. Fixture rows
 
