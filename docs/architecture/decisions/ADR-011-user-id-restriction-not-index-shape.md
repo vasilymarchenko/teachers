@@ -83,9 +83,22 @@ planner:
      must be a key on its own, or "one parent row" is not true. This is the
      composite FK of `design/schema.md` §8 doing read-path work.
 
-   An `Index Cond` and a `Filter` count alike, and at least one relation per
-   plan must be restricted to a *value* rather than to another relation, so the
-   chain cannot close on a `CTE` or `VALUES` list that nothing vouches for.
+   An `Index Cond` and a `Filter` count alike. "Already restricted" carries the
+   weight in both clauses: the resolution starts from the relations restricted
+   to a *value* — a parameter or a literal — and reaches the rest from there, so
+   a chain cannot close on a `CTE` or `VALUES` list that nothing vouches for, and
+   one relation's literal cannot answer for another's.
+
+   Two consequences of taking "every relation" literally:
+
+   - **the unit is the scan, not the table or its alias.** Two branches of an
+     `Append` are one alias and two reads, and an alias may vouch for another
+     relation only when every scan carrying it is restricted;
+   - **the arms of a `BitmapOr` are alternatives**, so an arm that restricts
+     `user_id` restricts nothing on its own. Their conditions are dropped rather
+     than modelled, which makes a read restricted only through a `BitmapOr` come
+     out red. No read sends one; a red for a plan that may be safe is the
+     direction this rule is allowed to be wrong in.
 
 The rule is `lib/db/planBinding.ts`, exercised against real plans by
 `indexUsage.integration.test.ts` and against the plan shapes a 200-row fixture

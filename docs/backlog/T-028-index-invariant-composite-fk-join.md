@@ -116,3 +116,22 @@ reason this ticket gave for not using it.
 Every clause was checked by removing it and watching a case go red: the value
 clause, the foreign-key clause, the parent-must-be-restricted check inside it,
 the equality requirement, and the reporting of an unrestricted relation.
+
+**Review of the pull request closed three holes in the rule**, each a way for a
+plan that reads a foreign row to come out clean, and each now a case in
+`planBinding.test.ts` that goes red when the clause is removed:
+
+- the fixpoint was seeded from "`user_id` is equated to something", so a
+  relation bound to a `VALUES` list counted as restricted whenever any other
+  relation in the plan reached a literal. It is seeded from the value clause;
+- binding was recorded per alias, so the restricted branch of an `Append`
+  answered for the unrestricted one;
+- the arms of a `BitmapOr` were concatenated into the conjunction the other
+  conditions form, which reads an alternative as a restriction.
+
+`foreignKeysToAKey()` also accepted a partial unique index as proof that a
+parent column identifies one row, where the catalog case in the same file
+excludes them and says why. The unit fixture claimed to be what that query
+returns and was not: it carried a `user_id -> user_id` pair the query cannot
+produce, and named `template_slot` as the schema's only composite-FK child when
+`semester` and `non_teaching_period` are two more.

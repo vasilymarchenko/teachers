@@ -114,6 +114,11 @@ async function plansOf(run: () => Promise<unknown>): Promise<PlanNode[][]> {
 /**
  * The foreign keys whose parent column is a key of the parent on its own. Read
  * once: a plan can only be judged against the schema it was planned for.
+ *
+ * The uniqueness has to be total, so `indpred is null` for the same reason the
+ * catalog case above gives: a partial unique index makes the column unique over
+ * the rows of its predicate and no others, and "one parent row" is then true
+ * only for some parents.
  */
 async function foreignKeysToAKey(): Promise<ForeignKey[]> {
   return client<ForeignKey[]>`
@@ -134,6 +139,7 @@ async function foreignKeysToAKey(): Promise<ForeignKey[]> {
         where i.indrelid = c.confrelid
           and i.indisunique
           and i.indisvalid
+          and i.indpred is null
           and i.indnkeyatts = 1
           and i.indkey[0] = k.parent
       )

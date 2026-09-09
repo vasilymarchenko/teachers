@@ -157,13 +157,10 @@ The indexes the reads land on, all defined in `docs/architecture/design/schema.m
 | `academic_year` | `academic_year_no_overlap_ex`, the same shape as `schedule_template` above |
 | `semester` | `semester_year_index_uq` |
 
-The names are observation, not contract, and the slots join is the proof: it is
-planned at least three ways at this size — `template_slot` bound by `user_id`
-with `schedule_template` joined to it, `schedule_template` driving and the slots
-reached by `template_id` through `template_slot_cell_uq`, and `template_slot`
-scanned whole through that index with `user_id` filtered afterwards. All three
-return one teacher's rows; which appears depends on whether the table has been
-analysed (T-028, `ADR-011`).
+The names are observation, not contract, and the slots join is the proof: at
+this size the planner builds it three different ways depending on whether the
+table has been analysed, all three returning one teacher's rows. `ADR-011`
+tabulates them and is the place that fact lives.
 
 ## 7. Fixture rows
 
