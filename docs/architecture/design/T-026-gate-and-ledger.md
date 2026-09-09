@@ -60,8 +60,13 @@ the workflow.
 | `migrator-smoke` | `teachers-migrator:ci` | image paths | docker |
 
 **Database paths:** `lib/db/**`, `drizzle/**`, `scripts/verify-schema.sql`.
-The third is wider than the ticket's routing; the gate may be wider than CI,
-never narrower.
+The third is wider than the ticket's routing.
+
+**Routing is narrower than CI, on purpose.** Every job in `ci.yml` runs on every
+commit; the gate selects by path, so a docs-only change runs five checks here
+and eleven there. The *table* covers CI — that is what `checks.test.ts` proves —
+but a given run does not, so a green gate is a prediction over the routed subset
+and silence over the rest. `gh pr checks` on the pushed head is the rest.
 
 **Image paths:** `Dockerfile`, `docker-compose*.yml` (either compose file).
 
@@ -84,7 +89,13 @@ column may be a space, so trimming the output eats the first line's.
 | Working tree | `tree` |
 |---|---|
 | clean | the short HEAD sha, e.g. `20e0ff6` |
-| dirty | `20e0ff6+<8 hex>`, the digest of `git status --porcelain` and `git diff HEAD` |
+| dirty | `20e0ff6+<8 hex>` — a digest over `git status --porcelain -uall`, `git diff HEAD`, and the content of the untracked test files diff-hygiene reads |
+
+The untracked content is in the digest because porcelain names such a file
+without describing it: without it, deleting an `it.only` from a new test leaves
+the identity unchanged, and the now-passing check is recorded as a `flake` owing
+a ticket for a defect that was simply fixed. `-uall`, because plain porcelain
+collapses a whole new directory to one `?? sub/` entry.
 
 The commit alone will not do: the gate runs against the working tree, so on a
 dirty tree a row naming only HEAD claims a tree that was never committed. The
@@ -132,6 +143,11 @@ requirement is absent. **A skip is never a pass**, and §8 treats it as a blocke
 CI has the Docker daemon and the database the machine may not, so `gh pr checks`
 on the pushed head is what clears it.
 
+A row is appended **as each check finishes**, not in one batch at the end: a
+check can throw, and a Ctrl-C during `npm run build` is ordinary, either of
+which would otherwise discard the rows for everything that had already run —
+several minutes of work, and the attempt counts §6 depends on.
+
 A line that is not JSON is skipped and counted rather than thrown on. The ledger
 is the loop's only memory, and losing all of it to one truncated line is a worse
 failure than reporting the damage.
@@ -148,11 +164,16 @@ Two counters are derived from the rows:
 A red check gets exactly one re-run **against the same tree**, and which attempt
 a run is comes from the ledger rather than from a flag:
 
-| Rows for (check, tree) | `attemptFor` | If it passes | If it fails |
+The **episode** is the unbroken run of `fail` rows at the end of that check's
+history for this tree. Anything that is not a failure — a pass, a flake, a skip
+— ends one, so a check that was flaky earlier, went green and has now failed
+again is starting a new episode and is owed its own re-run.
+
+| Episode for (check, tree) | `attemptFor` | If it passes | If it fails |
 |---|---|---|---|
-| none, or the last is not `fail` | `1` | `pass` | `fail` |
-| the last is `fail`, no attempt 2 yet | `2` | `flake` — a ticket is owed | `fail` |
-| an attempt 2 exists and the last is `fail` | `"capped"` | — | not run; `fail` with the refusal in `detail` |
+| empty — the last row is not `fail`, or there is none | `1` | `pass` | `fail` |
+| one failure, no attempt 2 in it | `2` | `flake` — a ticket is owed | `fail` |
+| already contains an attempt 2 | `"capped"` | — | not run; `fail`, with the refusal in `detail` and `refused` in the table |
 
 Keyed on the tree and not on the invocation, because that is what makes it
 enforceable: an ordinary second `npm run gate` with nothing edited **is** the
@@ -204,11 +225,18 @@ ticket done on the last one's evidence. It exits 1 while any of these holds:
 
 - no row at all for this tree;
 - a routed check has no row for this tree, is red, or was skipped;
-- a check has reached the fix cap;
-- no findings file, or one belonging to a different ticket than `--ticket`;
+- a check has reached the fix cap **at this tree**;
+- no findings file, one belonging to a different ticket than `--ticket`, or one
+  recording no round at all;
 - a disposition lacks its evidence, or a finding is open;
 - the round cap was reached with findings still open;
 - the ledger had a damaged line.
+
+Red checks and the fix cap are both read from this tree's rows only, and redness
+only for the *routed* checks: `.gate/` outlives a branch, so an abandoned
+ticket's failures would otherwise cap a check on its first failure of a fresh
+one, and a check run by hand with `--only` against a deliberately broken
+database would wedge the loop with no way back.
 
 ## 9. `verify-schema` through a driver
 
@@ -219,8 +247,13 @@ removed, so Postgres error positions still name the file's own line numbers.
 **The constraint this places on the SQL file:** psql meta-commands are not SQL
 and must carry no assertion. Everything the file asserts belongs in the `DO $$`
 block, where `psql` and the driver read it the same way.
-`verifySchema.test.ts` fails if the file grows a meta-command that survives the
-strip.
+
+`verifySchema.test.ts` enforces that against the **raw** file, with an allowlist
+of exactly one line — `\set ON_ERROR_STOP on`, which asserts nothing and whose
+effect a driver has anyway. A `\gexec`, an `\if` or an `\i` fails the suite.
+Asserting against the *stripped* text instead cannot work, and was the first
+attempt: the strip blanks precisely the lines such an assertion looks for, so it
+is empty by construction and can never fail.
 
 ## 10. The migrator smoke test
 

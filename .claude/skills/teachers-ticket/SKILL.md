@@ -22,7 +22,7 @@ happens to the *result* of measuring against it: it is recorded rather than
 remembered.
 
 **A phase is passed when a row says so.** `npm run gate` writes one row per
-check to `.gate/ledger.jsonl` — name, result, exit code, the commit it ran
+check to `.gate/ledger.jsonl` — name, result, exit code, the tree it ran
 against, and when — and phase 7 writes its rounds and dispositions to
 `.gate/findings.json`. Neither file is committed; `.gate/` is gitignored, and a
 reviewer reads the summary in the pull request body instead (ADR-011). **If this
@@ -361,6 +361,12 @@ saying what remains — and update the mirrored row in `docs/backlog/README.md`.
 If the plan was persisted, reconcile the document against what was built in the
 same commit: updated, or its `**Status:**` line marked superseded and by what.
 
+**Then gate again, and push.** Ticking the boxes edits files, and committing
+them moves `HEAD`, so both change the tree the ledger's rows were written
+against. Without a final run, `--report` correctly answers *"no gate has run
+against this tree"* and the loop can never reach a done report — the last thing
+the gate sees has to be the thing you are handing over.
+
 ### Diff hygiene
 
 `npm run gate` runs the mechanical half — no `.only`, no newly added `.skip`, no
@@ -377,9 +383,16 @@ gh pr checks <pr> --watch
 ```
 
 `ci.yml` is the authoritative gate (ADR-007), and a local gate is a prediction of
-it. **Do not report the ticket done while that run is red or pending.** Where
-`gh` is unavailable, the report says the run could not be read — never that it
-passed.
+it **over the checks this diff routed** and silence over the rest: every CI job
+runs on every commit, while the gate selects by path, so a docs-only change gets
+five checks here and eleven there. A green gate is therefore never a reason to
+skip this step — on this very ticket CI's integration suite went red on a commit
+whose local gate was green, for a suite the routing had not selected.
+
+**Do not report the ticket done while that run is red or pending.** Where `gh`
+is unavailable, or cannot read the logs or re-run the job, the report says so
+and says which — never that the run passed, and never that a failure was a flake
+without the evidence of a re-run.
 
 ### The report
 

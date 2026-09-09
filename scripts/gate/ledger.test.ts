@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   attemptFor,
-  readLedgerLines,
   cappedChecks,
   consecutiveFailures,
   currentlyRed,
   flakes,
+  readLedgerLines,
   MAX_FIX_ATTEMPTS,
   type CheckResult,
   type LedgerRow,
@@ -124,6 +124,31 @@ describe("the one permitted re-run", () => {
     const rows = [row("test", "fail"), row("test", "fail", { attempt: 2 })];
 
     expect(attemptFor(rows, "test", "abc1234+deadbeef")).toBe(1);
+  });
+
+  it("gives a new failure its own re-run after an earlier flake went green", () => {
+    // Found by running the rule against a live gate: reading the whole history
+    // for the tree meant one old flake capped every later failure on the first
+    // repeat, so a real, different failure never got the re-run it is owed.
+    const rows = [
+      row("test", "fail"),
+      row("test", "flake", { attempt: 2 }),
+      row("test", "pass"),
+      row("test", "fail"),
+    ];
+
+    expect(attemptFor(rows, "test", "abc1234")).toBe(2);
+  });
+
+  it("caps the new episode on its own second attempt", () => {
+    const rows = [
+      row("test", "flake", { attempt: 2 }),
+      row("test", "pass"),
+      row("test", "fail"),
+      row("test", "fail", { attempt: 2 }),
+    ];
+
+    expect(attemptFor(rows, "test", "abc1234")).toBe("capped");
   });
 
   it("does not let another check's failures cap this one", () => {

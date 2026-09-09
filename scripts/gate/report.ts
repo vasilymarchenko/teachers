@@ -79,7 +79,10 @@ export function markdownSummary(
   rows: readonly LedgerRow[],
   findings: FindingsFile | null,
 ): string {
-  const lines = ["| Check | Result | Commit | When |", "|---|---|---|---|"];
+  // "Tree", not "Commit": on a dirty tree the value is `<sha>+<digest>`, and
+  // a human reading the pull request body would try `git show` on it. What
+  // the column has to say is what was checked, which is not always a commit.
+  const lines = ["| Check | Result | Tree | When |", "|---|---|---|---|"];
   for (const row of latestByName(rows).values()) {
     const note = row.result === "skipped" ? ` — ${row.detail ?? "not run here"}` : "";
     lines.push(
@@ -180,10 +183,17 @@ export function loopReport(
     }
   }
 
-  const red = currentlyRed(here);
+  // Only the routed checks. The question this report answers is whether *this
+  // change* is checked, and a check the diff does not route — run by hand with
+  // `--only`, against a database pointed somewhere deliberately broken — is not
+  // this change's business and must not wedge the loop.
+  const red = currentlyRed(here).filter((name) => context.expected.includes(name));
   if (red.length > 0) blockers.push(`red check(s): ${red.join(", ")}`);
 
-  const capped = cappedChecks(rows);
+  // `here`, not the whole ledger: `.gate/` outlives a branch, so an abandoned
+  // ticket that left two consecutive failures behind would otherwise cap a
+  // check on its very first failure of a fresh one.
+  const capped = cappedChecks(here);
   if (capped.length > 0) {
     blockers.push(
       `fix cap of ${MAX_FIX_ATTEMPTS} reached by ${capped.join(", ")} — stop and report`,
@@ -205,6 +215,10 @@ export function loopReport(
     const state = convergence(findings);
     lines.push(`Rounds: ${state.rounds}; findings per round: ${state.counts.join(", ")}.`);
     for (const problem of state.problems) blockers.push(problem);
+    // `{"ticket":"T-NNN","rounds":[]}` has nothing undisposed because it has
+    // nothing at all, and would otherwise read as converged before a single
+    // review round had run — the self-attestation this file exists to remove.
+    if (state.rounds === 0) blockers.push("the findings file records no review round");
     if (state.openInLastRound > 0) {
       blockers.push(
         `${state.openInLastRound} finding(s) undisposed in round ${state.rounds}`,

@@ -64,16 +64,6 @@ export const MAX_FIX_ATTEMPTS = 3;
 /** How many review rounds phase 7 may run before it stops and reports. */
 export const MAX_REVIEW_ROUNDS = 3;
 
-export function readLedger(root = process.cwd()): LedgerRow[] {
-  let raw: string;
-  try {
-    raw = readFileSync(join(root, LEDGER_PATH), "utf8");
-  } catch {
-    return [];
-  }
-  return readLedgerLines(raw).rows;
-}
-
 /**
  * Parses the ledger, surviving a line that is not JSON.
  *
@@ -179,7 +169,16 @@ export function attemptFor(
   const last = forTree[forTree.length - 1];
   // Green, skipped, or already recorded as a flake: nothing is being retried.
   if (!last || last.result !== "fail") return 1;
-  return forTree.some((row) => row.attempt === 2) ? "capped" : 2;
+
+  // Only the *current* run of failures counts. A check that was flaky earlier
+  // against this tree, went green, and has now failed for a different reason is
+  // starting a new episode and gets its own re-run — reading the whole history
+  // instead refuses the very first repeat and calls it a third attempt.
+  let index = forTree.length - 1;
+  while (index >= 0 && forTree[index].result === "fail") index -= 1;
+  const episode = forTree.slice(index + 1);
+
+  return episode.some((row) => row.attempt === 2) ? "capped" : 2;
 }
 
 /** The checks that are red as of the last row written for each of them. */

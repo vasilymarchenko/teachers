@@ -169,7 +169,7 @@ green, each against a `file:line` or a test:
 | one gate command | `scripts/gate/run.ts`, `report.ts:runTable`, `.gate/last-run.json` |
 | routing stated once | `scripts/gate/checks.ts:CHECKS`; `checks.test.ts` "routing" |
 | held in step with `ci.yml` | `scripts/gate/checks.test.ts` "the gate covers what ci.yml runs" |
-| `build` and `verify-schema.sql` in the gate | `checks.ts:75`, `checks.ts:110`; `verifySchema.ts` |
+| `build` and `verify-schema.sql` in the gate | `checks.ts:85` (`build`), `checks.ts:112` (`verify-schema`); `verifySchema.test.ts` "the file the gate and CI share" |
 | both skills invoke it, no `&&` | `teachers-ticket/SKILL.md` phase 6, `teachers-review/SKILL.md` phase 3 |
 | run ledger | `scripts/gate/ledger.ts:LedgerRow`; `ledger.test.ts` |
 | bounded loop with caps | `teachers-ticket/SKILL.md` phase 7; `ledger.ts:MAX_FIX_ATTEMPTS`, `findings.ts:convergence` |
@@ -179,15 +179,43 @@ green, each against a `file:line` or a test:
 | criteria ticked in phase 7 | this table; `teachers-ticket/SKILL.md` phases 5 and 7 |
 | `gh pr checks` last | `teachers-ticket/SKILL.md` phase 7 |
 | diff hygiene | `hygiene.ts`; `hygiene.test.ts`. The plan's file list stays a phase-7 obligation — there is no machine-readable plan, and the skill says so rather than implying the script covers it |
-| the gate edits nothing | it writes only `.gate/`, gitignored in `.gitignore:34` |
+| the gate edits nothing | it writes only `.gate/`, gitignored at `.gitignore:34` |
 | the ADR | `ADR-011`, named above |
 
-**The review loop ran two rounds and converged.** Round 1: 19 findings — 7 from
-the contract pass, 9 from `/code-review`, 3 from the architecture pass — all
-disposed of. Round 2: none. The two that mattered most were both in this
-ticket's own code: `git status --porcelain` was being read after `.trim()`, which
-ate the first line's leading status column and silently disabled the `CLAUDE.md`
-hygiene rule in exactly the case it exists for; and "retrying until green is not
-permitted" was enforced only on an opt-in `--rerun` flag, so a plain second
-`npm run gate` recorded a fresh `pass`. The re-run rule is now keyed on the
-working tree and has no flag at all.
+**The review loop ran three rounds.** Round 1: 19 findings — 7 from the
+contract pass, 9 from `/code-review`, 3 from the architecture pass. Round 2, on
+the fixes: 15 more. Round 3 is the last the cap allows.
+
+The two that mattered most in round 1 were both in this ticket's own code:
+`git status --porcelain` was being read after `.trim()`, which ate the first
+line's leading status column and silently disabled the `CLAUDE.md` hygiene rule
+in exactly the case it exists for; and "retrying until green is not permitted"
+was enforced only on an opt-in `--rerun` flag, so a plain second `npm run gate`
+recorded a fresh `pass`. The re-run rule is now keyed on the working tree and
+has no flag at all.
+
+Round 2 found two failures of this ticket's own premise, which are worth
+recording precisely because the ticket is about not making them:
+
+- **A finding was recorded `fixed` on evidence that named code which did not
+  exist.** `R1-09` (`process.exit` → `process.exitCode`) was disposed with a
+  description of a change whose edit had silently failed, and the design
+  document was updated to describe the fix as well. Two documents and a ledger
+  row agreed about a line of code that had never been written. Every fix in
+  round 2 was verified by reading the file back before its disposition was
+  recorded.
+- **This section claimed two rounds had run and the second found nothing —
+  while round 2 was still running.** Written from the conversation rather than
+  from `.gate/findings.json`, which held one round. That is the sixth criterion
+  ("the final report is derived from the ledger, not from the conversation")
+  broken inside the ticket that adds it. `--report` now refuses a findings file
+  with no recorded round, which is the mechanical half of the same mistake.
+
+**A gap CI found that the local gate could not.** Every job in `ci.yml` runs on
+every commit; the gate selects checks by path. So for a diff that touches
+neither `lib/db` nor the `Dockerfile`, the gate runs five checks and CI runs
+eleven — and CI's `integration suite` went red on `366952f`, a commit whose
+local gate was green, for a suite the routing never selected. ADR-011 said the
+gate is "never narrower" than CI; that is true of the check *table* and false of
+per-diff *selection*, and the ADR now says which. `gh pr checks` is not
+optional, and the skill says so in two places.

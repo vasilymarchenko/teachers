@@ -122,7 +122,9 @@ async function changedPaths(base: string): Promise<{
   const committed = resolved
     ? await git(["diff", "--name-only", `${resolved}...HEAD`])
     : "";
-  const status = await gitRaw(["status", "--porcelain"]);
+  // `-uall`, so a wholly-untracked directory lists its files instead of
+  // collapsing to one `?? sub/` entry that no routing pattern matches.
+  const status = await gitRaw(["status", "--porcelain", "-uall"]);
 
   const paths = new Set<string>();
   for (const line of committed.split("\n")) if (line.trim()) paths.add(line.trim());
@@ -134,6 +136,24 @@ async function changedPaths(base: string): Promise<{
     label: resolved || `${base} (unresolved — running every check)`,
     status,
   };
+}
+
+/**
+ * The untracked test files diff-hygiene reads, with their content.
+ *
+ * Shared with `treeId`: the identity has to cover everything the gate looks at,
+ * and porcelain names an untracked file without describing it.
+ */
+function untrackedTests(status: string): { path: string; content: string }[] {
+  return untrackedPaths(status)
+    .filter((path) => /\.test\.tsx?$/.test(path))
+    .flatMap((path) => {
+      try {
+        return [{ path, content: readFileSync(path, "utf8") }];
+      } catch {
+        return [];
+      }
+    });
 }
 
 type Outcome = {
@@ -176,15 +196,9 @@ async function runCheck(check: Check, context: Context): Promise<Outcome> {
       // file contributes no diff at all, and a newly written focused test is
       // the commonest way `.only` arrives, so its whole content is presented
       // as added lines instead.
-      const asAdded = untrackedPaths(context.status)
-        .filter((path) => /\.test\.tsx?$/.test(path))
-        .map((path) => {
-          try {
-            return wholeFileAsAdded(path, readFileSync(path, "utf8"));
-          } catch {
-            return "";
-          }
-        });
+      const asAdded = untrackedTests(context.status).map(({ path, content }) =>
+        wholeFileAsAdded(path, content),
+      );
       const problems = hygieneProblems({
         changedPaths: context.paths,
         diff: [
@@ -225,7 +239,13 @@ async function main(): Promise<number> {
   const commit = (await git(["rev-parse", "--short", "HEAD"])) || "unknown";
   const branch = (await git(["rev-parse", "--abbrev-ref", "HEAD"])) || "unknown";
   const { paths, base, label, status } = await changedPaths(options.base);
-  const tree = treeId(commit, status, await gitRaw(["diff", "HEAD"]));
+  const tree = treeId(
+    commit,
+    status,
+    await gitRaw(["diff", "HEAD"]),
+    untrackedTests(status).map(({ path, content }) => `${path}
+${content}`),
+  );
 
   if (options.report) {
     const { rows, damaged } = readLedgerWithDamage();
@@ -324,8 +344,18 @@ async function main(): Promise<number> {
             : {}),
     });
 
+    // Appended as each check finishes, not in one batch at the end. `runCheck`
+    // can throw, and a Ctrl-C during `npm run build` is ordinary — either would
+    // otherwise discard the rows for every check that had already run: several
+    // minutes of work, and the attempt counts the re-run rule depends on.
+    appendRows(rows.slice(-1));
+
     if (!options.json) {
-      process.stdout.write(` ${result} (${(durationMs / 1000).toFixed(1)}s)\n`);
+      // A refusal is a `fail` row, but saying "fail" here would read as the
+      // check having run and failed a third time, which is the one thing it
+      // did not do.
+      const shown = outcome.refused ? "refused" : result;
+      process.stdout.write(` ${shown} (${(durationMs / 1000).toFixed(1)}s)\n`);
     }
   }
 
@@ -341,7 +371,6 @@ async function main(): Promise<number> {
     ok: rows.every((row) => row.result !== "fail"),
   };
 
-  appendRows(rows);
   writeLastRun(summary);
 
   if (options.json) {
@@ -360,10 +389,17 @@ async function main(): Promise<number> {
   return summary.ok ? 0 : 1;
 }
 
+// `process.exitCode`, never `process.exit()`. Where stdout is a pipe — an agent
+// capturing the run, `| tee`, CI — writes are asynchronous and `process.exit()`
+// discards whatever is still buffered. This command prints the table, the skip
+// notes and up to 80 lines of tail per failing check, so the runs carrying the
+// most information are exactly the ones that would lose the end of it.
 main().then(
-  (code) => process.exit(code),
+  (code) => {
+    process.exitCode = code;
+  },
   (error: Error) => {
     process.stderr.write(`${error.message}\n`);
-    process.exit(2);
+    process.exitCode = 2;
   },
 );

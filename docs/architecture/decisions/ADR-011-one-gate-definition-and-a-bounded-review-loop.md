@@ -80,6 +80,22 @@ which nothing in the loop noticed.
    runs, human or agent. It survives compaction and a new session. A reviewer
    cannot see it, so the pull request body has to carry the summary.
 
+### What the one re-run is counted against
+
+1. **An opt-in flag** (`--rerun <check>`). Explicit, and the refusal can name
+   itself. It also caps only the path a careful caller volunteers into: an
+   ordinary second `npm run gate` with nothing edited records a fresh `pass`,
+   which is precisely the repetition the rule forbids. Built first, and this is
+   how it failed.
+2. **The commit.** No flag, and the count survives a re-run of the same
+   invocation. But the gate checks the working tree, not the commit, so a fix
+   that is not yet committed does not reset the count — the loop refuses to
+   re-run a check the developer has just fixed.
+3. **The working tree.** An identity over `git status`, `git diff HEAD` and the
+   content of the untracked files the gate reads. Editing anything resets the
+   count, so the rule lands on repetition rather than on effort, and there is no
+   honest way to ask a third time. It costs a hash per run and a field per row.
+
 ### How much of the loop the harness enforces
 
 1. **A `Stop` hook** that refuses to end a turn while the ledger is stale or
@@ -103,9 +119,20 @@ the routing; `scripts/gate/checks.test.ts` holds it in step with `ci.yml`.
 prediction of it, and `gh pr checks` on the pushed head is the last thing the
 loop looks at.
 
-The relationship is coverage, not equality: the gate may be wider than CI and
-never narrower. `diff-hygiene` is the one gate-only check, because everything it
-looks at is a property of the change rather than of the commit CI receives.
+The relationship is coverage, not equality, and it holds of the check **table**:
+every step `ci.yml` runs has an entry, and the gate may have entries CI does not.
+`diff-hygiene` is the one of those, because everything it looks at is a property
+of the change rather than of the commit CI receives.
+
+It does **not** hold of what a given run *selects*. Every job in `ci.yml` runs on
+every pushed commit, while the gate selects by path, so on a diff that touches
+neither `lib/db` nor the `Dockerfile` the gate runs five checks and CI runs
+eleven. That is the trade the routing is for — a docs-only change should not
+build two Docker images — and the price is that a green gate is a prediction of
+CI over the routed subset and nothing at all over the rest. This is not
+theoretical: CI's integration suite went red on a commit of this very ticket
+whose local gate was green, for a suite the routing had not selected. Hence
+`gh pr checks` on the pushed head, which is the last gate and not a formality.
 
 **The ledger is `.gate/`, gitignored.** One row per check — name, result, exit
 code, commit, branch, time, attempt, and the *tree* it ran against — in

@@ -67,6 +67,22 @@ describe("the tree identity", () => {
     );
   });
 
+  it("changes when the content of an untracked file changes", () => {
+    // Porcelain names an untracked file without describing it, so without the
+    // extra part, deleting an it.only from a new test leaves the identity
+    // unchanged: the now-passing check is recorded as a flake owing a ticket
+    // for a defect that was simply fixed.
+    const status = "?? lib/a.test.ts";
+
+    expect(treeId("abc1234", status, "", ["lib/a.test.ts it.only(x)"])).not.toBe(
+      treeId("abc1234", status, "", ["lib/a.test.ts it(x)"]),
+    );
+  });
+
+  it("is not the bare commit when only untracked content is in play", () => {
+    expect(treeId("abc1234", "", "", ["new file"])).not.toBe("abc1234");
+  });
+
   it("does not confuse a status and a diff that concatenate the same way", () => {
     // Without a separator between the two, ("ab", "c") and ("a", "bc") hash
     // alike, and two different trees would share an identity.
