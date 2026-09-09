@@ -706,13 +706,14 @@ composite key, `user_id` on a child table is a value the application sets and ca
 therefore set wrongly.
 
 **The composite key is also a read-path mechanism, not only an integrity one.**
-Its `UNIQUE (id, user_id)` target is an index, and a join through both of its
-columns — which is what `lib/db/queries/templates.ts` does to reach a version's
-slots — is bound by `user_id` before a row is read, exactly as a `user_id`-led
-index is. Overview §8.4 asks that no scan can read another teacher's row; the
-index of the first column of this section's table and the composite key of this
-one are the two ways a table answers for it, and
-`lib/db/queries/indexUsage.integration.test.ts` asserts both (`ADR-011`).
+A child row reached through it — `(template_id = schedule_template.id)`, which
+is how `lib/db/queries/templates.ts` reaches a version's slots — belongs to
+whichever owner the parent's own scan was restricted to, because `id` identifies
+one parent row. That is the same guarantee the `user_id`-led index of this
+section's table gives directly, reached the other way round: the index restricts
+a table by its own column, the composite key restricts it by its parent's.
+Overview §8.4 asks that no read return another teacher's row, and
+`lib/db/planBinding.ts` accepts both mechanisms and nothing else (`ADR-011`).
 
 ---
 

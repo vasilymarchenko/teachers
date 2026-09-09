@@ -93,20 +93,26 @@ answered above. The second is moot: `gh run view --log-failed` returns the log
 on this repository — the 403 recorded there was against a run on a branch, and
 the output quoted above was read with that command.
 
-**Done.** The rule is restated as binding rather than as the index's leading
-column — `ADR-011`, with overview §8.4 and `design/schema.md` §8 changed to name
-both mechanisms, and `design/T-008-calendar-read-queries.md` §6 rewritten to what
-the test now asserts. The leading-column property is still asserted, as a
-property of the DDL read from the catalog for every table carrying `user_id`.
+**Done.** The rule is restated as "every relation the plan reads is restricted
+to one owner", and the leading-column property is asserted separately against
+the catalog, where no planner is involved — `ADR-011`, with overview §8.4,
+`design/schema.md` §8 and `design/T-008-calendar-read-queries.md` §6 changed to
+match. The rule itself is `lib/db/planBinding.ts`, so the plan shapes a 200-row
+fixture will not produce can be stated as data in `lib/db/planBinding.test.ts`
+rather than coaxed out of a planner.
 
-The failing plan is reproducible locally: with `enable_bitmapscan = off` the
-planner answers the slots query through `schedule_template_id_user_uq` with
-`Index Cond ((id = template_slot.template_id) AND (user_id = <param>))` — the
-plan CI failed on, and one the restated rule accepts. Over the eight reads, both
-statements each, under fourteen planner configurations (`enable_indexonlyscan`,
-`enable_nestloop`, `enable_hashjoin`, `enable_mergejoin`, `enable_bitmapscan`,
-`enable_material`/`enable_memoize`, and combinations), 140 plans over eleven
-distinct indexes produced no unbound scan and no `Seq Scan` — which is the
-third criterion's independence, measured rather than argued. That probe was a
-throwaway; what stays in the suite is the rule and the two negative controls.
+**What the investigation found, and what it cost.** The first restatement —
+every index scan binds `user_id` in its `Index Cond` — accepted the composite-FK
+join and was committed. It then failed about one run in five: at fixture size
+the slots statement has no stable plan, and three were observed for it. Only one
+applies `user_id` through the index; the other two apply it as a `Filter` after
+reading a table small enough that Postgres is right to read it whole. Requiring
+the index to carry the restriction asserts the planner's cost model at a size
+that says nothing about production, which is why the original failure looked
+like a flake for three sessions. Thirty consecutive runs pass under the rule as
+shipped, before and after `ANALYZE`; `ANALYZE` itself is not used, for the
+reason this ticket gave for not using it.
 
+Every clause was checked by removing it and watching a case go red: the value
+clause, the foreign-key clause, the parent-must-be-restricted check inside it,
+the equality requirement, and the reporting of an unrestricted relation.

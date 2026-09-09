@@ -29,6 +29,7 @@ plain data: no Drizzle row type reaches `lib/domain` or a component.
 | `lib/db/fixtures/scenarioRows.ts` | `insertFixtureScenario(userId, db)` — fixtures §3 as rows, shared by the seed and the integration suite |
 | `lib/db/client.ts` | `closeDb()` — added for scripts and tests; the application never calls it |
 | `lib/db/testDatabase.ts` | `createRecordingDatabase()` — test support for the index-usage check |
+| `lib/db/planBinding.ts` | `violationsOf(plan, foreignKeys)` — the rule §6 measures a plan against (T-028) |
 
 `range` is the domain's `DateRange` (`{ from, to }`, **both ends inclusive**).
 
@@ -115,24 +116,31 @@ mistake worth seeing.
 
 `lib/db/queries/indexUsage.integration.test.ts` captures the SQL each module
 actually sends (Drizzle's logger, through `createRecordingDatabase()`), runs
-`EXPLAIN (FORMAT JSON)` on it with `enable_seqscan = off`, and asserts that the
-plan holds no `Seq Scan`, that at least one index answers it, and that **every
-index scan in it binds `user_id` in its `Index Cond`** — to the statement's
-parameter, or to the `user_id` of a relation the same plan has already bound,
-which is what a composite-FK join does. A `Filter` does not count: the row is
-read first and discarded after. Sequential scans are disabled because on the
-~200 fixture rows the planner would rightly read the table; the question being
-asked is whether a usable index exists, not what the planner does at this size.
+`EXPLAIN (FORMAT JSON)` on it with `enable_seqscan = off`, and measures each
+plan against `lib/db/planBinding.ts`. Three files, and the split is the point
+(`ADR-011`):
 
-Until T-028 the second assertion matched index *names* against the set whose
-leading column is `user_id`. That rejected `schedule_template_id_user_uq`, both
-of whose columns the slots join binds, and tied the suite's colour to which of
-several tenant-safe indexes the planner preferred (`ADR-011`). The leading-column
-property is still asserted, but as what it is — a property of the DDL, checked
-against the catalog for every table carrying a `user_id` column, with no planner
-involved. Two further cases `EXPLAIN` statements no module sends — one with no
-`user_id` predicate, one whose `user_id` can only reach the `Filter` — and
-require the rule to report them.
+| File | Asserts | Needs |
+|---|---|---|
+| `lib/db/planBinding.ts` | the rule itself — which relations of a plan are restricted to one owner | nothing |
+| `lib/db/planBinding.test.ts` | the rule's verdict on the plan shapes a 200-row fixture will not produce | the unit suite |
+| `lib/db/queries/indexUsage.integration.test.ts` | the catalog claim, the eight reads' real plans, and three real unbound reads | a migrated Postgres |
+
+The catalog claim is that every table carrying a `user_id` column has a valid,
+non-partial index whose leading column is `user_id` — read from `pg_index`, so
+no planner is involved. The plan claim is that no relation is read without a
+restriction to one owner: `user_id` equated to a value or to an already
+restricted relation, or a foreign key equated to a key of an already restricted
+parent, which is the composite FK of `schema.md` §8. `Index Cond` and `Filter`
+count alike, because at this size the planner decides between them and the same
+statement is planned three different ways as statistics move; that an index
+could carry the restriction is what the catalog claim covers. Sequential scans
+are disabled because on the ~200 fixture rows the planner would rightly read the
+table; the question being asked is whether a usable index exists, not what the
+planner does at this size.
+
+Until T-028 the plan claim matched index *names* against the set whose leading
+column is `user_id`, which no plan of the slots join could satisfy reliably.
 
 The indexes the reads land on, all defined in `docs/architecture/design/schema.md`:
 
@@ -149,12 +157,13 @@ The indexes the reads land on, all defined in `docs/architecture/design/schema.m
 | `academic_year` | `academic_year_no_overlap_ex`, the same shape as `schedule_template` above |
 | `semester` | `semester_year_index_uq` |
 
-The names are observation, not contract: they are what the planner happened to
-pick at this size, and the test asserts a property of the plan rather than this
-table. `schedule_template_id_user_uq` — the `UNIQUE (id, user_id)` composite-FK
-target of `schema.md` §8 — serves the slots join as legitimately as
-`template_slot_user_template_idx` does, and the planner chooses between them on
-row counts (T-028).
+The names are observation, not contract, and the slots join is the proof: it is
+planned at least three ways at this size — `template_slot` bound by `user_id`
+with `schedule_template` joined to it, `schedule_template` driving and the slots
+reached by `template_id` through `template_slot_cell_uq`, and `template_slot`
+scanned whole through that index with `user_id` filtered afterwards. All three
+return one teacher's rows; which appears depends on whether the table has been
+analysed (T-028, `ADR-011`).
 
 ## 7. Fixture rows
 
