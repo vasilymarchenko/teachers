@@ -39,9 +39,21 @@ export function addedLines(diff: string): { file: string; line: string }[] {
 }
 
 const TEST_FILE = /\.test\.tsx?$/;
-/** `it.only(`, `describe.only(`, `test.only(` — and the `.skip` / `.todo` pair. */
-const FOCUSED = /\b(?:describe|it|test|suite|bench)\.only\s*\(/;
-const DISABLED = /\b(?:describe|it|test|suite|bench)\.(?:skip|todo)\s*\(/;
+
+/**
+ * `it.only(`, `describe.only(` — and the `.skip` / `.todo` pair.
+ *
+ * Anchored to the start of the line, because that is where a focused test is
+ * actually written. An unanchored pattern also matches the call quoted inside a
+ * string, which is how this check first reported four defects in its own
+ * fixtures: `hygiene.test.ts` passes literal diff text like `"+  it.only(…)"`
+ * to prove the check fires on it. A check phrased more widely than the rule it
+ * comes from is how a reviewer starts producing confident nonsense.
+ */
+const RUNNER = "(?:describe|it|test|suite|bench)";
+const LEAD = "^\\s*(?:await\\s+|return\\s+)?";
+const FOCUSED = new RegExp(`${LEAD}${RUNNER}\\.only\\s*\\(`);
+const DISABLED = new RegExp(`${LEAD}${RUNNER}\\.(?:skip|todo)\\s*\\(`);
 
 /**
  * A `.env` in the diff. `.env.example` is the committed template and is fine;

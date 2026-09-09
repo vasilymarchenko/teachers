@@ -65,6 +65,28 @@ describe("a focused or disabled test", () => {
     ).toEqual([]);
   });
 
+  it("is not a finding when the call is quoted inside a string", () => {
+    // The check reported four defects in this very file the first time it ran:
+    // the fixtures above pass `it.only(...)` as literal diff text, and an
+    // unanchored pattern cannot tell that from a focused test. A focused test
+    // starts its line; a quoted one does not.
+    expect(
+      hygieneProblems({
+        ...clean,
+        diff: diffOf("lib/a.test.ts", '+        diff: diffOf("x.test.ts", "+  it.only(y)"),'),
+      }),
+    ).toEqual([]);
+  });
+
+  it("still fires on one the line merely indents or awaits", () => {
+    const problems = hygieneProblems({
+      ...clean,
+      diff: diffOf("lib/a.test.ts", '+    it.only("indented", () => {}); '),
+    });
+
+    expect(problems).toHaveLength(1);
+  });
+
   it("is not a finding outside a test file", () => {
     // `.only` is an ordinary identifier in application code — a Zod refinement,
     // a query builder — and reporting it there is how a check starts producing
