@@ -2,7 +2,7 @@
 id: T-021
 type: ticket
 title: Week view — lesson text overflows the day card from the xl breakpoint
-status: todo
+status: in-progress
 depends_on: [T-007]
 refs:
   - docs/architecture/architect-overview.md §10.2
@@ -43,3 +43,14 @@ Found by inspection of the running app against the seeded fixture, after T-007
 merged; the ticket's own criteria are about content, not overflow, which is why
 its review did not catch this. The overflow is CSS-only — no query, no domain
 code and no data is involved.
+
+**T-021.** The row now reflows against its container rather than the viewport:
+`DayLessons` opens an `@container` and `LessonRow` switches below `14rem`, with
+the threshold and every class in `components/calendar/lessonRowLayout.ts`. Why a
+container query and not a breakpoint, a prop, a smaller left column or a browser
+test — `docs/architecture/decisions/ADR-013-row-reflows-against-its-container.md`;
+the constraint is pinned by `components/calendar/lessonRowLayout.test.ts`.
+
+Measurement while implementing found the overflow starts at `lg` (four columns,
+135 px of card content), not at `xl` as the title says — «Інформатика» is 38 px
+over there. The fix covers both, because the threshold is the card's width.

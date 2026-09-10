@@ -3,6 +3,7 @@ import type { ResolvedLesson } from "@/lib/domain/schedule/types";
 import type { SlotPayload } from "@/lib/validation/slotPayload";
 import { cn } from "@/lib/utils";
 import { EDIT_LABELS, LESSON_LABELS } from "./labels";
+import { LESSON_ROW_LAYOUT } from "./lessonRowLayout";
 
 /**
  * One lesson, as specification §5.1 lists its fields and §5.4 wants a
@@ -115,28 +116,45 @@ export function LessonRow({
   return (
     <li
       className={cn(
-        "border-border flex gap-3 border-b py-2 last:border-b-0",
+        "border-border border-b py-2 last:border-b-0",
+        LESSON_ROW_LAYOUT.row,
         cancelled && "opacity-70",
       )}
     >
-      <div className="w-16 shrink-0 text-sm">
-        <p className="font-semibold">{lesson.lessonNumber}</p>
+      {/* Three lines in a wide card — number, «10:15», «11:00» — and one
+          wrapping line in a narrow one, where the column would otherwise take
+          two thirds of the card (ADR-013). Spans rather than a `<p>` with a
+          `<br>`: a line break cannot be undone by a container query. */}
+      <div className={LESSON_ROW_LAYOUT.timeColumn}>
+        <span className="font-semibold">{lesson.lessonNumber}</span>
         {lesson.timeFrom !== undefined && lesson.timeTo !== undefined && (
-          <p className="text-muted-foreground tabular-nums">
-            {lesson.timeFrom}
-            <br />
-            {lesson.timeTo}
-          </p>
+          <>
+            <span className="text-muted-foreground tabular-nums">
+              {lesson.timeFrom}
+            </span>
+            {/* Only on the single line of a narrow card: «10:15–11:00». Stacked
+                in a wide one, where a dash would hang off the first line. */}
+            <span aria-hidden className={LESSON_ROW_LAYOUT.timeSeparator}>
+              –
+            </span>
+            <span className="text-muted-foreground tabular-nums">
+              {lesson.timeTo}
+            </span>
+          </>
         )}
       </div>
 
-      <div className="min-w-0 flex-1 space-y-1">
+      <div className={LESSON_ROW_LAYOUT.payload}>
         <div className="flex flex-wrap items-center gap-2">
+          {/* `title` carries the full name where the card is too narrow to
+              show it, the way `dayTooltip` already does for the year view. */}
           <p
             className={cn(
               "font-medium",
+              LESSON_ROW_LAYOUT.subject,
               cancelled && "text-muted-foreground line-through",
             )}
+            title={lesson.payload.subject}
           >
             {lesson.payload.subject}
           </p>
