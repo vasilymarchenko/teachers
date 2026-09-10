@@ -49,7 +49,7 @@ export const LESSON_ROW_LAYOUT = {
    * The two bell times, as one wrap item.
    *
    * Their own flex box, nested inside the column: a flex container does not
-   * wrap unless it is told to, so «08:30–11:15» stays whole where the column
+   * wrap unless it is told to, so «08:30–09:15» stays whole where the column
    * around it wraps. Four loose items instead — number, time, dash, time —
    * break as «1 08:30 –» over «09:15», which is a range with its dash hanging
    * off the end of a line.

@@ -41,6 +41,7 @@ for reading. Order is priority; the ID number is not.
 | [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | in-progress | T-017, T-024 |
 | [T-030](T-030-one-migrator-smoke-definition.md) | One migrator smoke test, called by both CI and the gate | todo | T-029 |
 | [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | done | T-029 |
+| [T-032](T-032-gate-counts-under-report.md) | The gate can under-report — a missing origin/main, a dirty tree, an unresolvable opening head | todo | T-029 |
 
 ## Open questions
 
@@ -95,10 +96,11 @@ tooling every other ticket is worked and checked by, not the application. T-027
 hangs off T-017 like T-019 and T-022 — a check the review skill may only
 propose, promoted into the suite. T-029 hangs off T-017 for the review loop it
 bounds and off T-024 for the check list that loop must agree with. T-026 carried
-those same edges and is `declined`; T-029 replaces it. T-030 and T-031 hang off T-029
+those same edges and is `declined`; T-029 replaces it. T-030, T-031 and T-032 hang off T-029
 and are absent for the same reason: T-030 finishes one check T-029 routed but
-could not run, and T-031 names the runtime that made two of its checks fail for
-a cause the gate could not report. T-028 hangs off T-008 and
+could not run, T-031 names the runtime that made two of its checks fail for
+a cause the gate could not report, and T-032 collects three inputs the gate
+cannot resolve and reports as though it had. T-028 hangs off T-008 and
 is not drawn either: it is a defect in the invariant test that ticket's last
 criterion produced, not new work off it.
 No item waits on an open question any more: Q-002, the one that did, is answered
@@ -111,7 +113,7 @@ too; T-013 is what remains of the calendar work.
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030 and T-031 are
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031 and T-032 are
 not product scope: they are the review tooling those tickets are checked by, and
 the documents that tooling reads. T-024 is not product scope either, and is not review tooling: it
 is the deployment path checking itself, which is why it hangs off T-015 rather
