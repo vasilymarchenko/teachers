@@ -15,6 +15,8 @@ import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
+import { config } from "dotenv";
+
 import { selectChecks, unmetRequirement, type Check } from "./checks";
 import { runHygiene } from "./hygiene";
 import {
@@ -32,6 +34,13 @@ import {
   table,
   type CheckOutcome,
 } from "./report";
+
+// This project keeps `DATABASE_URL` in `.env`, and loads it there —
+// `drizzle.config.ts` and `vitest.integration.config.mts` both do. Without
+// this, the database checks would report `skipped: DATABASE_URL is not set` on
+// a machine that had just run `docker compose up -d`, telling the developer to
+// do what they had already done.
+config({ path: ".env", quiet: true });
 
 /**
  * The change under review: what the branch adds to `origin/main`, plus whatever
@@ -73,8 +82,7 @@ function runCheck(check: Check, files: readonly string[]): CheckOutcome {
     };
   }
 
-  if (check.argv === null) {
-    // The in-process checks. `hygiene` is the only one.
+  if (check.inProcess === "hygiene") {
     const problems = runHygiene(files);
     return {
       name: check.name,
@@ -85,8 +93,29 @@ function runCheck(check: Check, files: readonly string[]): CheckOutcome {
     };
   }
 
-  const [command, ...args] = check.argv;
-  const result = spawnSync(command, args, { encoding: "utf8" });
+  if (check.argv === null) {
+    // A check with no local command and no in-process implementation. Reported
+    // rather than silently dropped, and never as a pass — dispatching on the
+    // absence of `argv` alone is how `migrator-smoke` would come back green the
+    // day its `ci-only` requirement is relaxed (T-030).
+    return {
+      name: check.name,
+      result: "skipped",
+      exitCode: null,
+      durationMs: 0,
+      reason: check.skipReason ?? "no local command for this check",
+    };
+  }
+
+  const [command, ...args] =
+    typeof check.argv === "function" ? check.argv() : check.argv;
+  const result = spawnSync(command, args, {
+    encoding: "utf8",
+    // A `docker build` or a full `next build` overruns Node's 1 MiB default,
+    // and an overrun kills the child and reports it as a failure with a null
+    // exit code — the value the ledger reserves for a check that never started.
+    maxBuffer: 64 * 1024 * 1024,
+  });
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   return {
     name: check.name,
@@ -100,11 +129,17 @@ function runCheck(check: Check, files: readonly string[]): CheckOutcome {
 function run(): number {
   const files = changedFiles();
   const commit = git(["rev-parse", "HEAD"]) ?? "unknown";
+  // The gate checks HEAD *plus* whatever is not committed yet, so `commit`
+  // alone would attribute a run to a tree it did not see. A resumed session
+  // reading a green run must be able to tell "this commit was checked" from
+  // "this commit plus edits that no longer exist was checked".
+  const dirty = (git(["status", "--porcelain"]) ?? "") !== "";
   const selected = selectChecks(files);
   const runId = `${new Date().toISOString()}-${randomUUID().slice(0, 8)}`;
 
   console.log(
-    `gate: ${selected.length} checks for ${files.length} changed files on ${commit.slice(0, 7)}`,
+    `gate: ${selected.length} checks for ${files.length} changed files on ` +
+      `${commit.slice(0, 7)}${dirty ? " plus uncommitted work" : ""}`,
   );
 
   const outcomes: CheckOutcome[] = [];
@@ -120,13 +155,14 @@ function run(): number {
     runId,
     at,
     commit,
+    dirty,
     check: outcome.name,
     result: outcome.result,
     exitCode: outcome.exitCode,
     ...(outcome.reason === undefined ? {} : { reason: outcome.reason }),
   }));
   appendLedger(rows);
-  writeLastRun({ runId, at, commit, changedFiles: files, checks: outcomes });
+  writeLastRun({ runId, at, commit, dirty, changedFiles: files, checks: outcomes });
 
   const failed = outcomes.filter((outcome) => outcome.result === "failed");
   for (const failure of failed) {
@@ -145,12 +181,48 @@ function run(): number {
   return 0;
 }
 
+interface LastRun {
+  commit: string;
+  dirty?: boolean;
+  checks: CheckOutcome[];
+}
+
+function readLastRun(): LastRun | null {
+  try {
+    return JSON.parse(readFileSync(LAST_RUN_PATH, "utf8")) as LastRun;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * `--report`: may this be called done? It runs no check — it reads what the
  * checks already said, the counts, and the pull request's own run.
  */
 function report(): number {
   const blockers: string[] = [];
+
+  const last = readLastRun();
+  if (last === null) {
+    blockers.push(`no gate run recorded in ${LAST_RUN_PATH} — run \`npm run gate\``);
+  } else {
+    const failed = last.checks.filter((check) => check.result === "failed");
+    if (failed.length > 0) {
+      blockers.push(
+        `the last gate run was red: ${failed.map((c) => c.name).join(", ")}`,
+      );
+    }
+    if (last.dirty) {
+      blockers.push("the last gate run included uncommitted work");
+    }
+    const skipped = last.checks.filter((check) => check.result === "skipped");
+    if (skipped.length > 0) {
+      // Named, never counted as passes — CI is the authority on these.
+      console.log(
+        `not run here: ${skipped.map((c) => `${c.name} (${c.reason})`).join("; ")}`,
+      );
+    }
+  }
 
   for (const [name, count] of Object.entries(counts())) {
     if (count.exceeded) {
@@ -182,18 +254,21 @@ function report(): number {
  * never says it passed.
  */
 function pullRequestChecks(): { state: string; summary: string } {
-  const result = spawnSync("gh", ["pr", "checks", "--required"], {
-    encoding: "utf8",
-  });
+  const result = spawnSync("gh", ["pr", "checks"], { encoding: "utf8" });
   if (result.error !== undefined) {
     return { state: "unreadable", summary: "unreadable — gh is not available" };
   }
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim();
   if (result.status === 0) return { state: "passing", summary: "green" };
-  if (/pending|no checks/i.test(output)) {
+  // `gh pr checks` exits 8 while any check is still running. Deliberately not
+  // `--required`: with no branch protection yet (`T-025`), nothing on this
+  // repository is a *required* check, and `--required` would then report the
+  // absence of requirements rather than the state of the `ci.yml` run — red
+  // forever, for a repository that is neither red nor unreadable.
+  if (result.status === 8 || /pending|in progress|no checks/i.test(output)) {
     return { state: "pending", summary: `pending or absent — ${tail(output)}` };
   }
-  if (/not found|no pull requests|authentication|auth/i.test(output)) {
+  if (/not found|no pull requests|authentication|auth|gh auth login/i.test(output)) {
     return { state: "unreadable", summary: `unreadable — ${tail(output)}` };
   }
   return { state: "failing", summary: `red — ${tail(output)}` };
@@ -202,11 +277,15 @@ function pullRequestChecks(): { state: string; summary: string } {
 const args = process.argv.slice(2);
 if (args.includes("--pr-block")) {
   // Phase 6 pastes this into the pull request body.
-  const commit = git(["rev-parse", "HEAD"]) ?? "unknown";
-  const last = JSON.parse(readFileSync(LAST_RUN_PATH, "utf8")) as {
-    checks: CheckOutcome[];
-  };
-  console.log(pullRequestBlock(last.checks, commit));
+  const last = readLastRun();
+  if (last === null) {
+    console.error(`No gate run recorded in ${LAST_RUN_PATH}. Run \`npm run gate\` first.`);
+    process.exit(1);
+  }
+  // The run's own commit, never `git rev-parse HEAD`: committing the work
+  // between the run and the paste would publish a run against one tree as a
+  // statement about another.
+  console.log(pullRequestBlock(last.checks, last.commit, last.dirty ?? false));
   process.exit(0);
 }
 process.exit(args.includes("--report") ? report() : run());

@@ -53,21 +53,20 @@ The changed-file set is `git diff --name-only origin/main...HEAD`, plus
 and sorted. The uncommitted half is deliberate: the loop of §6 gates a fix
 before it is committed, so a commit per attempt is not required.
 
-`verify-schema` runs `psql -v ON_ERROR_STOP=1 -f scripts/verify-schema.sql` —
-the file CI runs, through the tool CI runs it with. There is no second
-implementation of it, and it is not executed through a driver.
+`verify-schema` runs `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/verify-schema.sql`,
+argument for argument as `ci.yml` runs it — its argv is resolved at run time
+because libpq does not read `DATABASE_URL` itself. There is no second
+implementation of the file and it is not executed through a driver.
 
-`migrator-smoke` is routed but never runs locally: CI performs it as a five-step
-orchestration (a throwaway Postgres on 5433, the migrator image against it,
-`verify-schema.sql` again, cleanup), and transcribing that into a second file is
-the local reimplementation T-029 rules out. It appears in every table as
-`skipped` with its reason, so a change to the images is never reported as fully
-checked here. `T-030` unifies the two into one script called by both.
+`migrator-smoke` carries `requires: ["ci-only"]`, so it is selected by an image
+change and always reported `skipped` with its reason. Why it is not run here,
+and what replaces that: `T-030`.
 
 Environment probes run on **every** invocation and are never cached:
-`DATABASE_URL` set, `command -v psql`, `docker info` exit code. An environment
-fix changes no file, so a remembered answer would keep refusing a check the
-developer had just repaired.
+`DATABASE_URL` set, `command -v psql`, `docker info` exit code. `index.ts` loads
+`.env` through `dotenv` first, as `drizzle.config.ts` and
+`vitest.integration.config.mts` do — this project keeps `DATABASE_URL` there,
+not in the shell.
 
 ## 3. Parity with `ci.yml`
 
@@ -87,28 +86,31 @@ at every two-space key with nothing after the colon. Scoped to `checks`,
 
 ## 4. `.gate/`
 
-Gitignored, and the only path the gate writes. In the repository rather than a
-session scratchpad: a human running `npm run gate` has no scratchpad path, and a
-fresh session could not find the previous one.
+Gitignored, and the only path the gate writes. It sits in the repository rather
+than a session scratchpad — T-029 `## Notes`, "Two things T-026 settled".
 
 **`ledger.jsonl`** — append-only, one line per check per run.
 
 ```json
-{"runId":"2026-09-10T11:04:00.000Z-4f1a2b3c","at":"2026-09-10T11:04:31.000Z","commit":"9f2c1ab…","check":"lint","result":"passed","exitCode":0}
+{"runId":"2026-09-10T11:04:00.000Z-4f1a2b3c","at":"2026-09-10T11:04:31.000Z","commit":"9f2c1ab…","dirty":true,"check":"lint","result":"passed","exitCode":0}
 ```
+
+`commit` is `HEAD` at the start of the run and `dirty` says whether the tree
+also carried uncommitted work — the gate checks both, so the commit alone would
+attribute a run to a tree it never saw.
 
 `result` is `passed | failed | skipped`; `exitCode` is `null` for a check that
 never started or ran in-process; `reason` is present on a skip. A line that does
 not parse is skipped on read, never fatal.
 
-**`last-run.json`** — `{ runId, at, commit, changedFiles, checks[] }`, where each
-check is `{ name, result, exitCode, durationMs, reason?, output? }`.
+**`last-run.json`** — `{ runId, at, commit, dirty, changedFiles, checks[] }`,
+where each check is `{ name, result, exitCode, durationMs, reason?, output? }`.
+`--report` and `--pr-block` both read it, and both use its `commit`, never
+`HEAD` at the time they run.
 
 **`findings.json`** — written by `/teachers-ticket` phase 7, read by nothing but
 `readRounds()`, which takes `round`, `startedAt` and `head` and ignores the rest.
-Its shape and the four dispositions are stated in that skill. **No code
-validates it**: a validator can check that a field is not empty, never that it
-is true.
+Its shape and its dispositions are stated in that skill. No code validates it.
 
 ## 5. `hygiene`
 
@@ -136,11 +138,16 @@ diff.
 |---|---|
 | `reviewRounds` | `rounds.length` in `.gate/findings.json` — the one agent-written number |
 | `gateRunsThisRound` | distinct `runId`s in `ledger.jsonl` with `at >= ` the current round's `startedAt` |
-| `pushesAfterOpening` | entries in `git reflog show refs/remotes/origin/<branch>`, minus the first |
+| `pushesAfterOpening` | entries in `git reflog show refs/remotes/origin/<branch>` newer than the one pointing at round 1's `head` |
 
-The push count falls back to `git rev-list --count <round 1 head>..HEAD` when
-the reflog is empty — a fresh clone in a resumed session — and prints which
-derivation it used. A fetch that moves the remote-tracking ref also lands in
-that reflog, so the count can over-report on a branch someone else pushes to;
-anything exact would need a record the agent writes itself, which is what the
-ticket rules out.
+Round 1's `head` is the commit the pull request was opened at, so every reflog
+entry newer than it is a push made after the pull request existed. Counting "all
+entries but the oldest" would be wrong: a clone's fetch creates the
+remote-tracking ref before the opening push updates it, so the oldest entry is
+the fetch, not that push.
+
+Before phase 7 starts a round the count is 0 by definition. Where round 1's head
+is not in the reflog — a fresh clone in a resumed session — it falls back to
+`git rev-list --count <head>..HEAD` and prints which derivation it used; that
+over-counts a push carrying two commits, and a round is meant to be one commit.
+The pure part is `pushesAfterOpeningFrom()`, tested in `ledger.test.ts`.

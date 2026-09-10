@@ -16,8 +16,13 @@ export type Requirement = "docker" | "database" | "psql" | "ci-only";
 export interface Check {
   /** The name that appears in the table, the ledger and the PR body. */
   name: string;
-  /** argv, run without a shell. `null` means the gate runs it in-process. */
-  argv: readonly string[] | null;
+  /**
+   * argv, run without a shell. A function when an argument has to be resolved
+   * at run time. `null` means there is no local command — see `inProcess`.
+   */
+  argv: readonly string[] | (() => readonly string[]) | null;
+  /** Dispatched in-process by name, rather than by `argv` being absent. */
+  inProcess?: "hygiene";
   /**
    * The paths that pull this check in. `null` means every change needs it.
    * Matched against repository-relative paths with `/` separators.
@@ -38,8 +43,21 @@ export interface Check {
   skipReason?: string;
 }
 
-/** A change under either of these has to answer to a real database. */
-const DATABASE_PATHS = [/^lib\/db\//, /^drizzle\//] as const;
+/**
+ * A change under any of these has to answer to a real database.
+ *
+ * `scripts/verify-schema.sql` and `drizzle.config.ts` are here because
+ * `ci.yml`'s `integration` job runs against both on every push: a change to the
+ * assertion file alone, or to where the migrator points, would otherwise run no
+ * database check locally and the full one in CI — the gap this gate exists to
+ * close.
+ */
+const DATABASE_PATHS = [
+  /^lib\/db\//,
+  /^drizzle\//,
+  /^drizzle\.config\.ts$/,
+  /^scripts\/verify-schema\.sql$/,
+] as const;
 
 /** A change to either of these rebuilds what the VPS pulls. */
 const IMAGE_PATHS = [/^Dockerfile$/, /^docker-compose[\w.-]*\.ya?ml$/] as const;
@@ -80,6 +98,7 @@ export const CHECKS: readonly Check[] = [
     // diff, and CI checks out a commit rather than reviewing one.
     name: "hygiene",
     argv: null,
+    inProcess: "hygiene",
     paths: null,
   },
   {
@@ -94,8 +113,14 @@ export const CHECKS: readonly Check[] = [
     // Run the way CI runs it — `psql` against the file — rather than through a
     // driver, so one assertion file keeps one execution path.
     name: "verify-schema",
-    argv: [
+    // `psql "$DATABASE_URL" …`, exactly as `ci.yml` invokes it. libpq does not
+    // read `DATABASE_URL` itself, so without this argument the check would
+    // connect to the local socket as the OS user and assert against whatever
+    // database it found there — passing or failing for reasons that have
+    // nothing to do with the change.
+    argv: () => [
       "psql",
+      process.env.DATABASE_URL ?? "",
       "-v",
       "ON_ERROR_STOP=1",
       "-f",

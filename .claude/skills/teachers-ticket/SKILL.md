@@ -246,11 +246,11 @@ that round produced carries one of the four dispositions below — or when a cap
 stops it. Nothing else ends it: not a round that felt thorough, and not a report
 you have already drafted.
 
-### The three caps
+### The caps
 
-All three are **three**, and they live in one module — `scripts/gate/caps.ts` —
-because a number restated in a skill file drifts out of step with the one the
-gate counts against:
+They live in one module — `scripts/gate/caps.ts` — and this file states no
+number of its own, because a number restated in prose goes on being right until
+that module changes, after which nothing says it is wrong. Read them there:
 
 | Cap | Bounds |
 |---|---|
@@ -258,12 +258,12 @@ gate counts against:
 | `gateRunsPerRound` | `npm run gate` invocations inside one round |
 | `pushesAfterOpening` | pushes after the one that opened the pull request |
 
-The second and third are the loops that are easy to leave open: a red check
-fixed and re-gated inside a round, and a red CI run fixed and re-pushed after
-it. `npm run gate` prints all three counts on every run, so a cap being
+The last two bound the loops that are easiest to leave open: a red check fixed
+and re-gated inside a round, and a red CI run fixed and re-pushed after it.
+`npm run gate` prints every count against its cap on each run, so a cap being
 approached is visible in the terminal without anyone opening a file for it.
 
-**Each count is derived from a record you did not write.** The gate runs in this
+**Every count is derived from a record you did not write.** The gate runs in this
 round are the distinct run ids the gate itself appended to `.gate/ledger.jsonl`
 since the round's timestamp; the pushes come from the branch's own history. Only
 the round number is yours, in `.gate/findings.json`. **A count held in the
@@ -278,8 +278,8 @@ changed, either the answer has not either, or what changed is the environment,
 and that is worth saying out loud rather than re-rolling.
 
 **Hitting any cap stops the loop.** Report what is still open — which findings,
-which check, which count ran out — rather than opening a fourth of anything.
-Three rounds that did not converge is information; a fourth rarely adds any.
+which check, which count ran out — rather than starting another of anything. A
+run of rounds that did not converge is information; one more rarely adds any.
 
 ### One round
 
@@ -328,7 +328,7 @@ Three rounds that did not converge is information; a fourth rarely adds any.
    exist passes any validator anyone could write. What makes the file worth
    keeping is that the next round reads it, and that a resumed session can.
 
-3. **Dispose of every finding.** Four dispositions, and each costs something:
+3. **Dispose of every finding.** These dispositions, and each costs something:
 
    | Disposition | What it takes | What it costs |
    |---|---|---|

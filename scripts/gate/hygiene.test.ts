@@ -62,14 +62,24 @@ describe("a focused test", () => {
 
 describe("an environment file", () => {
   it("is a finding wherever it sits in the tree", () => {
-    expect(hygieneProblems(input({ changedFiles: [".env"] }))).toEqual([
+    const present = (path: string) =>
+      input({ changedFiles: [path], contents: new Map([[path, "SECRET=1\n"]]) });
+    expect(hygieneProblems(present(".env"))).toEqual([
       ".env: an environment file must not be in the diff",
     ]);
-    expect(hygieneProblems(input({ changedFiles: ["apps/web/.env.local"] }))).toHaveLength(1);
+    expect(hygieneProblems(present("apps/web/.env.local"))).toHaveLength(1);
   });
 
   it("is not `.env.example`, which is committed and must be", () => {
     expect(hygieneProblems(input({ changedFiles: [".env.example"] }))).toEqual([]);
+  });
+
+  it("is not a change that deletes one — that is the fix, not the problem", () => {
+    // A deleted path is in the diff and absent from `contents`. Without this
+    // the author could never satisfy the check.
+    expect(
+      hygieneProblems(input({ changedFiles: [".env"], contents: new Map() })),
+    ).toEqual([]);
   });
 });
 

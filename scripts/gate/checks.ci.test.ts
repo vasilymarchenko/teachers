@@ -153,12 +153,20 @@ describe("the slicer itself", () => {
     "        image: postgres:16-alpine",
     "    steps:",
     "      - run: npm test",
+    "  third:",
+    "    steps:",
+    "      - uses: docker/build-push-action@v6",
+    "  publish:",
+    "    needs: [first, second, third]",
+    "    steps:",
+    "      - uses: docker/login-action@v3",
+    "      - run: npm run release-notes",
     "",
   ].join("\n");
 
   it("cuts at job headers and nowhere else", () => {
     const cut = jobSlices(synthetic);
-    expect([...cut.keys()]).toEqual(["first", "second"]);
+    expect([...cut.keys()]).toEqual(["first", "second", "third", "publish"]);
     // `postgres:` is a two-space-looking key at eight spaces — a whole-file
     // match would have made it a third job.
     expect(cut.get("second")).toContain("image: postgres:16-alpine");
@@ -168,6 +176,17 @@ describe("the slicer itself", () => {
     const cut = jobSlices(synthetic);
     expect(npmScriptsIn(cut.get("first") ?? "")).toEqual(["ci", "lint"]);
     expect(npmScriptsIn(cut.get("second") ?? "")).toEqual(["test"]);
+    expect(npmScriptsIn(cut.get("third") ?? "")).toEqual([]);
+  });
+
+  it("keeps a non-gate job's npm script out of the gate jobs entirely", () => {
+    // The whole point of slicing rather than matching the file: `publish` runs
+    // `npm run release-notes`, and no gate job may be made to answer for it.
+    const cut = jobSlices(synthetic);
+    expect(npmScriptsIn(cut.get("publish") ?? "")).toEqual(["release-notes"]);
+    for (const job of ["first", "second", "third"]) {
+      expect(npmScriptsIn(cut.get(job) ?? "")).not.toContain("release-notes");
+    }
   });
 
   it("ignores everything above `jobs:`", () => {

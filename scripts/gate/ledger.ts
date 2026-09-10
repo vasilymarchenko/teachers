@@ -29,7 +29,10 @@ export type CheckResult = "passed" | "failed" | "skipped";
 export interface LedgerRow {
   runId: string;
   at: string;
+  /** The commit the run started from. */
   commit: string;
+  /** Whether the tree also carried uncommitted work at that moment. */
+  dirty?: boolean;
   check: string;
   result: CheckResult;
   /** `null` for a check that never started, or one that ran in-process. */
@@ -161,46 +164,62 @@ export function counts(dir = GATE_DIR): Record<string, Count> {
           `distinct run ids in ${LEDGER_PATH} since ${current.startedAt}`,
         )
       : count(0, CAPS.gateRunsPerRound, "phase 7 has not started a round"),
-    pushesAfterOpening: pushCount(current === undefined ? undefined : rounds[0]),
+    pushesAfterOpening: pushCount(rounds[0]),
   };
 }
 
 /**
  * Pushes to the pull request after the one that opened it.
  *
- * From the reflog of the remote-tracking ref: git writes one entry there per
- * update of `origin/<branch>`, and the first is the one that created it — the
- * push that opened the pull request, or the fetch that first saw the branch.
- * A fetch that moves the ref also lands there, so this can over-count on a
- * branch someone else pushes to; this repository has no such branch, and
- * anything more exact would need a record the agent writes itself.
+ * `git reflog show refs/remotes/origin/<branch>` records one entry per update
+ * of the remote-tracking ref, newest first — the pushes this clone made, plus
+ * the fetch that first saw the branch. Counting "all but the oldest" would
+ * count the opening push itself, because a clone's fetch creates the ref before
+ * that push updates it.
  *
- * Where the reflog is empty — a fresh clone in a resumed session — it falls
- * back to counting commits since the head the first round opened against.
+ * So the boundary is the commit round 1 opened against, which is the head the
+ * pull request was opened at: every entry newer than the one pointing at it is
+ * a push made after the pull request existed.
  */
+export function pushesAfterOpeningFrom(
+  reflogHeads: readonly string[],
+  openedAt: string,
+): number | null {
+  const index = reflogHeads.findIndex((head) => head.startsWith(openedAt));
+  return index === -1 ? null : index;
+}
+
 function pushCount(firstRound: Round | undefined): Count {
+  const openedAt = firstRound?.head;
+  if (openedAt === undefined) {
+    // Phase 7 has not started, so nothing has been pushed after the opening
+    // push by definition.
+    return count(0, CAPS.pushesAfterOpening, "phase 7 has not started a round");
+  }
+
   const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]);
   const ref = `refs/remotes/origin/${branch}`;
-  const reflog = git(["reflog", "show", "--format=%H", ref]);
+  const heads = (git(["reflog", "show", "--format=%H", ref]) ?? "")
+    .split("\n")
+    .filter((line) => line !== "");
 
-  if (reflog !== null && reflog !== "") {
-    const updates = reflog.split("\n").filter((line) => line !== "").length;
+  const fromReflog = pushesAfterOpeningFrom(heads, openedAt);
+  if (fromReflog !== null) {
     return count(
-      Math.max(0, updates - 1),
+      fromReflog,
       CAPS.pushesAfterOpening,
-      `${ref} reflog updates after the first`,
+      `${ref} reflog entries newer than ${openedAt.slice(0, 7)}`,
     );
   }
 
-  const head = firstRound?.head;
-  if (head === undefined) {
-    return count(0, CAPS.pushesAfterOpening, "no reflog and no round 1 head");
-  }
-  const commits = git(["rev-list", "--count", `${head}..HEAD`]);
+  // The ref was never fetched here, or was rewritten: a fresh clone in a
+  // resumed session. Commits stand in for pushes, which over-counts a push
+  // that carried two commits — a round is meant to be one commit anyway.
+  const commits = git(["rev-list", "--count", `${openedAt}..HEAD`]);
   return count(
     commits === null ? 0 : Number(commits),
     CAPS.pushesAfterOpening,
-    `commits since round 1's head ${head.slice(0, 7)} (no reflog)`,
+    `commits since ${openedAt.slice(0, 7)} (that commit is not in the reflog)`,
   );
 }
 

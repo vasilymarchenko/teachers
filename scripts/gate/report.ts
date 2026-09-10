@@ -53,6 +53,7 @@ export function countsLine(counts: Record<string, Count>): string {
 export function pullRequestBlock(
   outcomes: readonly CheckOutcome[],
   commit: string,
+  dirty = false,
 ): string {
   const lines = outcomes.map((outcome) => {
     const reason = outcome.reason === undefined ? "" : ` — ${outcome.reason}`;
@@ -64,5 +65,8 @@ export function pullRequestBlock(
       ? ""
       : "\n\nA skipped check was not run and is not a pass. " +
         `${skipped.map((o) => `\`${o.name}\``).join(", ")} — see the reasons above.`;
-  return `\`npm run gate\` on \`${commit.slice(0, 7)}\`:\n\n${lines.join("\n")}${note}`;
+  const tree = dirty
+    ? `\`${commit.slice(0, 7)}\` plus uncommitted work`
+    : `\`${commit.slice(0, 7)}\``;
+  return `\`npm run gate\` on ${tree}:\n\n${lines.join("\n")}${note}`;
 }

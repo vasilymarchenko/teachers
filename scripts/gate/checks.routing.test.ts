@@ -32,6 +32,13 @@ describe("selectChecks", () => {
     expect(names(["drizzle/0007_add_event.sql"])).toEqual([...ALWAYS, ...DATABASE]);
   });
 
+  it("adds them for the two other files ci.yml's integration job runs against", () => {
+    // A change to the assertion file alone, or to where the migrator points,
+    // would otherwise run no database check locally and the full one in CI.
+    expect(names(["scripts/verify-schema.sql"])).toEqual([...ALWAYS, ...DATABASE]);
+    expect(names(["drizzle.config.ts"])).toEqual([...ALWAYS, ...DATABASE]);
+  });
+
   it("does not treat every lib/** file as a database change", () => {
     // Guards a glob written one segment too wide: the domain is DB-free by
     // construction (`architect-overview.md` §2), and routing it to a suite that
@@ -70,6 +77,25 @@ describe("what a check needs from the machine", () => {
   it("lets a met requirement through", () => {
     const build = CHECKS.find((check) => check.name === "docker:runner")!;
     expect(unmetRequirement(build, () => null)).toBeNull();
+  });
+
+  it("gives verify-schema the connection string ci.yml gives it", () => {
+    // libpq does not read DATABASE_URL, so without this the check would connect
+    // to the local socket as the OS user and assert against whatever database
+    // it found — passing or failing for reasons unrelated to the change.
+    const check = CHECKS.find((c) => c.name === "verify-schema")!;
+    const argv = typeof check.argv === "function" ? check.argv() : check.argv;
+    expect(argv?.[0]).toBe("psql");
+    expect(argv).toContain("scripts/verify-schema.sql");
+    expect(argv).toHaveLength(6);
+  });
+
+  it("runs no check in-process except by name", () => {
+    // `migrator-smoke` also carries no argv. Dispatching on that absence alone
+    // is how it would come back green the day its requirement is relaxed.
+    const inProcess = CHECKS.filter((check) => check.inProcess !== undefined);
+    expect(inProcess.map((check) => check.name)).toEqual(["hygiene"]);
+    expect(CHECKS.find((c) => c.name === "migrator-smoke")?.inProcess).toBeUndefined();
   });
 
   it("keeps the migrator smoke test out of this machine and says why", () => {

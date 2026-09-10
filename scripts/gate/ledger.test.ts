@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendLedger,
   gateRunsSince,
+  pushesAfterOpeningFrom,
   readLedger,
   readRounds,
   type LedgerRow,
@@ -147,5 +148,32 @@ describe("the rounds in findings.json", () => {
       }),
     );
     expect(readRounds(at)).toHaveLength(1);
+  });
+});
+
+describe("pushes after the one that opened the pull request", () => {
+  // `git reflog show --format=%H` is newest first. A clone's fetch creates the
+  // ref before the opening push updates it, so the oldest entry is not the
+  // opening push and "all but the oldest" over-counts by one.
+  const reflog = ["ccc3333", "bbb2222", "aaa1111", "aaa1111"];
+
+  it("counts nothing when the opening head is still the newest entry", () => {
+    expect(pushesAfterOpeningFrom(["aaa1111", "aaa1111"], "aaa1111")).toBe(0);
+  });
+
+  it("counts the entries newer than the opening head", () => {
+    expect(pushesAfterOpeningFrom(reflog, "aaa1111")).toBe(2);
+    expect(pushesAfterOpeningFrom(reflog, "bbb2222")).toBe(1);
+  });
+
+  it("matches an abbreviated head against the full sha", () => {
+    expect(pushesAfterOpeningFrom(["ccc3333333", "aaa1111111"], "aaa1111")).toBe(1);
+  });
+
+  it("says it cannot tell rather than guessing, when the head is absent", () => {
+    // A fresh clone in a resumed session: the caller falls back to counting
+    // commits and prints which derivation it used.
+    expect(pushesAfterOpeningFrom(reflog, "ddd4444")).toBeNull();
+    expect(pushesAfterOpeningFrom([], "aaa1111")).toBeNull();
   });
 });

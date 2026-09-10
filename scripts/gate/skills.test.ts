@@ -41,15 +41,21 @@ describe("the skills and the gate", () => {
     });
   }
 
-  it("has one module holding the caps, and all three are three", () => {
-    // Not a golden-value test of the numbers themselves — `caps.ts` is free to
-    // change them. It asserts the shape the skills' prose relies on: three
-    // named caps, one module, and the "all of them three" the ticket states.
+  it("has one module holding every cap", () => {
+    // The shape, not the values: `caps.ts` is free to change a number, and a
+    // golden-value assertion here would pin the code to the prose from the
+    // other side — exactly the drift the module exists to prevent.
     expect(Object.keys(CAPS).sort()).toEqual([
       "gateRunsPerRound",
       "pushesAfterOpening",
       "reviewRounds",
     ]);
-    expect([...new Set(Object.values(CAPS))]).toEqual([3]);
   });
+
+  // That neither skill *states a cap value* is not asserted mechanically, and
+  // deliberately. A regex cannot tell a numeral naming a cap from an ordinal
+  // naming one of them — "the second and third are the loops T-026 left open"
+  // is correct prose that any such pattern flags. A check phrased more widely
+  // than the rule it comes from is how a reviewer starts producing confident
+  // nonsense; the two assertions above are the ones a pattern can carry.
 });

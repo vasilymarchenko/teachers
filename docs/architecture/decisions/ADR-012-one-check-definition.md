@@ -94,10 +94,12 @@ A check with no CI counterpart is allowed and is visible as such — it carries 
 job. `hygiene` is the only one: what it looks for are properties of a *diff*,
 and CI checks out a commit rather than reviewing one.
 
-The reverse gap is real and is not closed: a new *gate* job added to `ci.yml`
-has to be added to the test's three-name list by hand, and until it is, the test
-passes while ignoring it. The list is three lines in one file and changes about
-as often as `ADR-007` does.
+The gate-job list is maintained by hand, and the test asserts the workflow's job
+names *exactly* — so adding any job to `ci.yml`, gate job or not, fails the suite
+until someone says which kind it is. That is louder than it needs to be for a
+non-gate job and quieter than nothing for a gate one, and it is the trade chosen
+deliberately: the alternative is a test that passes while ignoring a gate job
+nobody remembered to list, which is the failure this decision exists to prevent.
 
 A check the local machine cannot run — no Docker daemon, no `DATABASE_URL` — is
 reported `skipped` with the reason and never as a pass, which is what keeps the

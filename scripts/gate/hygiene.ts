@@ -50,6 +50,10 @@ export function hygieneProblems(input: HygieneInput): string[] {
     const name = file.split("/").at(-1) ?? file;
     // `.env.example` is committed and is the one that must be.
     if (name === ".env.example" || !name.startsWith(".env")) continue;
+    // A change that *deletes* one is the fix, not the problem. Without this,
+    // removing a committed `.env` would be flagged for containing one, with
+    // nothing the author could do to satisfy the check.
+    if (!input.contents.has(file)) continue;
     problems.push(`${file}: an environment file must not be in the diff`);
   }
 
