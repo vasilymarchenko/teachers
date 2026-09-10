@@ -164,6 +164,16 @@ branch reached ~2,100 lines under `scripts/gate/`:
   enforces the loop instead of the model, and the right eventual one. It applies
   to every session in the repository, so it waits.
 
+**One exception to "nothing refuses to run a check", added after this ticket.**
+`T-031` gives `run()` a single preflight ahead of check selection: a Node too
+old to run `test` or `build` at all is not an environment gap a check can name
+for itself the way `unmetRequirement()` does, so the gate fails outright with
+one named reason instead of reaching the check loop. It is recorded — `failed`,
+with a `reason`, through the same ledger and `last-run.json` path as everything
+else — never a bare refusal with no record behind it, which is what the
+criterion above is actually guarding against. Mechanics:
+`docs/architecture/design/T-029-gate-and-loop.md` §4.
+
 **Two things T-026 settled that stand.** The ledger lives in a gitignored
 `.gate/` rather than the session scratchpad, because a human running
 `npm run gate` in a terminal has no scratchpad path and a fresh session could not

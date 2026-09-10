@@ -31,7 +31,7 @@ Application architecture: [`docs/architecture/architect-overview.md`](docs/archi
 
 ## Running it locally
 
-Prerequisites: Node.js 22+, npm, and Docker (for Postgres).
+Prerequisites: Node (version pinned in [`.nvmrc`](.nvmrc)), npm, and Docker (for Postgres).
 
 ```sh
 cp .env.example .env          # then set BETTER_AUTH_SECRET: openssl rand -base64 32
