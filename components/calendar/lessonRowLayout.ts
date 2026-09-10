@@ -11,7 +11,7 @@
  * The threshold is the width below which the side-by-side form stops working:
  * `w-16` (64 px) for the number and its bell times, `gap-3` (12 px), and what
  * the longest subject of the seeded fixture needs beside them — «Інформатика»
- * measures about 95 px at `text-sm`. That is 171 px; `14rem` (224 px) is the
+ * measures 97 px at the row's own size. That is 173 px; `14rem` (224 px) is the
  * next size up with room for the «заміна» badge to sit on the same line.
  *
  * Exported as whole class strings rather than assembled from parts: Tailwind

@@ -22,15 +22,16 @@ nothing made the text follow, so the text painted over the neighbouring day:
 «Інформатика» +57 px, «Математика» +52 px, «Алгебра» +22 px at a 1400 px
 viewport (T-021).
 
-The same 95 px card appears at `lg` with four columns, and the **widest** card
-of all, at 320 px, is the phone-width week view, where the grid is one column
-and the row has the full screen. A viewport breakpoint therefore does not even
-order the cases correctly.
+`lg`'s four columns are 135 px of content, narrow for the same reason, and the
+**widest** card of all, at 320 px, is the phone-width week view, where the grid
+is one column and the row has the full screen. A viewport breakpoint therefore
+does not even order the cases correctly.
 
 There is no DOM test environment in this project. `vitest.config.mts` runs the
-unit suite in `node`, and the `components` entries in it are convention tests
-over the source — the navigation menu's links against the real routes, the
-gate's check list against `ci.yml`.
+unit suite in `node`, and says why the `components` entry is there at all: for
+convention tests over the source — the navigation menu's links against the real
+routes — «not for rendering React, which would need a DOM environment this
+project does not carry».
 
 ## Options
 
@@ -81,8 +82,8 @@ container as well, where it is inherited by the card's other free text — an
 event title, a note, the name of a non-teaching period — none of which is inside
 a lesson row and each of which is one long teacher-typed token away from the
 same overflow. The threshold is the width below which the side-by-side form stops
-working — 64 px of column, 12 px of gap and the ~95 px «Інформатика» needs
-beside them is 171 px — rounded up to the next size with room for the «заміна»
+working — 64 px of column, 12 px of gap and the 97 px «Інформатика» measures
+beside them is 173 px — rounded up to the next size with room for the «заміна»
 badge on the same line.
 
 The enforcement is `components/calendar/lessonRowLayout.test.ts`, a convention

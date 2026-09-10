@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LESSON_ROW_LAYOUT } from "./lessonRowLayout";
 
@@ -83,27 +83,39 @@ describe("the lesson row's narrow-card form", () => {
   });
 });
 
-/** Every tracked file that renders a `<LessonRow`, the row's own source aside. */
-function filesRenderingTheRow(): string[] {
-  const found = execFileSync(
-    "git",
-    ["grep", "-l", "--", "<LessonRow", "app", "components"],
-    { encoding: "utf8" },
-  );
+/** Every source file under `dir`, tests and the row's own source aside. */
+function sourceFilesIn(dir: string): string[] {
+  return readdirSync(dir).flatMap((entry) => {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) return sourceFilesIn(path);
+    if (!path.endsWith(".ts") && !path.endsWith(".tsx")) return [];
+    if (/\.test\.tsx?$/.test(path)) return [];
+    if (path === ROW) return [];
+    return [path];
+  });
+}
 
-  return found
-    .split("\n")
-    .filter(
-      (file) => file !== "" && file !== ROW && !file.endsWith(".test.ts"),
-    );
+/**
+ * Every file that renders a `<LessonRow`.
+ *
+ * The walk is the filesystem's, not `git grep`'s: a renderer that has not been
+ * staged yet is exactly the one being written, and a check that waits for
+ * `git add` before it can fail is a check the author meets after the mistake
+ * rather than before it. Same shape as `lib/auth/queryDiscipline.test.ts`.
+ */
+function filesRenderingTheRow(): string[] {
+  return ["app", "components"]
+    .flatMap(sourceFilesIn)
+    .filter((file) => readFileSync(file, "utf8").includes("<LessonRow"));
 }
 
 describe("the components", () => {
   const renderers = filesRenderingTheRow();
 
   it("are found at all", () => {
-    // A renamed directory would otherwise turn the loop below into a loop over
-    // nothing, which passes without checking anything.
+    // A renamed directory, or a `<LessonRow` spelling this walk no longer
+    // matches, would otherwise turn the loop below into a loop over nothing,
+    // which passes without checking anything.
     expect(renderers.length).toBeGreaterThan(0);
   });
 

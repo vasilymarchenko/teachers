@@ -2,12 +2,13 @@
 id: T-021
 type: ticket
 title: Week view — lesson text overflows the day card once the grid column is narrow
-status: in-progress
+status: done
 depends_on: [T-007]
 refs:
   - docs/architecture/architect-overview.md §10.2
   - docs/specs/specification.md §6.1
   - docs/architecture/design/T-007-calendar-views.md
+  - docs/architecture/decisions/ADR-013-row-reflows-against-its-container.md
 ---
 
 ## Goal
@@ -23,19 +24,35 @@ the card is wide.
 
 ## Acceptance criteria
 
-- [ ] No descendant of a `DayCard` renders outside its box in the week view at
+- [x] No descendant of a `DayCard` renders outside its box in the week view at
       any viewport from 320 px to 2560 px. `document.documentElement.scrollWidth`
       never exceeds `window.innerWidth`, and no element's bounding rect crosses
       its card's.
-- [ ] The lesson number and its bell times stay readable — the fix constrains
+      — `components/calendar/lessonRowLayout.ts` and
+      `components/calendar/event-marks.tsx:46`; measured in a headless Chromium
+      over the real components at 21 viewports, with unbreakable 40-character
+      event titles and a non-teaching name, and against the pre-fix code, which
+      the same harness reports 69 px outside the card at 1400 px.
+- [x] The lesson number and its bell times stay readable — the fix constrains
       the payload side rather than dropping the left column.
-- [ ] The subject name stays identifiable at seven columns: wrapped or
+      — `lessonRowLayout.ts` keeps `w-16` in the wide form and reflows it;
+      `lessonRowLayout.test.ts` «keeps the number and its bell times».
+- [x] The subject name stays identifiable at seven columns: wrapped or
       truncated, not clipped mid-glyph, and the full text reachable (a `title`
       is enough, matching what `dayTooltip` already does for the year view).
-- [ ] The day view and the phone-width week view are unchanged — `LessonRow` is
+      — wrapped at the card's full width, never clipped, so the whole name is on
+      the screen; `lessonRowLayout.ts:subject` and `lesson-row.tsx:148`. Why no
+      `title`: `## Notes`.
+- [x] The day view and the phone-width week view are unchanged — `LessonRow` is
       shared, so a fix that narrows it everywhere is not the fix.
-- [ ] A test pins the constraint so the next layout change cannot reintroduce
+      — both are containers above the `14rem` threshold; the day view was
+      rendered before and after and compared in the browser, every row and
+      column identical to the pixel at 320, 390, 768, 1024, 1280, 1400 and
+      1920 px.
+- [x] A test pins the constraint so the next layout change cannot reintroduce
       it.
+      — `components/calendar/lessonRowLayout.test.ts`, 12 cases; it fails when a
+      renderer drops the container and when a new, unstaged renderer omits it.
 
 ## Notes
 
@@ -44,23 +61,22 @@ merged; the ticket's own criteria are about content, not overflow, which is why
 its review did not catch this. The overflow is CSS-only — no query, no domain
 code and no data is involved.
 
-**T-021.** The row now reflows against its container rather than the viewport:
-`DayLessons` opens an `@container` and `LessonRow` switches below `14rem`, with
-the threshold and every class in `components/calendar/lessonRowLayout.ts`. Why a
-container query and not a breakpoint, a prop, a smaller left column or a browser
-test — `docs/architecture/decisions/ADR-013-row-reflows-against-its-container.md`;
-the constraint is pinned by `components/calendar/lessonRowLayout.test.ts`.
+**Decisions taken while doing the work** — the reasoning is in ADR-013
+(`refs:`), not here:
 
-Measurement while implementing found the overflow starts at `lg` (four columns,
-135 px of card content) and not at `xl`, which is what the title said when the
-ticket was filed — «Інформатика» is 38 px over the card's edge there. The title
-now names the narrow column rather than a breakpoint, mirrored in `README.md`
-in the same commit; the fix covers both widths anyway, because what it keys on
-is the card.
+- the row reflows against its container, not the viewport, and the threshold
+  with every class is `components/calendar/lessonRowLayout.ts`; the constraint
+  is pinned by `components/calendar/lessonRowLayout.test.ts`;
+- criterion 3 offers a `title` as the way to reach the full subject name. There
+  is none: the name wraps at the card's full width and is never clipped, so the
+  whole of it is on the screen, and a `title` repeating visible text becomes the
+  element's accessible description and has every row read out twice. The test
+  pins the absence;
+- the defect starts at `lg` (four columns, 135 px of card content), not at `xl`
+  as the title said when the ticket was filed. Retitled, mirrored in
+  `README.md` in the same commit.
 
-The review of the first implementation added three things it had missed: the
-wrapping rule belongs on the day box, where the event titles and the name of a
-non-teaching period inherit it, and not on the lesson row alone; the lesson
-editor of T-011 renders a `LessonRow` too and had no container, so the test now
-walks every file that renders one; and the two bell times have to stay together
-as a single wrap item, or the range breaks with its dash hanging off a line.
+Commits: `ce652d9` the fix, `6510a4f` the review fixes (the day box owns the
+wrapping rule the events and the non-teaching name inherit; every renderer of
+the row opens the container, the lesson editor of T-011 included; the two bell
+times are one wrap item).
