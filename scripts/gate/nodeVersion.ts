@@ -2,14 +2,16 @@
  * The Node version a developer's shell needs before the gate can tell them
  * anything else about a change.
  *
- * `.nvmrc`, `package.json`'s `engines.node` and both `node-version: 22` lines
- * in `.github/workflows/ci.yml` are held in step by `nodeVersion.ci.test.ts` —
- * `CLAUDE.md`'s "Node.js 22+" points at `.nvmrc` instead of restating the
- * number a fourth time.
+ * `.nvmrc`, `package.json`'s `engines.node`, both `node-version: 22` lines in
+ * `.github/workflows/ci.yml`, and the `Dockerfile`'s four `node:22-alpine`
+ * stages — the images the VPS runs — are held in step by
+ * `nodeVersion.ci.test.ts`. `CLAUDE.md` and `README.md` point at `.nvmrc`
+ * instead of restating the number themselves.
  *
  * An older Node fails `npm test` and `npm run build` deep inside rolldown,
  * with `SyntaxError: ... does not provide an export named 'styleText'`, and
- * neither check says why (T-031). This runs before any check does.
+ * neither check says why (T-031). `scripts/gate/index.ts`'s `run()` calls
+ * `unsupportedNodeVersion()` before selecting a single check.
  */
 
 import { readFileSync } from "node:fs";

@@ -4,11 +4,20 @@
  *
  * It edits nothing and pushes nothing; `.gate/` is the only path it writes.
  *
- * **Nothing here ever refuses to run a check.** A check this machine cannot run
- * is `skipped` with the reason, in the table and in the pull request body, and
- * a skip is never reported as a pass. `--report` refuses a *conclusion* — a
- * refused measurement would block the recovery, because the check is what tells
- * the truth and an environment fix changes no file (T-029).
+ * **Nothing here ever refuses to run a *selected* check.** A check this
+ * machine cannot run is `skipped` with the reason, in the table and in the
+ * pull request body, and a skip is never reported as a pass. `--report`
+ * refuses a *conclusion* — a refused measurement would block the recovery,
+ * because the check is what tells the truth and an environment fix changes no
+ * file (T-029).
+ *
+ * **One thing runs before any check is even selected:** `unsupportedNodeVersion()`
+ * (`nodeVersion.ts`). A too-old Node cannot run `test` or `build` at all — an
+ * import failure that names no version, not a clean `skipped` — so `run()`
+ * records it as a single failed outcome, `node-version`, through the same
+ * ledger and `last-run.json` pipeline as every other run. Never a bare early
+ * return: that would leave a stale, greener answer sitting in
+ * `.gate/last-run.json` for `--report` to read (T-031).
  */
 
 import { spawnSync } from "node:child_process";
@@ -128,26 +137,36 @@ function runCheck(check: Check, files: readonly string[]): CheckOutcome {
 }
 
 function run(): number {
-  // Before any check: an older Node fails `test` and `build` deep inside
-  // rolldown, with a `styleText` import error that names no version, and
-  // reporting the whole gate `skipped` here would empty it — skipping
-  // `lint`, `typecheck`, `test` and `build` is the empty-gate-exits-zero
-  // failure T-029 exists to prevent (T-031).
-  const nodeProblem = unsupportedNodeVersion();
-  if (nodeProblem !== null) {
-    console.log(`gate: ${nodeProblem}`);
-    return 1;
-  }
-
-  const files = changedFiles();
   const commit = git(["rev-parse", "HEAD"]) ?? "unknown";
   // The gate checks HEAD *plus* whatever is not committed yet, so `commit`
   // alone would attribute a run to a tree it did not see. A resumed session
   // reading a green run must be able to tell "this commit was checked" from
   // "this commit plus edits that no longer exist was checked".
   const dirty = (git(["status", "--porcelain"]) ?? "") !== "";
+
+  // Before any check is even selected — see nodeVersion.ts and the header
+  // above for why this is recorded rather than a bare early return.
+  const nodeProblem = unsupportedNodeVersion();
+  if (nodeProblem !== null) {
+    console.log(`gate: ${nodeProblem}`);
+    return finish(
+      [
+        {
+          name: "node-version",
+          result: "failed",
+          exitCode: 1,
+          durationMs: 0,
+          reason: nodeProblem,
+        },
+      ],
+      commit,
+      dirty,
+      [],
+    );
+  }
+
+  const files = changedFiles();
   const selected = selectChecks(files);
-  const runId = `${new Date().toISOString()}-${randomUUID().slice(0, 8)}`;
 
   console.log(
     `gate: ${selected.length} checks for ${files.length} changed files on ` +
@@ -162,6 +181,26 @@ function run(): number {
     outcomes.push(runCheck(check, files));
   }
 
+  return finish(outcomes, commit, dirty, files);
+}
+
+/**
+ * Records one run's outcomes to the ledger and `last-run.json`, prints the
+ * table and the counts, and returns the exit code.
+ *
+ * Shared by the normal check loop and the Node-version preflight above, so a
+ * run that stops at the preflight leaves the same kind of record behind as one
+ * that runs every check — `--report` and `--pr-block` read one file either
+ * way, never a stale one left over from before the Node on this machine went
+ * bad (T-031).
+ */
+function finish(
+  outcomes: readonly CheckOutcome[],
+  commit: string,
+  dirty: boolean,
+  files: readonly string[],
+): number {
+  const runId = `${new Date().toISOString()}-${randomUUID().slice(0, 8)}`;
   const at = new Date().toISOString();
   const rows: LedgerRow[] = outcomes.map((outcome) => ({
     runId,

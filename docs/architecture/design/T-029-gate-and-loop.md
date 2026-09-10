@@ -16,16 +16,17 @@ mechanics — the modules, the routing table, the shape of each file under
 |---|---|
 | `scripts/gate/caps.ts` | `CAPS` — the three cap numbers. The only place they exist. |
 | `scripts/gate/checks.ts` | `CHECKS`, `selectChecks()`, `unmetRequirement()` — the routing and the environment probes. |
+| `scripts/gate/nodeVersion.ts` | `unsupportedNodeVersion()` — the Node-version preflight `run()` calls before selecting a check (`T-031`). |
 | `scripts/gate/hygiene.ts` | `hygieneProblems()` (pure) and `runHygiene()` (reads the tree). |
 | `scripts/gate/ledger.ts` | Everything that touches `.gate/`, plus `counts()`. |
 | `scripts/gate/report.ts` | `table()`, `countsLine()`, `pullRequestBlock()`. |
-| `scripts/gate/index.ts` | The CLI: `run()`, `report()`, `pullRequestChecks()`. |
+| `scripts/gate/index.ts` | The CLI: `run()`, `finish()`, `report()`, `pullRequestChecks()`. |
 
 Entry point: `npm run gate` → `tsx scripts/gate/index.ts`.
 
 | Invocation | Does |
 |---|---|
-| `npm run gate` | Runs the selected checks, writes `.gate/`, prints the table and the counts, exits non-zero if any check failed. |
+| `npm run gate` | Checks the Node version first (`T-031`); too old, and `run()` records that alone as one failed outcome named `node-version` and stops there. Otherwise selects checks, runs them, writes `.gate/`, prints the table and the counts. Exits non-zero if the preflight or any selected check failed. |
 | `npm run gate -- --report` | Runs **no** check. Reads `.gate/last-run.json`, the counts and `gh pr checks`; exits non-zero — naming every blocker — when there is no recorded run, when the last one was red, included uncommitted work, or was against a commit other than `HEAD`, when a cap is exceeded, or when CI is not green. |
 | `npm run gate -- --pr-block` | Prints the markdown block for the PR body from `.gate/last-run.json`. |
 

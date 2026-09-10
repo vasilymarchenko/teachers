@@ -4,22 +4,31 @@ import { describe, expect, it } from "vitest";
 import { requiredNodeMajor, unsupportedNodeVersion } from "./nodeVersion";
 
 /**
- * The Node major version is named three times, and they have to agree.
+ * The Node major version is named four times, and they have to agree.
  *
  * `.nvmrc` is what `nvm use` reads, `package.json`'s `engines.node` is what
- * `npm install` warns about, and `.github/workflows/ci.yml`'s two
- * `node-version: 22` lines are what the runner installs. A skew between them
- * is the gap T-031 closes: two files a developer's shell can read and one
- * that nothing compared. Same shape as `lib/db/postgresImage.test.ts`, and
+ * `npm install` warns about, `.github/workflows/ci.yml`'s two
+ * `node-version: 22` lines are what the runner installs, and the
+ * `Dockerfile`'s four `node:22-alpine` stages build the images the VPS runs.
+ * A skew between them is the gap T-031 closes: three files a developer's
+ * shell or a deploy can read and, before this, nothing that compared them.
+ * Same shape as `lib/db/postgresImage.test.ts`, and
  * `scripts/gate/checks.ci.test.ts` for the `ci.yml` half.
  */
 
 const PACKAGE_JSON = "package.json";
 const WORKFLOW = ".github/workflows/ci.yml";
+const DOCKERFILE = "Dockerfile";
 
 function ciNodeMajors(source: string): number[] {
   return [...source.matchAll(/node-version:\s*["']?(\d+)["']?/g)].map(
     ([, major]) => Number.parseInt(major, 10),
+  );
+}
+
+function dockerfileNodeMajors(source: string): number[] {
+  return [...source.matchAll(/^FROM node:(\d+)-alpine/gm)].map(([, major]) =>
+    Number.parseInt(major, 10),
   );
 }
 
@@ -54,6 +63,34 @@ describe("the Node version", () => {
     // comparison against an empty list, which trivially passes.
     expect(majors.length).toBeGreaterThan(0);
     expect(new Set(majors)).toEqual(new Set([required]));
+  });
+
+  it("is the same major in every Dockerfile FROM node:… stage", () => {
+    const dockerfile = readFileSync(DOCKERFILE, "utf8");
+    const majors = dockerfileNodeMajors(dockerfile);
+    // Same guard: a stage renamed off `node:<major>-alpine` must not turn
+    // this into an empty, trivially-passing comparison.
+    expect(majors.length).toBeGreaterThan(0);
+    expect(new Set(majors)).toEqual(new Set([required]));
+  });
+});
+
+describe("dockerfileNodeMajors", () => {
+  it("reads every FROM node:<major>-alpine stage", () => {
+    expect(
+      dockerfileNodeMajors(
+        "FROM node:22-alpine AS deps\n" +
+          "RUN apk add --no-cache libc6-compat\n" +
+          "FROM node:22-alpine AS runner\n",
+      ),
+    ).toEqual([22, 22]);
+  });
+
+  it("ignores a stage built from something else", () => {
+    // Without this, a stage renamed off `node:` — a distroless or `alpine`
+    // base for a later stage — would silently stop being compared, the same
+    // way a renamed job emptied `checks.ci.test.ts`'s comparison.
+    expect(dockerfileNodeMajors("FROM alpine:3.20 AS certs\n")).toEqual([]);
   });
 });
 
