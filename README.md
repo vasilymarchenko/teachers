@@ -50,6 +50,7 @@ npm run dev                   # http://localhost:3000
 |---|---|
 | `npm run dev` | Next.js dev server |
 | `npm run build` / `npm start` | production build and server |
+| `npm run gate` | The checks this change needs — all of them, one table, non-zero on any failure |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest — the unit suite, once |

@@ -2,9 +2,11 @@
 id: T-029
 type: ticket
 title: One gate command and a bounded review loop for /teachers-ticket
-status: todo
+status: in-progress
 depends_on: [T-017, T-024]
 refs:
+  - docs/architecture/decisions/ADR-012-one-check-definition.md
+  - docs/architecture/design/T-029-gate-and-loop.md
   - .claude/skills/teachers-ticket/SKILL.md
   - .claude/skills/teachers-review/SKILL.md
   - .github/workflows/ci.yml
@@ -182,3 +184,25 @@ deferred. The ticket says so rather than implying a guarantee it does not have.
 hundred lines. A criterion above that appears to need a thousand is being read as
 a licence to build machinery: what makes the loop reliable is the gate's exit
 code, one file it appends to, and `gh pr checks`.
+
+---
+
+**Implementation.** The mechanics are `docs/architecture/design/T-029-gate-and-loop.md`;
+the one decision worth recording is
+`decisions/ADR-012-one-check-definition.md` — the local gate and `ci.yml` keep
+one check definition, held in step by `scripts/gate/checks.ci.test.ts` rather
+than by one calling the other.
+
+**Why this stays `in-progress`.** The last criterion cannot be satisfied by the
+session that implements the ticket, by its own argument: a skill's text enters
+context when it is invoked, so that session's phases 6 and 7 run the version
+loaded before phase 5 edited it. It closes when a later session, on a different
+ticket, has worked the new loop end to end — and that session ticks the box and
+sets `done`.
+
+**One criterion was read narrowly, deliberately.** The routing covers the
+migrator smoke test, but the check is always `skipped` here rather than run: CI
+performs it as a five-step orchestration, and transcribing that into a second
+file is the local reimplementation this ticket's own `## Notes` rule out. It is
+therefore never reported as checked locally. `T-030` unifies the two into one
+script called by both.
