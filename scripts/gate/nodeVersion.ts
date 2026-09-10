@@ -34,17 +34,32 @@ export function requiredNodeMajor(path: string = NVMRC_PATH): number {
  * "Older than", not "not exactly this major": `package.json`'s `engines.node`
  * is a `>=` range, not an exact one, and a newer major is not the failure
  * this exists to catch.
+ *
+ * `requiredMajor` defaults to reading `.nvmrc`, and that read is guarded: a
+ * missing or unparseable `.nvmrc` must become a named reason, like every other
+ * outcome `run()` records, not an uncaught throw that skips `finish()`
+ * entirely and leaves `.gate/last-run.json` exactly as stale as the bare
+ * early return this file exists to replace.
  */
 export function unsupportedNodeVersion(
   actual: string = process.version,
-  requiredMajor: number = requiredNodeMajor(),
+  requiredMajor?: number,
 ): string | null {
+  let required = requiredMajor;
+  if (required === undefined) {
+    try {
+      required = requiredNodeMajor();
+    } catch (error) {
+      return `cannot read the required Node version from .nvmrc: ${(error as Error).message}`;
+    }
+  }
+
   const match = /^v(\d+)/.exec(actual);
   const actualMajor = match ? Number.parseInt(match[1], 10) : NaN;
-  if (!Number.isFinite(actualMajor) || actualMajor < requiredMajor) {
+  if (!Number.isFinite(actualMajor) || actualMajor < required) {
     return (
-      `Node ${actual} is older than the Node ${requiredMajor}+ this project ` +
-      `requires (.nvmrc) — nvm use, or install Node ${requiredMajor}+`
+      `Node ${actual} is older than the Node ${required}+ this project ` +
+      `requires (.nvmrc) — nvm use, or install Node ${required}+`
     );
   }
   return null;

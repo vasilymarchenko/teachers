@@ -60,9 +60,13 @@ change to how the project is developed, and would need its own ticket and an
 ADR against what `docs/tech-stack.md` records.
 
 Implemented as the preflight the Notes above left open: `unsupportedNodeVersion()`
-in `scripts/gate/nodeVersion.ts`, read from `.nvmrc` and called at the top of
-`scripts/gate/index.ts`'s `run()`, before `changedFiles()` or any check.
-`scripts/gate/nodeVersion.ci.test.ts` holds `.nvmrc`, `package.json`'s
-`engines.node` and both `ci.yml` `node-version` lines in step, plus unit tests
-for the preflight's own message. `README.md`'s prerequisite line was pointed at
-`.nvmrc` alongside `CLAUDE.md`'s, for the same reason.
+in `scripts/gate/nodeVersion.ts`, read from `.nvmrc` and called near the top of
+`scripts/gate/index.ts`'s `run()`, before any check is selected or run.
+`changedFiles()` runs first, immediately above it — a plain `git diff`, safe on
+any Node — because `finish()` records `changedFiles` on every run, preflight
+failure included, and a hard-coded `[]` there was one of the defects self-review
+found (`.gate/findings.json`, R2-1). `scripts/gate/nodeVersion.ci.test.ts` holds
+`.nvmrc`, `package.json`'s `engines.node`, both `ci.yml` `node-version` lines and
+the `Dockerfile`'s `node:22-alpine` stages in step, plus unit tests for the
+preflight's own message. `README.md`'s prerequisite line was pointed at `.nvmrc`
+alongside `CLAUDE.md`'s, for the same reason.

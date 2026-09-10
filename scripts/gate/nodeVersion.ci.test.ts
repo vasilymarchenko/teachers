@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { requiredNodeMajor, unsupportedNodeVersion } from "./nodeVersion";
@@ -94,6 +97,21 @@ describe("dockerfileNodeMajors", () => {
   });
 });
 
+describe("requiredNodeMajor", () => {
+  it("throws, naming the path and the content, on a bare-major .nvmrc's opposite: an alias", () => {
+    // A synthetic file, never the real .nvmrc — this must not depend on or
+    // perturb the one the rest of this suite reads. A common nvm alias, not
+    // a bare major, is exactly the shape a hand-edited .nvmrc could take.
+    const tmp = join(tmpdir(), `nvmrc-bad-${randomUUID()}`);
+    writeFileSync(tmp, "lts/*\n");
+    try {
+      expect(() => requiredNodeMajor(tmp)).toThrow(/lts\/\*/);
+    } finally {
+      rmSync(tmp);
+    }
+  });
+});
+
 describe("unsupportedNodeVersion", () => {
   it("names an older Node as the reason", () => {
     const reason = unsupportedNodeVersion("v18.19.1", 22);
@@ -104,5 +122,14 @@ describe("unsupportedNodeVersion", () => {
   it("accepts the required major, and any newer one", () => {
     expect(unsupportedNodeVersion("v22.23.2", 22)).toBeNull();
     expect(unsupportedNodeVersion("v23.0.0", 22)).toBeNull();
+  });
+
+  it("reads the real .nvmrc when requiredMajor is not given", () => {
+    // The path unsupportedNodeVersion() takes when called with no arguments
+    // at all — its own default parameter reads the real .nvmrc, guarded by
+    // the try/catch around requiredNodeMajor() that the test above proves
+    // throws on a bad file. With this repository's own well-formed .nvmrc,
+    // that path succeeds.
+    expect(unsupportedNodeVersion(`v${requiredNodeMajor()}.0.0`)).toBeNull();
   });
 });

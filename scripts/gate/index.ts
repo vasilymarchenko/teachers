@@ -236,10 +236,12 @@ function finish(
   });
 
   const failed = outcomes.filter((outcome) => outcome.result === "failed");
-  // Only a failure that actually captured output earns the box — the
-  // node-version preflight has none, only a `reason` the table row already
-  // shows, and an empty `─── name ───` block under it said nothing twice.
-  for (const failure of failed.filter((outcome) => outcome.output)) {
+  // Only a failure whose `output` field was ever set earns the box — not
+  // merely non-empty, which would also drop it for a real check that failed
+  // to spawn at all and captured only `""`. The node-version preflight never
+  // sets `output`; it has only a `reason`, which the table row already shows,
+  // and an empty `─── name ───` block under it said nothing twice.
+  for (const failure of failed.filter((outcome) => outcome.output !== undefined)) {
     console.log(`\n─── ${failure.name} ───\n${tail(failure.output ?? "")}`);
   }
 
