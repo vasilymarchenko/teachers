@@ -128,33 +128,35 @@ export function LessonRow({
       <div className={LESSON_ROW_LAYOUT.timeColumn}>
         <span className="font-semibold">{lesson.lessonNumber}</span>
         {lesson.timeFrom !== undefined && lesson.timeTo !== undefined && (
-          <>
-            <span className="text-muted-foreground tabular-nums">
-              {lesson.timeFrom}
-            </span>
+          <span
+            className={cn(
+              "text-muted-foreground tabular-nums",
+              LESSON_ROW_LAYOUT.timeRange,
+            )}
+          >
+            <span>{lesson.timeFrom}</span>
             {/* Only on the single line of a narrow card: «10:15–11:00». Stacked
                 in a wide one, where a dash would hang off the first line. */}
             <span aria-hidden className={LESSON_ROW_LAYOUT.timeSeparator}>
               –
             </span>
-            <span className="text-muted-foreground tabular-nums">
-              {lesson.timeTo}
-            </span>
-          </>
+            <span>{lesson.timeTo}</span>
+          </span>
         )}
       </div>
 
       <div className={LESSON_ROW_LAYOUT.payload}>
         <div className="flex flex-wrap items-center gap-2">
-          {/* `title` carries the full name where the card is too narrow to
-              show it, the way `dayTooltip` already does for the year view. */}
+          {/* No `title`: the name wraps at the card's full width and is never
+              clipped, so the whole of it is already on the screen. Repeating
+              visible text in a `title` only makes it the element's accessible
+              description, and every row is then read out twice. */}
           <p
             className={cn(
               "font-medium",
               LESSON_ROW_LAYOUT.subject,
               cancelled && "text-muted-foreground line-through",
             )}
-            title={lesson.payload.subject}
           >
             {lesson.payload.subject}
           </p>

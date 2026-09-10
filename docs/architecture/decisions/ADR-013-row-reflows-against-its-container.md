@@ -71,21 +71,29 @@ browser — is reachable here from three source properties instead.
 The container query, with the threshold and every class it needs in
 `components/calendar/lessonRowLayout.ts`.
 
-`DayLessons` carries `@container`; `LessonRow` reflows below `14rem` (224 px):
-the row stops being a side-by-side flex, the 64 px column becomes an auto-width
-wrapping line with the two bell times joined by a dash, and the payload keeps
-`min-w-0` with `break-words` so no single long token can leave the box at any
-width. The threshold is the width below which the side-by-side form stops
+Every list that renders a `LessonRow` carries the container — `DayLessons` and
+the lesson editor of T-011 alike — and `LessonRow` reflows below `14rem`
+(224 px): the row stops being a side-by-side flex, the 64 px column becomes an
+auto-width wrapping line whose two bell times stay together as one wrap item,
+joined by a dash, and the payload keeps `min-w-0` with `break-words` so no
+single long token can leave the box at any width. `break-words` sits on the
+container as well, where it is inherited by the card's other free text — an
+event title, a note, the name of a non-teaching period — none of which is inside
+a lesson row and each of which is one long teacher-typed token away from the
+same overflow. The threshold is the width below which the side-by-side form stops
 working — 64 px of column, 12 px of gap and the ~95 px «Інформатика» needs
 beside them is 171 px — rounded up to the next size with room for the «заміна»
 badge on the same line.
 
 The enforcement is `components/calendar/lessonRowLayout.test.ts`, a convention
 test over the source in the shape `lib/auth/queryDiscipline.test.ts` uses. It
-pins the three properties the absence of the overflow rests on: one threshold
-rather than two, the container actually opened on the day — without which every
-`@max-[…]` variant is inert while the source still looks right — and a payload
-that can wrap. No browser test and no new dependency.
+pins the properties the absence of the overflow rests on: one threshold rather
+than two, the container opened by **every** file that renders the row — without
+which every `@max-[…]` variant is inert there while the source still looks
+right — the bell times held together as one wrap item, and a payload that can
+wrap. The list of renderers is taken from the repository at test time rather
+than written down, because a written list is a list that goes stale the first
+time a screen draws a lesson. No browser test and no new dependency.
 
 ## Consequences
 

@@ -1,7 +1,7 @@
 ---
 id: T-021
 type: ticket
-title: Week view — lesson text overflows the day card from the xl breakpoint
+title: Week view — lesson text overflows the day card once the grid column is narrow
 status: in-progress
 depends_on: [T-007]
 refs:
@@ -52,5 +52,15 @@ test — `docs/architecture/decisions/ADR-013-row-reflows-against-its-container.
 the constraint is pinned by `components/calendar/lessonRowLayout.test.ts`.
 
 Measurement while implementing found the overflow starts at `lg` (four columns,
-135 px of card content), not at `xl` as the title says — «Інформатика» is 38 px
-over there. The fix covers both, because the threshold is the card's width.
+135 px of card content) and not at `xl`, which is what the title said when the
+ticket was filed — «Інформатика» is 38 px over the card's edge there. The title
+now names the narrow column rather than a breakpoint, mirrored in `README.md`
+in the same commit; the fix covers both widths anyway, because what it keys on
+is the card.
+
+The review of the first implementation added three things it had missed: the
+wrapping rule belongs on the day box, where the event titles and the name of a
+non-teaching period inherit it, and not on the lesson row alone; the lesson
+editor of T-011 renders a `LessonRow` too and had no container, so the test now
+walks every file that renders one; and the two bell times have to stay together
+as a single wrap item, or the range breaks with its dash hanging off a line.

@@ -9,6 +9,7 @@ import {
   capitalise,
 } from "@/components/calendar/labels";
 import { LessonRow } from "@/components/calendar/lesson-row";
+import { LESSON_ROW_LAYOUT } from "@/components/calendar/lessonRowLayout";
 import {
   calendarHref,
   scheduleViewOf,
@@ -21,6 +22,7 @@ import {
 import { OverrideForm } from "@/components/calendar/override-form";
 import { Section } from "@/components/year/section";
 import { requireUser } from "@/lib/auth/session";
+import { cn } from "@/lib/utils";
 import { getNonTeachingPeriods } from "@/lib/db/queries/calendarRules";
 import { getDayOverride } from "@/lib/db/queries/overrides";
 import { getScheduleInput } from "@/lib/db/queries/scheduleInput";
@@ -125,7 +127,14 @@ export default async function Page({
             {OVERRIDE_LABELS.currentNone}
           </p>
         ) : (
-          <ul className="border-border bg-card rounded-lg border px-4">
+          <ul
+            className={cn(
+              "border-border bg-card rounded-lg border px-4",
+              // Every list that draws a `LessonRow` opens the row's container,
+              // or the row cannot reflow in it at all (ADR-013).
+              LESSON_ROW_LAYOUT.container,
+            )}
+          >
             {/* The same row the calendar draws, cancellation and badges
                 included — the teacher is looking at the lesson she just came
                 from, not at a second rendering of it. */}
@@ -146,7 +155,14 @@ export default async function Page({
             {OVERRIDE_LABELS.plannedNone}
           </p>
         ) : (
-          <ul className="border-border bg-card rounded-lg border px-4">
+          <ul
+            className={cn(
+              "border-border bg-card rounded-lg border px-4",
+              // Every list that draws a `LessonRow` opens the row's container,
+              // or the row cannot reflow in it at all (ADR-013).
+              LESSON_ROW_LAYOUT.container,
+            )}
+          >
             <LessonRow lesson={plannedLesson} />
           </ul>
         )}

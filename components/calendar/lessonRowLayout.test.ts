@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { LESSON_ROW_LAYOUT } from "./lessonRowLayout";
@@ -16,11 +17,12 @@ import { LESSON_ROW_LAYOUT } from "./lessonRowLayout";
  * 1. The narrow-card form exists and is reached through **one** threshold. A
  *    second, different threshold would reflow half the row and leave the other
  *    half in the wide form — the exact defect, at a different width.
- * 2. `DayLessons` opens the container the row's `@max-[…]` variants resolve
- *    against. Without it every one of those variants is inert and the row keeps
- *    the wide form in a 95 px card. This is the silent failure: the classes are
- *    still in the source, the stylesheet still has the rules, and nothing
- *    matches.
+ * 2. **Every** file that renders a `LessonRow` opens the container its
+ *    `@max-[…]` variants resolve against. Without it those variants are inert
+ *    and the row keeps the wide form in a 95 px card. This is the silent
+ *    failure: the classes are still in the source, the stylesheet still has the
+ *    rules, and nothing matches. Naming one file here would have left the
+ *    lesson editor of T-011 out, which is where it was found.
  * 3. The payload side can wrap. `min-w-0` alone lets the box shrink while the
  *    text keeps its own width, which is how «Інформатика» ended up 57 px over
  *    the neighbouring day.
@@ -53,6 +55,7 @@ describe("the lesson row's narrow-card form", () => {
     // two bell times gain the dash that joins them on one line.
     expect(thresholdsIn(LESSON_ROW_LAYOUT.row)).not.toHaveLength(0);
     expect(thresholdsIn(LESSON_ROW_LAYOUT.timeColumn)).not.toHaveLength(0);
+    expect(thresholdsIn(LESSON_ROW_LAYOUT.timeRange)).not.toHaveLength(0);
     expect(thresholdsIn(LESSON_ROW_LAYOUT.timeSeparator)).not.toHaveLength(0);
   });
 
@@ -64,6 +67,14 @@ describe("the lesson row's narrow-card form", () => {
     expect(LESSON_ROW_LAYOUT.timeColumn).toMatch(/@max-\[[^\]]+\]:flex-wrap/);
   });
 
+  it("keeps the two bell times together as one wrap item", () => {
+    // The column wraps; the range inside it must not, or «08:30–09:15» breaks
+    // as «08:30 –» over «09:15» — a dash hanging off the end of a line.
+    expect(LESSON_ROW_LAYOUT.timeRange).toContain("flex");
+    expect(LESSON_ROW_LAYOUT.timeRange).not.toContain("flex-wrap");
+    expect(LESSON_ROW_LAYOUT.timeColumn).toMatch(/@max-\[[^\]]+\]:gap-x/);
+  });
+
   it("lets the payload and the subject wrap instead of painting outside the card", () => {
     expect(LESSON_ROW_LAYOUT.payload).toContain("min-w-0");
     expect(LESSON_ROW_LAYOUT.payload).toContain("break-words");
@@ -72,11 +83,42 @@ describe("the lesson row's narrow-card form", () => {
   });
 });
 
+/** Every tracked file that renders a `<LessonRow`, the row's own source aside. */
+function filesRenderingTheRow(): string[] {
+  const found = execFileSync(
+    "git",
+    ["grep", "-l", "--", "<LessonRow", "app", "components"],
+    { encoding: "utf8" },
+  );
+
+  return found
+    .split("\n")
+    .filter(
+      (file) => file !== "" && file !== ROW && !file.endsWith(".test.ts"),
+    );
+}
+
 describe("the components", () => {
-  it("open the container on the day, so the row's variants can match", () => {
-    expect(LESSON_ROW_LAYOUT.container).toBe("@container");
-    expect(source(DAY_LESSONS)).toContain("LESSON_ROW_LAYOUT.container");
+  const renderers = filesRenderingTheRow();
+
+  it("are found at all", () => {
+    // A renamed directory would otherwise turn the loop below into a loop over
+    // nothing, which passes without checking anything.
+    expect(renderers.length).toBeGreaterThan(0);
   });
+
+  it("declare the container and the wrapping rule on one class", () => {
+    expect(LESSON_ROW_LAYOUT.container).toContain("@container");
+    // Inherited, so it reaches the card's other free text as well — an event
+    // title, a note, the name of a non-teaching period.
+    expect(LESSON_ROW_LAYOUT.container).toContain("break-words");
+  });
+
+  for (const file of renderers) {
+    it(`${file} opens the container the row reflows against`, () => {
+      expect(source(file)).toContain("LESSON_ROW_LAYOUT.container");
+    });
+  }
 
   it("take the row's layout from the one module that holds it", () => {
     const row = source(ROW);
@@ -89,11 +131,15 @@ describe("the components", () => {
   it("hard-code no container-query threshold of their own", () => {
     // A threshold written into a component is a second definition of the
     // breakpoint, and the first thing to drift away from this module.
-    expect(thresholdsIn(source(ROW))).toEqual([]);
-    expect(thresholdsIn(source(DAY_LESSONS))).toEqual([]);
+    for (const file of [ROW, DAY_LESSONS, ...renderers]) {
+      expect(thresholdsIn(source(file))).toEqual([]);
+    }
   });
 
-  it("give the subject a title, so the full name is reachable when it wraps", () => {
-    expect(source(ROW)).toContain("title={lesson.payload.subject}");
+  it("leave the subject its whole text rather than a tooltip of it", () => {
+    // The name wraps at the card's full width and is never clipped, so the
+    // whole of it is on the screen. A `title` repeating visible text becomes
+    // the accessible description, and the row is read out twice.
+    expect(source(ROW)).not.toContain("title={lesson.payload.subject}");
   });
 });
