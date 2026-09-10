@@ -43,7 +43,7 @@ agent — the gate's exit code and `gh pr checks`.
       locally and red in CI.
 - [x] A test holds that list in step with `ci.yml`'s three gate jobs — the
       `lib/db/postgresImage.test.ts` pattern, which already holds one value
-      across two files. Scoped to those jobs rather than to the whole workflow:
+      across three files. Scoped to those jobs rather than to the whole workflow:
       a future job that runs an npm script for some other purpose must not have
       to become a gate check to keep the suite green. There is no YAML parser in
       this project and this does not justify adding one — slice the file at its

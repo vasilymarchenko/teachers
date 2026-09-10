@@ -26,7 +26,7 @@ Entry point: `npm run gate` → `tsx scripts/gate/index.ts`.
 | Invocation | Does |
 |---|---|
 | `npm run gate` | Runs the selected checks, writes `.gate/`, prints the table and the counts, exits non-zero if any check failed. |
-| `npm run gate -- --report` | Runs **no** check. Reads the counts and `gh pr checks`; exits non-zero when a cap is exceeded or CI is not green, naming which. |
+| `npm run gate -- --report` | Runs **no** check. Reads `.gate/last-run.json`, the counts and `gh pr checks`; exits non-zero — naming every blocker — when there is no recorded run, when the last one was red, included uncommitted work, or was against a commit other than `HEAD`, when a cap is exceeded, or when CI is not green. |
 | `npm run gate -- --pr-block` | Prints the markdown block for the PR body from `.gate/last-run.json`. |
 
 ## 2. The routing
@@ -41,12 +41,19 @@ so two runs over one change print the same table.
 | `test` | every change | — | `checks` (`npm test`) |
 | `build` | every change | — | `checks` (`npm run build`) |
 | `hygiene` | every change | — | none — see §5 |
-| `db:migrate` | `^lib/db/`, `^drizzle/` | `DATABASE_URL` | `integration` (`npm run db:migrate`) |
-| `verify-schema` | `^lib/db/`, `^drizzle/` | `DATABASE_URL`, `psql` | `integration` (anchor `scripts/verify-schema.sql`) |
-| `test:integration` | `^lib/db/`, `^drizzle/` | `DATABASE_URL` | `integration` (`npm run test:integration`) |
+| `db:migrate` | `DATABASE_PATHS` | `DATABASE_URL` | `integration` (`npm run db:migrate`) |
+| `verify-schema` | `DATABASE_PATHS` | `DATABASE_URL`, `psql` | `integration` (anchor `scripts/verify-schema.sql`) |
+| `test:integration` | `DATABASE_PATHS` | `DATABASE_URL` | `integration` (`npm run test:integration`) |
 | `docker:runner` | `^Dockerfile$`, `^docker-compose*.ya?ml$` | Docker daemon | `images` (anchor `target: runner`) |
 | `docker:migrator` | same | Docker daemon | `images` (anchor `target: migrator`) |
 | `migrator-smoke` | same | — always skipped | `images` (anchor `teachers-migrator:ci`) |
+
+`DATABASE_PATHS` is `^lib/db/`, `^drizzle/`, `^drizzle\.config\.ts$` and
+`^scripts/verify-schema\.sql$` — stated once in `scripts/gate/checks.ts` and
+named here rather than transcribed, so the two cannot drift. The last two are in
+it because `ci.yml`'s `integration` job runs against both on every push: a
+change to the assertion file alone, or to where the migrator points, would
+otherwise run no database check locally and the full one in CI.
 
 The changed-file set is `git diff --name-only origin/main...HEAD`, plus
 `git diff --name-only HEAD` and `git ls-files --others --exclude-standard`, de-duplicated
@@ -105,8 +112,16 @@ not parse is skipped on read, never fatal.
 
 **`last-run.json`** — `{ runId, at, commit, dirty, changedFiles, checks[] }`,
 where each check is `{ name, result, exitCode, durationMs, reason?, output? }`.
-`--report` and `--pr-block` both read it, and both use its `commit`, never
-`HEAD` at the time they run.
+`output` is stored tailed, as the terminal prints it: a check is allowed 64 MiB
+and only five short fields per check are ever read back.
+
+`--pr-block` prints the run's own `commit`, never `HEAD` at the time it runs, so
+committing between the run and the paste cannot publish a run against one tree
+as a statement about another. `--report` reads that same `commit` and *compares*
+it with `HEAD`, blocking when they differ — gating a clean tree at A and then
+committing B without re-gating would otherwise report B as checked on the
+strength of A's run, and while B is unpushed `gh pr checks` is still answering
+about A.
 
 **`findings.json`** — written by `/teachers-ticket` phase 7, read by nothing but
 `readRounds()`, which takes `round`, `startedAt` and `head` and ignores the rest.
@@ -121,7 +136,11 @@ diff.
 1. `(?:^|[\s;}])(?:describe|it|test)\.only\s*\(` in a changed `*.test.ts(x)`.
    Anchored at a statement position so a quoted mention of the form — in a test
    about this check, for one — is not itself a finding.
-2. A changed path whose basename starts with `.env` — `.env.example` exempt.
+2. A changed path whose basename starts with `.env`, and which still exists.
+   `.env.example` is exempt because it is the one that must be committed; a
+   change that *deletes* an environment file is exempt because that is the fix
+   rather than the problem, and flagging it would leave the author nothing they
+   could do to satisfy the check.
 3. `CLAUDE.md`, against two readings of it: the working tree's and
    `git show HEAD:CLAUDE.md`. The block `next dev` maintains missing from the
    working tree is a finding (it will come back); present there and absent at

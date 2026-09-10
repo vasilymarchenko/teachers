@@ -162,7 +162,23 @@ function run(): number {
     ...(outcome.reason === undefined ? {} : { reason: outcome.reason }),
   }));
   appendLedger(rows);
-  writeLastRun({ runId, at, commit, dirty, changedFiles: files, checks: outcomes });
+  writeLastRun({
+    runId,
+    at,
+    commit,
+    dirty,
+    changedFiles: files,
+    // The tail, not the whole buffer: `runCheck` allows a check up to 64 MiB of
+    // output, and a `docker build` or a full `next build` uses a good deal of
+    // it. Persisting all of it would leave a pretty-printed file of megabytes
+    // that `--report` and `--pr-block` re-parse on every invocation, to read
+    // five short fields out of each check.
+    checks: outcomes.map((outcome) =>
+      outcome.output === undefined
+        ? outcome
+        : { ...outcome, output: tail(outcome.output) },
+    ),
+  });
 
   const failed = outcomes.filter((outcome) => outcome.result === "failed");
   for (const failure of failed) {
@@ -185,6 +201,11 @@ interface LastRun {
   commit: string;
   dirty?: boolean;
   checks: CheckOutcome[];
+}
+
+/** The commit `--report` is being asked about. */
+function head(): string {
+  return git(["rev-parse", "HEAD"]) ?? "unknown";
 }
 
 function readLastRun(): LastRun | null {
@@ -214,6 +235,18 @@ function report(): number {
     }
     if (last.dirty) {
       blockers.push("the last gate run included uncommitted work");
+    }
+    // `run()` records the commit precisely so a run can be attributed to a
+    // tree. Without this, gating a clean tree at A and then committing B
+    // without re-gating reports B as checked on the strength of A's run — and
+    // while B is unpushed, `gh pr checks` is still answering about A, so that
+    // backstop does not catch it either.
+    const now = head();
+    if (last.commit !== now) {
+      blockers.push(
+        `the last gate run was against ${last.commit.slice(0, 7)}, not ` +
+          `${now.slice(0, 7)} — re-run \`npm run gate\``,
+      );
     }
     const skipped = last.checks.filter((check) => check.result === "skipped");
     if (skipped.length > 0) {
@@ -279,13 +312,22 @@ if (args.includes("--pr-block")) {
   // Phase 6 pastes this into the pull request body.
   const last = readLastRun();
   if (last === null) {
-    console.error(`No gate run recorded in ${LAST_RUN_PATH}. Run \`npm run gate\` first.`);
-    process.exit(1);
+    console.error(
+      `No gate run recorded in ${LAST_RUN_PATH}. Run \`npm run gate\` first.`,
+    );
+    process.exitCode = 1;
+  } else {
+    // The run's own commit, never `git rev-parse HEAD`: committing the work
+    // between the run and the paste would publish a run against one tree as a
+    // statement about another.
+    console.log(pullRequestBlock(last.checks, last.commit, last.dirty ?? false));
   }
-  // The run's own commit, never `git rev-parse HEAD`: committing the work
-  // between the run and the paste would publish a run against one tree as a
-  // statement about another.
-  console.log(pullRequestBlock(last.checks, last.commit, last.dirty ?? false));
-  process.exit(0);
+} else {
+  // `process.exitCode` rather than `process.exit()`: stdout is asynchronous
+  // when it is a pipe, and exiting discards whatever is still buffered — so
+  // `npm run gate | tee`, or any agent capturing the output, could lose the
+  // tail of the very table that says which checks failed while the exit code
+  // still said 1. Nothing here holds the event loop open, so the process still
+  // exits as soon as the work is done.
+  process.exitCode = args.includes("--report") ? report() : run();
 }
-process.exit(args.includes("--report") ? report() : run());
