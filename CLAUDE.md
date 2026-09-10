@@ -21,6 +21,7 @@ Package manager: **npm** (`package-lock.json` is committed). Node.js 22+.
 npm run dev          # dev server on :3000
 npm run build        # production build
 npm start            # serve the production build
+npm run gate         # the checks this change needs, all of them, in one table
 npm run lint         # ESLint
 npm run typecheck    # tsc --noEmit
 npm test             # Vitest, the unit suite, once
@@ -34,7 +35,7 @@ npm run db:studio    # Drizzle Studio
 
 Postgres runs from `docker-compose.yml` (`docker compose up -d`). Copy `.env.example` to `.env` first; `DATABASE_URL` must agree with the `POSTGRES_*` values in the same file. `docker-compose.yml` is dev-only; the production stack (web, Postgres, Caddy) is `docker-compose.prod.yml`, deployed as described in `README.md` ("Deploying to the VPS").
 
-Before pushing, run `npm run lint && npm run typecheck && npm test`. A single test file: `npx vitest run lib/time/today.test.ts`. The integration suite is separate because it needs a live database — run it too when touching `lib/db`.
+Before pushing, run `npm run gate`. It selects the checks the change actually needs — always `lint`, `typecheck`, `test`, `build` and `hygiene`, plus the database checks for `lib/db/**`, `drizzle/**`, `drizzle.config.ts` or `scripts/verify-schema.sql`, and the image builds for the `Dockerfile` or a Compose file — runs all of them without stopping at the first failure, prints one table and exits non-zero if any failed. A check it cannot run here (no Docker daemon, no `DATABASE_URL`) is reported `skipped` with the reason, which is not a pass. The routing lives in `scripts/gate/checks.ts` and is held in step with `.github/workflows/ci.yml` by a convention test — `docs/architecture/decisions/ADR-012-one-check-definition.md`. A single test file: `npx vitest run lib/time/today.test.ts`.
 
 ## Code layout
 

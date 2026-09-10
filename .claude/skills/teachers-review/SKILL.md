@@ -99,16 +99,33 @@ a review current with a project that is still moving.
 ## Phase 3 — The mechanical gate
 
 ```sh
-npm run lint; npm run typecheck; npm test
+npm run gate
 ```
 
-Separated deliberately: `&&` stops at the first failure, and a review that
-reports a lint error while three tests are also red costs the author three
-round-trips instead of one.
+One command, and the only one this skill runs to check a change. It resolves
+what the branch adds to `origin/main` plus the uncommitted change, selects the
+checks that change needs, runs **all** of them without short-circuiting, prints
+one table and exits non-zero if any failed. A review that reports a lint error
+while three tests are also red costs the author three round-trips instead of
+one — and a chain of commands joined so that the first failure hides the rest is
+precisely how that happens. The gate is what stops it.
 
-Add `npm run test:integration` when the diff touches `lib/db` — it needs a
-migrated Postgres (`docker compose up -d`, then `npm run db:migrate`). If it
-cannot run here, say so; never imply it passed.
+Which checks exist, and which change pulls each one in, is
+`scripts/gate/checks.ts`, held in step with `ci.yml` by
+`scripts/gate/checks.ci.test.ts` (`ADR-012`). None of it belongs in this file:
+a check list copied here is a list that disagrees with the workflow the first
+time the workflow changes, which is the same reason this skill carries no
+architectural rule.
+
+A check this machine cannot run — no Docker daemon, no `DATABASE_URL` — comes
+back `skipped` with the reason. **Report it as a skip, with the reason. Never
+imply it passed.**
+
+**This skill runs its own gate even when its caller has just run one.** That run
+was against the caller's tree; this one is against the target phase 1 checked
+out, and those are two different trees — the bug `T-017` found the hard way. A
+row in someone else's ledger would reinstate it the first time it was written
+against a different tree.
 
 Nothing a rule can decide should cost a reviewer's attention. A failure here is
 a finding and does not stop the review — a broken build usually has more wrong
@@ -173,6 +190,12 @@ contract with the ticket or the documents, then reuse and simplification.
 **Report** most severe first — through `ReportFindings` when the session has it,
 in prose when it does not. The shape is what matters; a review must never be
 blocked on a tool that may be absent.
+
+**In self-review mode, report a finding in the shape the caller records it in.**
+`/teachers-ticket` phase 7 writes each one to `.gate/findings.json`, which wants
+an id, the `file:line`, the rule quoted from the document it came from, a
+one-sentence summary, and which pass found it. The bar above already produces
+all but the last — name the pass too, so the caller does not have to guess it.
 
 **Comments.** On a pull request target under `--comment` — the default in
 review mode — post the findings as inline comments as well as reporting them
@@ -258,6 +281,12 @@ method, same passes; four differences:
   should merge unattended — and **`--comment` to `--no-comment`**: inline
   comments on your own PR, which you are about to fix in the same session, are
   notes to yourself in a public place.
+- **The caller's loop is bounded.** It runs a fixed number of rounds, gate runs
+  and pushes — the numbers are `scripts/gate/caps.ts`, and this skill states no
+  number of its own. Two consequences for what is reported: a round that finds
+  nothing undisposed is how the loop *ends*, so an empty report is a result and
+  not a failure to look hard enough; and padding the list with maybes spends a
+  round the author cannot get back.
 - **Ask the user nothing.** Anything the ticket, the documents or the diff can
   settle, settle. The caller owns the conversation and will report once, at the
   end of its own phase 7; a question from here interrupts that for something

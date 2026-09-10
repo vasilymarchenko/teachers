@@ -180,9 +180,12 @@ and the template: `docs/architecture/decisions/README.md`. Not every ticket
 produces one — see the trigger list there before writing.
 
 Update the backlog in the same commit as the work it describes: the ticket's
-frontmatter `status`, the checkboxes under `## Acceptance criteria`, and the
-mirrored row in `docs/backlog/README.md`. Set `done` only when every criterion is
-actually checked; otherwise `in-progress`, and say in `## Notes` what remains. A
+frontmatter `status` and the mirrored row in `docs/backlog/README.md`. **Leave
+the checkboxes under `## Acceptance criteria` alone** — phase 7 ticks them, once
+the gate is green and each one has evidence. Ticking them here means ticking them
+before a single check has run. Set `done` only in phase 7 and only when every
+criterion is actually ticked; until then `in-progress`, with `## Notes` saying
+what remains. A
 decision that changes the design belongs in `architect-overview.md` with a
 reference from `## Notes`, not buried in the ticket.
 
@@ -191,16 +194,26 @@ non-obvious choices.
 
 ## Phase 6 — Verify, then open the PR
 
-Everything must pass before the PR exists:
+Everything must pass before the PR exists, and one command says whether it does:
 
 ```sh
-npm run lint && npm run typecheck && npm test
+npm run gate
 ```
 
-Add `npm run test:integration` whenever `lib/db` was touched (it needs a migrated
-Postgres — `docker compose up -d`, then `npm run db:migrate`). If a check cannot
-run in this environment, say so explicitly in the PR body rather than implying it
-passed.
+It resolves what the branch adds to `origin/main` plus the uncommitted change,
+selects the checks that change needs, runs **all** of them without
+short-circuiting, prints one table and exits non-zero if any failed. Do not
+assemble a chain of check commands of your own: joined so that the first failure
+hides the rest, it turns one report into three round-trips, and it drifts out of
+step with `ci.yml` the moment either changes. Which checks exist is
+`scripts/gate/checks.ts`, held level with the workflow by
+`scripts/gate/checks.ci.test.ts` (`ADR-012`), and nothing about them belongs in
+this file.
+
+A check that cannot run here — no Docker daemon, no `DATABASE_URL` — comes back
+`skipped` with the reason. **A skip is never a pass.** Carry every one of them
+into the PR body with its reason; `npm run gate -- --pr-block` prints the block
+to paste.
 
 Push with `git push -u origin <branch>`, then open the PR. Check for a PR
 template first (`.github/pull_request_template.md`,
@@ -209,43 +222,153 @@ one exists. Otherwise write the body as:
 
 - **Ticket** — `T-NNN`, title, link to the ticket file.
 - **What changed** — the shape of the change, file groups, not a file list.
-- **Acceptance criteria** — each one, checked, with the file or test that
-  satisfies it; anything left unchecked, with the reason.
+- **Acceptance criteria** — each one, with the file or test that satisfies it;
+  anything not yet satisfied, with the reason. The boxes in the ticket file
+  itself are still unticked at this point — phase 7 ticks them.
 - **Decisions** — choices a reviewer would otherwise have to reverse-engineer,
   and the alternatives rejected.
-- **Tests** — what runs, and the commands' results.
+- **Tests** — the gate's table, including every skipped check and its reason.
 - **Follow-ups** — deliberately out of scope; a new ticket id if one was added.
 
 Title: `T-NNN: <ticket title>`. English, like everything else developer-facing.
 
-## Phase 7 — Review your own PR, then fix it
+## Phase 7 — Review, fix and re-review, until nothing is left undisposed
 
-This phase is not optional and it is not a re-read of your own diff from memory.
+This phase is a **loop**, not a step, and it is not a re-read of your own diff
+from memory:
 
-Invoke it on the PR you just opened, passing the ticket id:
-
-```sh
-/teachers-review <pr> --self-review T-NNN
+```
+review → triage → fix → gate → re-review
 ```
 
-That flag is what selects self-review defaults — no merge, no inline comments,
-and no questions to the user about anything this ticket already answers. It
-fetches the diff, reads the documents that govern the code you changed, runs the
-`teachers-review-contract` agent and `/code-review`, and returns ranked findings for you
-to fix. The standard is those documents, not a checklist — so a rule you added
-to the architecture in this very ticket is one the review applies to it.
+**It ends when the latest round leaves no finding undisposed** — every finding
+that round produced carries one of the four dispositions below — or when a cap
+stops it. Nothing else ends it: not a round that felt thorough, and not a report
+you have already drafted.
 
-Apply every finding **in the same branch**, as a separate commit
-(`T-NNN review fixes: <what>`), re-run lint, typecheck and the test suites, push,
-and update the PR body if a decision changed. If a finding is real but out of
-scope, say so in the PR body under *Follow-ups* and add a backlog ticket rather
-than silently widening the change.
+### The caps
 
-If the plan was persisted, reconcile the document against the merged shape in the
-same commit — updated, or its `**Status:**` line marked superseded and by what.
+They live in one module — `scripts/gate/caps.ts` — and this file states no
+number of its own, because a number restated in prose goes on being right until
+that module changes, after which nothing says it is wrong. Read them there:
 
-Report back to the user with the PR link, what the review changed, and anything
-left open.
+| Cap | Bounds |
+|---|---|
+| `reviewRounds` | review passes over the pull request |
+| `gateRunsPerRound` | `npm run gate` invocations inside one round |
+| `pushesAfterOpening` | pushes after the one that opened the pull request |
+
+The last two bound the loops that are easiest to leave open: a red check fixed
+and re-gated inside a round, and a red CI run fixed and re-pushed after it.
+`npm run gate` prints every count against its cap on each run, so a cap being
+approached is visible in the terminal without anyone opening a file for it.
+
+**Every count is derived from a record you did not write.** The gate runs in this
+round are the distinct run ids the gate itself appended to `.gate/ledger.jsonl`
+since the round's timestamp; the pushes come from the branch's own history. Only
+the round number is yours, in `.gate/findings.json`. **A count held in the
+conversation is not a count** — that is the one thing a compacted context is
+guaranteed to take. Read them; never recall them.
+
+**Re-running the gate against an unchanged tree, hoping for a different answer,
+is not one of those attempts. It is not permitted.** The gate will still run it
+and still count it — nothing here refuses a *measurement*, because the check is
+what tells the truth and an environment fix changes no file. If the tree has not
+changed, either the answer has not either, or what changed is the environment,
+and that is worth saying out loud rather than re-rolling.
+
+**Hitting any cap stops the loop.** Report what is still open — which findings,
+which check, which count ran out — rather than starting another of anything. A
+run of rounds that did not converge is information; one more rarely adds any.
+
+### One round
+
+1. **Review.**
+
+   ```sh
+   /teachers-review <pr> --self-review T-NNN
+   ```
+
+   That flag selects self-review defaults — no merge, no inline comments, and no
+   questions to the user about anything this ticket already answers. It fetches
+   the diff, reads the documents that govern the code you changed, runs the
+   `teachers-review-contract` agent and `/code-review`, and returns ranked
+   findings. The standard is those documents, not a checklist — so a rule you
+   added to the architecture in this very ticket is one the review applies to it.
+
+2. **Record the round in `.gate/findings.json` before fixing anything**, so
+   round *N* and round *N+1* are two lists that can be compared:
+
+   ```json
+   {
+     "rounds": [
+       {
+         "round": 1,
+         "startedAt": "2026-09-10T11:04:00.000Z",
+         "head": "9f2c1ab",
+         "findings": [
+           {
+             "id": "R1-1",
+             "location": "lib/db/queries/events.ts:42",
+             "rule": "userId is the first argument of every function in lib/db/queries — CLAUDE.md, Code layout",
+             "summary": "listEvents takes the range first, so a caller can omit the tenant filter.",
+             "pass": "contract",
+             "disposition": "fixed",
+             "note": "commit 4d1e0aa"
+           }
+         ]
+       }
+     ]
+   }
+   ```
+
+   `startedAt` and `head` are what the counts are measured from. **No code
+   validates this file.** A validator can check that a field is not empty, never
+   that it is true — a disposition recorded `fixed` against code that does not
+   exist passes any validator anyone could write. What makes the file worth
+   keeping is that the next round reads it, and that a resumed session can.
+
+3. **Dispose of every finding.** These dispositions, and each costs something:
+
+   | Disposition | What it takes | What it costs |
+   |---|---|---|
+   | `fixed` | a commit that changes the named `file:line` | the fix has to survive the gate |
+   | `rejected` | the document text that refutes the quoted rule, quoted back | having actually read the document, and being right |
+   | `deferred` | a `T-NNN` that **exists** — file it, mirror it in `README.md` | the backlog carries it, and someone must do it |
+   | `accepted` | the user said so, in this conversation | a question spent out of the user's attention |
+
+   Nothing else is a disposition. "Noted", "will keep an eye on it" and silence
+   are how a finding reaches `main`.
+
+4. **Fix, then gate.** Apply the fixes on the same branch as one commit —
+   `T-NNN review fixes: <what>` — then `npm run gate`. Every failing check is in
+   one table: fix them together rather than one round-trip each.
+
+5. **Push, then re-review.** A round that leaves nothing undisposed is the exit.
+
+### Before the ticket may be called done
+
+- **`npm run gate` is green**, and every check it skipped is named as skipped,
+  with its reason, in the PR body. A skip is not a pass.
+- **Tick the acceptance criteria now**, in the ticket file, and mirror the
+  `status` in `docs/backlog/README.md`. Tick a box **only where the evidence
+  names a `file:line` or a test**; anything else stays unticked with the reason,
+  and the ticket stays `in-progress`. They are ticked here, after the checks have
+  run — not in phase 5, where nothing had been checked yet.
+- **`gh pr checks` on the pushed head is the last gate.** `ci.yml` is the
+  authoritative one (`ADR-007`) and it checks the commit you actually pushed, on
+  a machine that has the Docker daemon and the database this one may not. The
+  ticket is not done while that run is red or pending. Where `gh` cannot read
+  it — not installed, not authenticated, no PR — say exactly that. **Never that
+  it passed.**
+- **`npm run gate -- --report`** answers the whole question in one exit code: it
+  runs no check, reads the counts and what CI said, and refuses — naming which
+  cap, or what CI reported. It refuses a *conclusion*, never a measurement.
+- If the plan was persisted, reconcile the document against what was actually
+  built: updated, or its `**Status:**` line marked superseded and by what.
+
+Report back with the PR link, what the review changed, what is still open, and
+every check that did not run here.
 
 ## Definition of done
 
@@ -255,5 +378,12 @@ left open.
 - Branch, commits and PR follow the naming and language conventions.
 - Backlog frontmatter, checkboxes and `README.md` agree with each other and with
   the work.
-- `lint`, `typecheck` and the relevant test suites pass on the pushed head.
-- Phase 7 ran, its findings are pushed, and the PR body reflects the final state.
+- `npm run gate` is green on the pushed head, and every check it could not run
+  is reported as skipped, with its reason, rather than as a pass.
+- Phase 7 looped to its exit criterion or to a cap, each round is in
+  `.gate/findings.json` with every finding disposed, and the PR body reflects
+  the final state.
+- The acceptance criteria were ticked in phase 7, against evidence, and `status`
+  is `done` only if all of them are.
+- `gh pr checks` on the pushed head is green, or the report says plainly that it
+  could not be read.

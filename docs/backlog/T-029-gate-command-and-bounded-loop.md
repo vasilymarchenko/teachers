@@ -2,9 +2,11 @@
 id: T-029
 type: ticket
 title: One gate command and a bounded review loop for /teachers-ticket
-status: todo
+status: in-progress
 depends_on: [T-017, T-024]
 refs:
+  - docs/architecture/decisions/ADR-012-one-check-definition.md
+  - docs/architecture/design/T-029-gate-and-loop.md
   - .claude/skills/teachers-ticket/SKILL.md
   - .claude/skills/teachers-review/SKILL.md
   - .github/workflows/ci.yml
@@ -24,40 +26,40 @@ agent — the gate's exit code and `gh pr checks`.
 
 ## Acceptance criteria
 
-- [ ] `npm run gate` is one command and the only one either skill runs to check
+- [x] `npm run gate` is one command and the only one either skill runs to check
       a change. It resolves `git diff --name-only origin/main...HEAD` plus the
       uncommitted change, selects checks by path, runs **all** of them without
       short-circuiting, prints one table, exits non-zero when any check failed
       and writes `.gate/last-run.json`. A lint error and three red tests are one
       report, not three round-trips.
-- [ ] The gate edits nothing and pushes nothing. `.gate/` is the only path it
+- [x] The gate edits nothing and pushes nothing. `.gate/` is the only path it
       writes and it is gitignored.
-- [ ] The routing is stated once and covers what `ci.yml` runs: always `lint`,
+- [x] The routing is stated once and covers what `ci.yml` runs: always `lint`,
       `typecheck`, `test`, `build`; `lib/db/**` or `drizzle/**` adds
       `db:migrate`, `scripts/verify-schema.sql` and `test:integration`;
       `Dockerfile` or `docker-compose*.yml` adds the `runner` and `migrator`
       builds and the migrator smoke test. `build` and `verify-schema.sql` are in
       `ci.yml` and in neither skill today, so a pull request can be verified
       locally and red in CI.
-- [ ] A test holds that list in step with `ci.yml`'s three gate jobs — the
+- [x] A test holds that list in step with `ci.yml`'s three gate jobs — the
       `lib/db/postgresImage.test.ts` pattern, which already holds one value
-      across two files. Scoped to those jobs rather than to the whole workflow:
+      across three files. Scoped to those jobs rather than to the whole workflow:
       a future job that runs an npm script for some other purpose must not have
       to become a gate check to keep the suite green. There is no YAML parser in
       this project and this does not justify adding one — slice the file at its
       job headers and say so in a comment, which is a few lines more than
       matching the whole file and is the reason to prefer it.
-- [ ] A check the gate cannot run here — no Docker daemon, no `DATABASE_URL` —
+- [x] A check the gate cannot run here — no Docker daemon, no `DATABASE_URL` —
       is reported as `skipped` with the reason, in the table and in the pull
       request body. A skip is never reported as a pass.
-- [ ] `/teachers-ticket` phase 6 and `/teachers-review` phase 3 both invoke it.
+- [x] `/teachers-ticket` phase 6 and `/teachers-review` phase 3 both invoke it.
       No `&&` chain of checks remains in either skill.
-- [ ] Every run appends one row per check to `.gate/ledger.jsonl`: check name,
+- [x] Every run appends one row per check to `.gate/ledger.jsonl`: check name,
       result, exit code, the commit it ran against, and when. The file is
       **memory, not enforcement** — a session resumed after compaction reads it
       and carries on instead of re-attesting from a conversation it no longer
       has, and nothing refuses to run a check on account of what it says.
-- [ ] Phase 7 is a loop with a written exit criterion — review → triage → fix →
+- [x] Phase 7 is a loop with a written exit criterion — review → triage → fix →
       gate → re-review, ending when the latest round leaves no finding
       undisposed — and three caps, all of them **three**: at most three review
       rounds; at most three gate runs within one round; at most three pushes to
@@ -65,15 +67,15 @@ agent — the gate's exit code and `gh pr checks`.
       loops T-026 left unbounded and this ticket nearly did too — a red check
       fixed and re-gated inside a round, and a red CI run fixed and re-pushed
       after it.
-- [ ] Re-running the gate against an unchanged tree in the hope of a different
+- [x] Re-running the gate against an unchanged tree in the hope of a different
       answer is not one of those three attempts. It is not permitted and the
       skill says so — as a rule the skill states, not as a refusal the gate
       enforces.
-- [ ] Hitting any cap stops the loop and reports what is still open, rather than
+- [x] Hitting any cap stops the loop and reports what is still open, rather than
       opening a fourth. The gate names the count it is on in its own output, so a
       cap being approached is visible in the terminal without anyone reading a
       file for it.
-- [ ] A round is recorded in `.gate/findings.json` as a list, each finding
+- [x] A round is recorded in `.gate/findings.json` as a list, each finding
       carrying an id, a `file:line`, the rule quoted from the document it comes
       from, a one-sentence summary and which pass found it, so round *N* and
       round *N+1* are two lists that can be compared. Each is then disposed as
@@ -81,33 +83,33 @@ agent — the gate's exit code and `gh pr checks`.
       `deferred` to a `T-NNN` that exists, or `accepted` by the user. The skill
       states the vocabulary and what each disposition costs; no code validates
       the file.
-- [ ] The cap numbers live in code — one module exports them — and both skills
+- [x] The cap numbers live in code — one module exports them — and both skills
       reference that module rather than restating a number that then drifts out
       of step with it.
-- [ ] Each count is derived from a record the agent did not author, wherever one
+- [x] Each count is derived from a record the agent did not author, wherever one
       exists: the gate runs in the current round from the distinct run ids the
       gate itself appended to `.gate/ledger.jsonl` since that round's timestamp,
       and the pushes from the commits on the branch. Only the review-round number
       is agent-written, in `.gate/findings.json`. A count held in the
       conversation is not a count — that is the one thing compaction is
       guaranteed to take.
-- [ ] `npm run gate -- --report` exits non-zero and refuses to report the ticket
+- [x] `npm run gate -- --report` exits non-zero and refuses to report the ticket
       done when a cap is exceeded, naming which. **Nothing refuses to run a
       check.** A refused measurement blocks the recovery — the check is what
       tells the truth, and an environment fix changes no file — while a refused
       conclusion blocks only the claim, and stopping to report what is open is
       the right answer at a cap anyway.
-- [ ] The acceptance-criteria checkboxes are ticked in phase 7, after the gate is
+- [x] The acceptance-criteria checkboxes are ticked in phase 7, after the gate is
       green, and only where the evidence names a `file:line` or a test. They are
       ticked in phase 5 today, before phase 6 has run a single check.
-- [ ] `gh pr checks` on the pushed head is the last gate: the ticket is not
+- [x] `gh pr checks` on the pushed head is the last gate: the ticket is not
       reported done while that run is red or pending, and where `gh` cannot read
       it the report says so — never that it passed. `ci.yml` is the authoritative
       gate (`ADR-007`) and neither skill looks at it today.
-- [ ] A diff-hygiene check: no `.only` in a test, no `.env` in the diff, and the
+- [x] A diff-hygiene check: no `.only` in a test, no `.env` in the diff, and the
       block `next dev` re-adds to `CLAUDE.md` committed with the work rather than
       handed over as a stray change.
-- [ ] One ADR records the one decision worth recording — that the local gate and
+- [x] One ADR records the one decision worth recording — that the local gate and
       `ci.yml` keep a single check definition, held in step by a test rather than
       by one calling the other — referencing `ADR-007` and `ADR-001` instead of
       re-arguing either.
@@ -182,3 +184,28 @@ deferred. The ticket says so rather than implying a guarantee it does not have.
 hundred lines. A criterion above that appears to need a thousand is being read as
 a licence to build machinery: what makes the loop reliable is the gate's exit
 code, one file it appends to, and `gh pr checks`.
+
+---
+
+**Implementation.** The mechanics are `docs/architecture/design/T-029-gate-and-loop.md`;
+the one decision worth recording is
+`decisions/ADR-012-one-check-definition.md` — the local gate and `ci.yml` keep
+one check definition, held in step by `scripts/gate/checks.ci.test.ts` rather
+than by one calling the other.
+
+**Eighteen of the nineteen criteria are ticked**, each against a `file:line` or
+a test named in PR #24. The nineteenth is below.
+
+**Why this stays `in-progress`.** The last criterion cannot be satisfied by the
+session that implements the ticket, by its own argument: a skill's text enters
+context when it is invoked, so that session's phases 6 and 7 run the version
+loaded before phase 5 edited it. It closes when a later session, on a different
+ticket, has worked the new loop end to end — and that session ticks the box and
+sets `done`.
+
+**One criterion was read narrowly, deliberately.** The routing covers the
+migrator smoke test, but the check is always `skipped` here rather than run: CI
+performs it as a five-step orchestration, and transcribing that into a second
+file is the local reimplementation this ticket's own `## Notes` rule out. It is
+therefore never reported as checked locally. `T-030` unifies the two into one
+script called by both.

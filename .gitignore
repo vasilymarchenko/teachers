@@ -40,6 +40,10 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# The gate's own memory — `npm run gate` (T-029). Committing it would put one
+# machine's run history, and one session's review rounds, into everyone's diff.
+.gate/
+
 # Vercel (if ever used)
 .vercel
 docs/specs/input/
