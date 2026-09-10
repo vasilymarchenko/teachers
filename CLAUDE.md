@@ -15,7 +15,7 @@ The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), 
 
 ## Commands
 
-Package manager: **npm** (`package-lock.json` is committed). Node.js 22+.
+Package manager: **npm** (`package-lock.json` is committed). Node version: `.nvmrc`.
 
 ```sh
 npm run dev          # dev server on :3000

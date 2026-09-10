@@ -19,6 +19,7 @@ import { config } from "dotenv";
 
 import { selectChecks, unmetRequirement, type Check } from "./checks";
 import { runHygiene } from "./hygiene";
+import { unsupportedNodeVersion } from "./nodeVersion";
 import {
   appendLedger,
   counts,
@@ -127,6 +128,17 @@ function runCheck(check: Check, files: readonly string[]): CheckOutcome {
 }
 
 function run(): number {
+  // Before any check: an older Node fails `test` and `build` deep inside
+  // rolldown, with a `styleText` import error that names no version, and
+  // reporting the whole gate `skipped` here would empty it — skipping
+  // `lint`, `typecheck`, `test` and `build` is the empty-gate-exits-zero
+  // failure T-029 exists to prevent (T-031).
+  const nodeProblem = unsupportedNodeVersion();
+  if (nodeProblem !== null) {
+    console.log(`gate: ${nodeProblem}`);
+    return 1;
+  }
+
   const files = changedFiles();
   const commit = git(["rev-parse", "HEAD"]) ?? "unknown";
   // The gate checks HEAD *plus* whatever is not committed yet, so `commit`
