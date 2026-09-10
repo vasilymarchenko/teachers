@@ -108,8 +108,10 @@ also carried uncommitted work — the gate checks both, so the commit alone woul
 attribute a run to a tree it never saw.
 
 `result` is `passed | failed | skipped`; `exitCode` is `null` for a check that
-never started or ran in-process; `reason` is present on a skip. A line that does
-not parse is skipped on read, never fatal.
+never started or ran in-process; `reason` is present on a skip, and also on the
+one check that is never a check — `node-version` (`T-031`), which is `failed`
+with a `reason` when this Node cannot run the gate at all. A line that does not
+parse is skipped on read, never fatal.
 
 **`last-run.json`** — `{ runId, at, commit, dirty, changedFiles, checks[] }`,
 where each check is `{ name, result, exitCode, durationMs, reason?, output? }`.

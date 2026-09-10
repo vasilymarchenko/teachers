@@ -143,6 +143,11 @@ function run(): number {
   // reading a green run must be able to tell "this commit was checked" from
   // "this commit plus edits that no longer exist was checked".
   const dirty = (git(["status", "--porcelain"]) ?? "") !== "";
+  // Plain `git` calls — safe before the Node-version preflight below, and
+  // needed by it: `finish()` writes `changedFiles` to `.gate/last-run.json`
+  // on every run, preflight failure included, so that file never claims a
+  // change touched no files when it touched ten.
+  const files = changedFiles();
 
   // Before any check is even selected — see nodeVersion.ts and the header
   // above for why this is recorded rather than a bare early return.
@@ -161,11 +166,10 @@ function run(): number {
       ],
       commit,
       dirty,
-      [],
+      files,
     );
   }
 
-  const files = changedFiles();
   const selected = selectChecks(files);
 
   console.log(
@@ -232,7 +236,10 @@ function finish(
   });
 
   const failed = outcomes.filter((outcome) => outcome.result === "failed");
-  for (const failure of failed) {
+  // Only a failure that actually captured output earns the box — the
+  // node-version preflight has none, only a `reason` the table row already
+  // shows, and an empty `─── name ───` block under it said nothing twice.
+  for (const failure of failed.filter((outcome) => outcome.output)) {
     console.log(`\n─── ${failure.name} ───\n${tail(failure.output ?? "")}`);
   }
 

@@ -31,8 +31,8 @@ export function requiredNodeMajor(path: string = NVMRC_PATH): number {
 /**
  * Why this Node cannot run the gate, or `null` when it can.
  *
- * "Older than", not "not exactly this major": `CLAUDE.md` has said "Node.js
- * 22+" since before this file existed, and a newer major is not the failure
+ * "Older than", not "not exactly this major": `package.json`'s `engines.node`
+ * is a `>=` range, not an exact one, and a newer major is not the failure
  * this exists to catch.
  */
 export function unsupportedNodeVersion(

@@ -10,7 +10,7 @@ import { requiredNodeMajor, unsupportedNodeVersion } from "./nodeVersion";
  * `npm install` warns about, `.github/workflows/ci.yml`'s two
  * `node-version: 22` lines are what the runner installs, and the
  * `Dockerfile`'s four `node:22-alpine` stages build the images the VPS runs.
- * A skew between them is the gap T-031 closes: three files a developer's
+ * A skew between them is the gap T-031 closes: four files a developer's
  * shell or a deploy can read and, before this, nothing that compared them.
  * Same shape as `lib/db/postgresImage.test.ts`, and
  * `scripts/gate/checks.ci.test.ts` for the `ci.yml` half.
