@@ -21,7 +21,11 @@ export const NVMRC_PATH = ".nvmrc";
 /** The major version `.nvmrc` names — the same number `nvm use` reads. */
 export function requiredNodeMajor(path: string = NVMRC_PATH): number {
   const raw = readFileSync(path, "utf8").trim();
-  const major = Number.parseInt(raw, 10);
+  // `v22` and `v22.11.0` are both forms `nvm use` accepts, and the second is
+  // what `node -v > .nvmrc` writes. Without stripping the `v`, either one
+  // parses as `NaN` and the preflight fails the gate for an unreadable
+  // `.nvmrc` on a machine whose Node is perfectly correct.
+  const major = Number.parseInt(raw.replace(/^v/, ""), 10);
   if (!Number.isFinite(major)) {
     throw new Error(`${path} does not hold a version number: "${raw}"`);
   }

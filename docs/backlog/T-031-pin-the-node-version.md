@@ -81,15 +81,17 @@ in `scripts/gate/nodeVersion.ts`, read from `.nvmrc` and called near the top of
 `changedFiles()` runs first, immediately above it — a plain `git diff`, safe on
 any Node — because `finish()` records `changedFiles` on every run, preflight
 failure included, and a hard-coded `[]` there was one of the defects self-review
-found (`.gate/findings.json`, R2-1). `scripts/gate/nodeVersion.ci.test.ts` holds
-`.nvmrc`, `package.json`'s `engines.node`, both `ci.yml` `node-version` lines and
+found. `scripts/gate/nodeVersion.ci.test.ts` holds `.nvmrc`,
+`package.json`'s `engines.node`, both `ci.yml` `node-version` lines and
 the `Dockerfile`'s `node:22-alpine` stages in step, plus unit tests for the
 preflight's own message. `README.md`'s prerequisite line was pointed at `.nvmrc`
 alongside `CLAUDE.md`'s, for the same reason.
 
-Self-review ran three rounds (`.gate/findings.json`, the `reviewRounds` cap —
-`scripts/gate/caps.ts`), fixing eighteen findings across them: a stale
-`.gate/last-run.json` on a too-old-Node run, an unguarded `.nvmrc` read that
+Self-review ran three rounds (the `reviewRounds` cap — `scripts/gate/caps.ts`;
+the round-by-round findings live in the gitignored `.gate/findings.json`, so
+this paragraph, not that file, is the record that survives the session), fixing
+eighteen findings across them: a stale `.gate/last-run.json` on a
+too-old-Node run, an unguarded `.nvmrc` read that
 could crash `run()` the same way, several document-pair disagreements the
 preflight introduced, and a handful of documentation wording issues; five more
 findings were reviewed and rejected as re-proposals of alternatives the ticket,
@@ -97,5 +99,18 @@ findings were reviewed and rejected as re-proposals of alternatives the ticket,
 `gateRunsThisRound` count went over its cap — largely from the review passes'
 own verification runs against the ledger, not from re-running against an
 unchanged tree — so no further `npm run gate` ran locally past that point;
-`lint`, `typecheck`, `test` and `build` were each run directly and are green,
-and `gh pr checks` on the pushed head is the final word (`ADR-007`).
+`lint`, `typecheck`, `test` and `build` were each run directly and are green
+under a user-space Node 22 (the machine's system Node is 18.19.1, which is what
+made the preflight's own behaviour verifiable there), and `gh pr checks` on the
+pushed head is the final word (`ADR-007`).
+
+Reviewed again as `/teachers-review` on PR #25 after those rounds, on Node 22:
+`npm run gate` green on all five selected checks. Four further defects were
+fixed in that review — `.nvmrc`'s `v`-prefixed forms (`v22`, and the
+`v22.11.0` that `node -v > .nvmrc` writes) parsed as `NaN` and failed the gate
+for an unreadable `.nvmrc` on a correct machine; `dockerfileNodeMajors()`
+matched only a bare-major tag, so a patch-pinned stage dropped out of the
+comparison silently; `LedgerRow.exitCode`'s doc comment in
+`scripts/gate/ledger.ts` still said `null` covered an in-process check, which
+`hygiene` and `node-version` both contradict; and these Notes cited a
+gitignored file as their evidence.

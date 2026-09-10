@@ -35,7 +35,11 @@ export interface LedgerRow {
   dirty?: boolean;
   check: string;
   result: CheckResult;
-  /** `null` for a check that never started, or one that ran in-process. */
+  /**
+   * `null` only for a check that never started — a `skipped` one. A check that
+   * ran in-process (`hygiene`, and the `node-version` preflight) sets `0` or
+   * `1` as a subprocess-backed one would.
+   */
   exitCode: number | null;
   reason?: string;
 }

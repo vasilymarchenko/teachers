@@ -30,8 +30,11 @@ function ciNodeMajors(source: string): number[] {
 }
 
 function dockerfileNodeMajors(source: string): number[] {
-  return [...source.matchAll(/^FROM node:(\d+)-alpine/gm)].map(([, major]) =>
-    Number.parseInt(major, 10),
+  // `node:22-alpine` and `node:22.11.0-alpine` are both stage pins a Dockerfile
+  // can carry; matching only the bare major would drop a patch-pinned stage out
+  // of the comparison silently, which is the skew this file exists to catch.
+  return [...source.matchAll(/^FROM node:(\d+)(?:\.[\d.]+)?-alpine/gm)].map(
+    ([, major]) => Number.parseInt(major, 10),
   );
 }
 
@@ -89,6 +92,12 @@ describe("dockerfileNodeMajors", () => {
     ).toEqual([22, 22]);
   });
 
+  it("reads a stage pinned to a patch version too", () => {
+    expect(dockerfileNodeMajors("FROM node:22.11.0-alpine AS deps\n")).toEqual([
+      22,
+    ]);
+  });
+
   it("ignores a stage built from something else", () => {
     // Without this, a stage renamed off `node:` — a distroless or `alpine`
     // base for a later stage — would silently stop being compared, the same
@@ -98,6 +107,22 @@ describe("dockerfileNodeMajors", () => {
 });
 
 describe("requiredNodeMajor", () => {
+  it("accepts the v-prefixed forms nvm and `node -v` write", () => {
+    // `node -v > .nvmrc` writes `v22.11.0`, and `v22` is a form `nvm use`
+    // accepts. Parsed as-is, either one is `NaN` and the preflight fails the
+    // gate for an unreadable `.nvmrc` on a machine whose Node is correct.
+    for (const content of ["v22\n", "v22.11.0\n", "22.11.0\n"]) {
+      const tmp = join(tmpdir(), `nvmrc-v-${randomUUID()}`);
+      writeFileSync(tmp, content);
+      try {
+        expect(requiredNodeMajor(tmp)).toBe(22);
+      } finally {
+        rmSync(tmp);
+      }
+    }
+  });
+
+
   it("throws, naming the path and the content, on a bare-major .nvmrc's opposite: an alias", () => {
     // A synthetic file, never the real .nvmrc — this must not depend on or
     // perturb the one the rest of this suite reads. A common nvm alias, not
