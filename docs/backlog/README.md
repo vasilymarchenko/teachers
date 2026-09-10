@@ -40,7 +40,7 @@ for reading. Order is priority; the ID number is not.
 | [T-028](T-028-index-invariant-composite-fk-join.md) | Make the index-usage invariant accept the composite-FK join | done | T-008 |
 | [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | in-progress | T-017, T-024 |
 | [T-030](T-030-one-migrator-smoke-definition.md) | One migrator smoke test, called by both CI and the gate | todo | T-029 |
-| [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | in-progress | T-029 |
+| [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | done | T-029 |
 
 ## Open questions
 
