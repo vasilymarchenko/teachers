@@ -32,6 +32,15 @@ if ! git rev-parse --verify --quiet origin/main >/dev/null; then
   exit 0
 fi
 
+# Everything below counts commits against HEAD, which a checkout with no commits
+# of its own does not have. Without this guard that case reports git's own
+# errors and an empty commit count — and a SessionStart hook's output is read by
+# the agent, so a confusing line here is worse than a plain one.
+if ! git rev-parse --verify --quiet HEAD >/dev/null; then
+  say "Fetched origin: origin/main is current. This checkout has no commits yet."
+  exit 0
+fi
+
 branch=$(git rev-parse --abbrev-ref HEAD)
 behind=$(git rev-list --count HEAD..origin/main)
 ahead=$(git rev-list --count origin/main..HEAD)
@@ -39,7 +48,9 @@ dirty=$(git status --porcelain)
 
 # Never `git pull`: on a feature branch it does nothing for `main`, and on a
 # dirty tree it either fails or merges without being asked. Fast-forward only,
-# and only where there is exactly one possible outcome.
+# and only where there is exactly one possible outcome. "Not ahead" is part of
+# that: a local `main` carrying unpushed commits is a state someone chose, and
+# moving it unasked is precisely what `git pull` does wrong.
 if [ "$branch" = "main" ] && [ -z "$dirty" ] && [ "$behind" -gt 0 ] && [ "$ahead" -eq 0 ]; then
   if git merge --ff-only origin/main >/dev/null 2>&1; then
     say "Fetched origin and fast-forwarded main by $behind commit(s): origin/main and the working tree are both current."

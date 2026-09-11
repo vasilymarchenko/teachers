@@ -2,7 +2,7 @@
 id: T-036
 type: ticket
 title: A session starts from a current main — fetched by a hook, not by remembering
-status: in-progress
+status: done
 depends_on: []
 refs:
   - CLAUDE.md
@@ -20,7 +20,7 @@ phase 1 reads before any branch is cut.
 
 ## Acceptance criteria
 
-- [ ] A `SessionStart` hook in `.claude/settings.json` runs `git fetch origin`
+- [x] A `SessionStart` hook in `.claude/settings.json` runs `git fetch origin`
       at the start of every session. It is the harness that runs it, not the
       agent: a freshness rule stated only in a prompt is the kind that was
       forgotten.
@@ -86,12 +86,8 @@ root `CLAUDE.md` under "A session starts from a current main". `npm run gate`
 already resolved `origin/main...HEAD` without a fetch of its own — that
 criterion needed a comment recording why, not a behaviour change.
 
-**Outstanding: the `SessionStart` registration in `.claude/settings.json`.**
-The first criterion's hook entry is written and the script beside it is
-complete, but the entry itself is not in the repository: the session that
-implemented this ticket could not write a hook registration into its own
-settings (the harness refuses a hook install from the agent, which is the same
-instinct this ticket is built on). The entry to add, verbatim:
+**The `SessionStart` registration.** `.claude/settings.json` is a new file and
+holds nothing but this hook:
 
 ```json
 {
@@ -113,5 +109,17 @@ instinct this ticket is built on). The entry to add, verbatim:
 ```
 
 `bash <path>` rather than the bare path, so the hook does not depend on the
-script's executable bit surviving a checkout.
+script's executable bit surviving a checkout. The file is committed, not
+`.claude/settings.local.json`: the guarantee is team-wide, and a personal
+override would leave every other clone unfetched while the documents say
+otherwise. `.claude/settings.local.json` is gitignored in the same commit for
+exactly that reason.
 
+**Two conditions the criteria did not name.** The fast-forward also requires
+`main` to be no commits *ahead* of `origin/main` — a local `main` carrying
+unpushed commits is a state someone chose, and moving it unasked is what
+`git pull` does wrong. And a checkout with no commits at all returns from the
+fetch early: everything after it counts commits against `HEAD`, and a
+`SessionStart` hook's output is read by the agent, so an empty count there is
+worse than a plain sentence. Both are recorded in the root `CLAUDE.md` and in
+the script.
