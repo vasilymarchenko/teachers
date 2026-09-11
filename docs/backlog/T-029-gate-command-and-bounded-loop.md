@@ -227,3 +227,14 @@ performs it as a five-step orchestration, and transcribing that into a second
 file is the local reimplementation this ticket's own `## Notes` rule out. It is
 therefore never reported as checked locally. `T-030` unifies the two into one
 script called by both.
+
+`T-033` changed one rule this ticket settled. `/teachers-review` phase 3 no
+longer runs the gate unconditionally: on a pull request it reads the verdict
+`ci.yml` produced for that head, and in self-review the ledger row for it,
+falling back to a local run wherever no verdict on that exact head and tree can
+be read. The guarantee this ticket protected is unchanged — what was wrong was
+stating it as a rule about whose gate may be trusted rather than about the head
+and tree a verdict was produced against. The reasoning is in
+`docs/architecture/decisions/ADR-015-review-scoped-to-the-change.md`, which
+supersedes that part of this ticket; the criterion above is left ticked as the
+record of what was true when it was ticked.

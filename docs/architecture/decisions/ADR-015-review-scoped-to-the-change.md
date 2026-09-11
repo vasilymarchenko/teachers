@@ -31,6 +31,16 @@ given diff, by teaching the map to route better, never to cache their content
 back into the tooling."* That is the condition being exercised here, and the
 response it prescribes is the one taken.
 
+`T-029` settled the opposite of what this record settles for phase 3. Its text
+holds that `/teachers-review` keeps its own gate run because "a caller's ledger
+row would reinstate it the first time it was written against a different tree",
+and one of its ticked criteria reads that `/teachers-ticket` phase 6 and
+`/teachers-review` phase 3 both invoke the gate. That is the decision being
+reversed here, and `T-029`'s `## Notes` now points forward to this record so a
+reader landing there is not handed the superseded rule. What `T-029` got right is
+kept: the guarantee is real, and this record replaces the reason given for it,
+not the guarantee.
+
 Phase 3 carried a second cost. It ran `npm run gate` unconditionally, including
 where `ci.yml` had already run the same checks on the same head, on a machine
 with the Docker daemon and the database this one often lacks. The rule that
@@ -72,11 +82,17 @@ stated loosely it reinstates exactly the `T-017` bug.
 
 **`--effort low|medium|high|max` is an argument of `/teachers-review`**, resolved
 in phase 1 beside `--merge` and `--comment`, defaulting to `high` in review mode,
-and set by the caller in self-review mode. The name and the four levels are
-`/code-review`'s, unchanged. One table in the skill maps a level to what runs —
-the level passed through, how far phase 2's reading extends, and whether phase 6
-runs — and no level is named anywhere else in that file, so the table cannot be
-contradicted from elsewhere in it.
+and set by the caller in self-review mode. The four **level names** are
+`/code-review`'s, unchanged; the flag is not, because `/code-review` takes its
+level as a bare positional word and this skill has three other arguments a bare
+word could not be distinguished from. Its fifth level, `ultra`, is deliberately
+not offered: it is a user-triggered, billed cloud review the skill cannot launch
+on a user's behalf. One table in the skill maps a level to what runs — the level
+passed through, how far phase 2's reading extends, and whether phase 6 runs — and
+**no phase below that table names a level**, so no phase can contradict it. The
+two places a level appears besides the table are the argument row above it and
+the frontmatter `description`, both required by the ticket so that a caller
+reading the skill list sees what the argument does.
 
 **The self-review level is stated in exactly one file.**
 `.claude/skills/teachers-ticket/SKILL.md` states it, on the line that invokes the
@@ -126,6 +142,16 @@ broken caller outside the diff is most likely to surface anyway. What is
 genuinely given up is the reviewer's *judgement* applied to untouched code, and
 it is given up deliberately: the measured round spent a third of a session
 applying it and found nothing that the pull request could act on.
+
+**Phase 6 now runs in no invocation this repository actually makes.** It is
+gated on the widest level; review mode defaults one below it and
+`/teachers-ticket` passes one below it, so promoting a recurring check into a
+lint rule or a convention test is reachable only by a hand-typed level. That is
+a real loss and it is taken knowingly: a proposal drawn from a pass that read
+two directories has no evidence under it, and this repository has another route
+to the same place — a ticket filed by hand, which is what `T-027` is. Revisit if
+a quarter passes with no check promoted, because the phase existing and never
+running is worse than either alternative.
 
 Reading a verdict instead of producing one makes the review cheaper and, on a
 pull request, more truthful — `ci.yml` runs the checks this machine reports as

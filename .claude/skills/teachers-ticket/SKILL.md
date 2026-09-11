@@ -290,18 +290,18 @@ run of rounds that did not converge is information; one more rarely adds any.
    ```
 
    That flag selects self-review defaults — no merge, no inline comments, and no
-   questions to the user about anything this ticket already answers.
-
-   **`--effort` is `/code-review`'s own argument, and this line is the one place
-   the level a self-review round gets is stated.** `/teachers-review` documents
-   what each level buys and takes what it is given; it states no self-review
-   value of its own, so the word is not written in two files that can disagree.
-   Raise it by hand for a round that needs wider reading — and know that the
-   round costs what you raised it to. It fetches
+   questions to the user about anything this ticket already answers. It fetches
    the diff, reads the documents that govern the code you changed, runs the
    `teachers-review-contract` agent and `/code-review`, and returns ranked
    findings. The standard is those documents, not a checklist — so a rule you
    added to the architecture in this very ticket is one the review applies to it.
+
+   **`--effort` names the level in `/code-review`'s vocabulary, and this line is
+   the one place the level a self-review round gets is stated.**
+   `/teachers-review` documents what each level buys and takes what it is given;
+   it states no self-review value of its own, so the word is not written in two
+   files that can disagree. Raise it by hand for a round that needs wider
+   reading — and know that the round costs what you raised it to.
 
 2. **Record the round in `.gate/findings.json` before fixing anything**, so
    round *N* and round *N+1* are two lists that can be compared:
@@ -335,10 +335,12 @@ run of rounds that did not converge is information; one more rarely adds any.
    exist passes any validator anyone could write. What makes the file worth
    keeping is that the next round reads it, and that a resumed session can.
 
-3. **Dispose of every finding the review reported.** Findings outside the diff
-   are not among them: `/teachers-review` drops them, and the
+3. **Dispose of every finding the review reported.** A defect this change did
+   not cause is not among them: `/teachers-review` drops it, and the
    `## Outside this change` section it may print is information about code this
-   branch did not touch, not a list this loop owes anything. These dispositions,
+   branch did not touch, not a list this loop owes anything. Carry that section
+   into the report at the end of this phase, though — it is how a severe defect
+   nobody here caused reaches the person who can file it. These dispositions,
    and each costs something:
 
    | Disposition | What it takes | What it costs |

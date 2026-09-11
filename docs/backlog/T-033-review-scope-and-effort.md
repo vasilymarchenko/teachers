@@ -88,6 +88,14 @@ The self-review level is stated in `.claude/skills/teachers-ticket/SKILL.md`
 phase 7, and stays at today's value here: `T-034` is what lowers it, along with
 the rest of the loop it rewrites.
 
+Criterion 3's "No level is named anywhere else in the file" cannot hold
+literally beside criteria 2 and 4, which require a level in the buys sentence and
+in the frontmatter `description`. It is implemented as the rule those three
+criteria together describe: a level appears in the argument row, the buys
+sentence and the effort table — all adjacent — and in the frontmatter, and **no
+phase below the table names one**, so no phase can contradict it. The skill
+states those places rather than claiming the table is the only one.
+
 Evidence: the efficiency analysis of session `4c401314` (the `/teachers-ticket
 T-021` run). Round 3 of that run's review loop cost 31.6% of the session and
 returned no finding inside the pull request — three of its five findings were in

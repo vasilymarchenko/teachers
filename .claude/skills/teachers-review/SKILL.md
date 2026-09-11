@@ -37,13 +37,19 @@ is a policy nobody agreed to.
 | `--self-review` | `T-NNN` | off | set by `/teachers-ticket` phase 7 |
 | `--effort` | `low` \| `medium` \| `high` \| `max` | `high` | set by `/teachers-ticket` phase 7, which is where the level is stated |
 
-**What a level buys, and what it changes.** The argument and its four values are
-`/code-review`'s own, unchanged — one word means one thing in both skills rather
-than a second vocabulary beside the first. What each buys is quoted from
-`/code-review`'s description, and that attribution is the point: **low** and
-**medium** give fewer, high-confidence findings; **high** and **max** give
-broader coverage and may include uncertain ones. If that changes there, this
-line is wrong rather than quietly contradicted.
+**What a level buys, and what it changes.** The four level names are
+`/code-review`'s own, unchanged, so one word means one thing in both skills
+rather than a second vocabulary beside the first. The flag is this skill's:
+`/code-review` takes its level as a bare positional word, and this skill has
+three other arguments a bare word could not be told apart from. What each level
+buys is quoted from `/code-review`'s description, and that attribution is the
+point: **low** and **medium** give fewer, high-confidence findings; **high** and
+**max** give broader coverage and may include uncertain ones. If that changes
+there, this line is wrong rather than quietly contradicted.
+
+`/code-review` has a fifth level, `ultra`, and it is deliberately not offered
+here: it is a user-triggered, billed cloud review that this skill cannot launch
+on the user's behalf. Asked for it, say that and stop.
 
 | `--effort` | Passed to `/code-review` | Phase 2 reads | Phase 6 |
 |---|---|---|---|
@@ -52,9 +58,11 @@ line is wrong rather than quietly contradicted.
 | `high` | `high` | that, plus the architecture sections for the layers those paths belong to, the glossary for the terms they use, and `docs/tech-stack.md` | no |
 | `max` | `max` | that, plus the code the diff does not change but depends on, read for the assumptions the change makes of it | yes |
 
-This table is the only place a level is named, apart from the argument row above
-it. Nothing further down this file names one: a phase says what it does and
-which column decides whether it runs.
+A level is named in three places in this file and nowhere else: the frontmatter
+`description`, so the skill list shows what the argument does without the file
+being opened; the argument row above; and this table. Change a default and all
+three are the edit. **No phase below names one** — a phase says what it does and
+which column decides whether it runs, so no phase can contradict the table.
 
 **An explicit flag always wins over a mode default**, in both directions: a
 `/teachers-ticket` run told `--comment` posts comments, and a standalone review told
@@ -107,8 +115,14 @@ you find what applies to the diff in front of you.
 Start from the paths the change touches:
 
 ```sh
-git diff --name-only origin/main...HEAD     # the range phase 1 resolved
+git diff --name-only origin/main...HEAD      # a pull request, or a branch
+git diff --name-only HEAD                    # the working tree
 ```
+
+Take the range phase 1 resolved, not this one by habit: on a dirty working tree
+`origin/main...HEAD` is empty, and a review that derives no paths reads no
+document, scopes the generic pass to nothing, and reports an empty result that
+looks exactly like a clean change.
 
 and follow the map outward from them: the conventions file of every directory
 those paths sit in — a directory may carry its own, and it wins over the root
@@ -140,8 +154,15 @@ request, a better-equipped machine has usually produced it already.
 | Target | Where the verdict comes from |
 |---|---|
 | a pull request | what `ci.yml` reported on the head under review — `ADR-007` makes it the authoritative gate, and it runs the checks this machine reports as `skipped` |
-| self-review | the `.gate/ledger.jsonl` row for that head, written by the caller's own run |
+| a pull request whose CI verdict is not readable yet | the `.gate/ledger.jsonl` row for that head, written by whoever last gated it |
 | a branch, or the working tree | `npm run gate`, because nothing else has |
+
+**The rows are in precedence order and the first that fits wins.** Self-review is
+not a fourth target: it is a pull request, and it is the second row's usual case,
+because the caller has just pushed and CI has not finished. Where CI's verdict on
+that same head becomes readable it supersedes the ledger row — it ran the checks
+the local run reports as `skipped`, so the two are not equal evidence even when
+they agree.
 
 **The local gate still runs wherever no verdict on this exact head exists, is
 pending, or cannot be read** — `gh` unauthenticated, a run still in flight, no
@@ -149,10 +170,13 @@ ledger row for this commit. It is the fallback, and it is never wrong to reach
 for; what would be wrong is reporting its absence as a pass.
 
 **What the guarantee turns on is the head and the tree a verdict was produced
-against, not which command produced it.** A verdict from a different head is a
-verdict on different code; a verdict from a dirty tree is a verdict on a tree
-nobody else has. Either one is not evidence — whether it came from CI, from the
-ledger, or from a run on this machine a minute ago. That is the bug `T-017`
+against, not which command produced it.** A verdict counts for what it ran
+against and for nothing else. A verdict from a different head is a verdict on
+different code. A verdict from a dirty tree is a verdict on that dirty tree —
+which is evidence where the target *is* that working tree, and never for a
+commit, because a tree nobody else has is not the tree anyone will merge. Either
+mismatch voids it, whether it came from CI, from the ledger, or from a run on
+this machine a minute ago. That is the bug `T-017`
 found the hard way, stated as the thing that actually causes it rather than as a
 rule about whose gate may be trusted. `.gate/ledger.jsonl` carries `commit` and
 `dirty` on every row for exactly this comparison; check both before accepting
@@ -212,10 +236,18 @@ Send both in one message so they run at once.
 
    **The paths**, from the same `git diff --name-only` phase 2 ran, because
    without them the pass spends its budget on files the change never touched and
-   returns findings the author cannot act on from this branch. `/code-review`
-   takes a path target, so the paths are its own vocabulary, not a convention
-   invented here. Scope is enforced twice — as an argument here, and in phase 5,
-   which drops what lands outside the diff whatever produced it.
+   returns findings the author cannot act on from this branch.
+
+   Be honest about what that buys. In `/code-review`'s own grammar a path is a
+   *target* — an alternative to a pull request number, not a filter laid over
+   one — so passing both asks for something its interface does not promise, and
+   the paths may simply be ignored. Pass the target first and the paths after
+   it, and read the result: a pass that returns nothing at all on a substantial
+   diff has most likely taken the paths as its target and read an empty working
+   tree, and the answer is to re-run it with the target alone rather than to
+   report that both passes ran. **What actually enforces the scope is phase 5**,
+   which drops a finding the change did not cause whatever produced it. The
+   argument is the saving; the drop rule is the guarantee.
 
    Do not reimplement it, and do not narrow what it looks *for*. Narrowing
    *where* it looks is a different thing and is the point; within that scope it
@@ -250,22 +282,36 @@ suggestion. Confident findings that turn out to be wrong are what teach a
 reviewer's output to be skimmed, and a long list of maybes costs more attention
 than it returns. An empty report is a valid and unremarkable result.
 
-**A finding outside the diff is not a finding of this review.** If its
-`file:line` is not in the change under review, the change did not cause it and
-the caller owes it no disposition — a loop that must dispose of it spends a
-round on code nobody in this review touched, and the author cannot fix it from
-this branch without widening their own pull request. Drop it. This holds however
-the finding arrived: the scope passed in phase 4 narrows where the generic pass
-looks, and this rule is what makes the narrowing hold when it looks anyway.
+**A finding the change did not cause is not a finding of this review.** The test
+is causation, and a `file:line` outside the diff is how it is nearly always
+read: that defect was inherited, the author cannot fix it from this branch
+without widening their own pull request, and a loop that must dispose of it
+spends a round on code nobody in this review touched. Drop it. This holds
+however the finding arrived — the scope passed in phase 4 narrows where the
+generic pass looks, and this rule is what makes the narrowing hold when it looks
+anyway.
 
-One exception, worth a section and no more. A **security or data-correctness**
-defect noticed outside the diff is real whoever caused it, and losing it to a
-scoping rule would be the rule doing harm. Name it under a final
+**A file the diff obliged to change and did not is inside the change, wherever
+its line number falls.** Where a document says that one place mirrors another —
+a backlog row against the frontmatter it mirrors, an index against the file it
+lists, the glossary against a term the diff introduces — a change that edits one
+side and not the other *caused* a defect whose `file:line` is on the side it left
+alone. Report it as a finding like any other, quoting the rule that the two
+places must agree. It is the contract pass's whole lens, and it is one line for
+the author to fix on this branch.
+
+One exception past that, worth a section and no more. A **security or
+data-correctness** defect the change did not cause is still real, and losing it
+to a scoping rule would be the rule doing harm. Name it under a final
 `## Outside this change` heading, with the same three parts as any finding, and
 say plainly that it is out of scope: nothing in the review's verdict or the
-caller's loop turns on it, and what happens to it is a ticket — phase 6's route
-— or the user's call. Nothing else goes in that section; it is not a home for
-the maybes the bar above dropped.
+caller's loop turns on it. **Filing it is the reader's call, and the section is
+how the reader gets the chance** — a standalone review leaves it with the user,
+and a self-review carries it into the caller's final report, which is the last
+thing a person reads before the branch merges. Do not route it through phase 6:
+that phase does not run at most levels, and an exception carved out to stop a
+rule doing harm cannot depend on a phase that may be skipped. Nothing else goes
+in that section; it is not a home for the maybes the bar above dropped.
 
 **A recorded decision is not a finding.** Where the project has written down an
 accepted trade-off, a rejected alternative or the current default for an open
@@ -281,7 +327,10 @@ data-correctness defect, then a violated architectural invariant, then a broken
 contract with the ticket or the documents, then reuse and simplification.
 **Report** most severe first — through `ReportFindings` when the session has it,
 in prose when it does not. The shape is what matters; a review must never be
-blocked on a tool that may be absent.
+blocked on a tool that may be absent. `## Outside this change` has no field in
+that tool and is never squeezed into one: print it as prose beside the tool's
+output, which is also what keeps it visibly separate from the findings the
+caller must dispose of.
 
 **In self-review mode, report a finding in the shape the caller records it in.**
 `/teachers-ticket` phase 7 writes each one to `.gate/findings.json`, which wants
@@ -301,12 +350,13 @@ only. Never post to a pull request that was not the review target.
 **This phase runs only at the effort level the phase 1 table marks for it.**
 Promoting a recurring check is worth a review's whole attention when the review
 was asked for that breadth; drawn from a pass that read two directories it is a
-proposal with no evidence under it, which is the failure `ADR-001` records. Below
-that level, skip the phase without mentioning it.
+proposal with no evidence under it. Below that level, skip the phase without
+mentioning it.
 
 A check that has now fired twice belongs in a lint rule or a convention test,
-not in a reviewer's attention — this repository already keeps several, and the
-gate in phase 3 runs them for free on every future review.
+not in a reviewer's attention — this repository already keeps several, and
+whatever produces phase 3's verdict runs them for free on every future change,
+which is more reviews than this skill will ever be pointed at.
 
 **This phase proposes; it never edits.** A new lint rule or convention test
 changes the quality gate for every future change in the repository, including
@@ -343,8 +393,9 @@ review target.**
 Whatever the policy, merging requires all of:
 
 - the review reported **no findings** — not "none serious", none;
-- the mechanical gate ran **against the target** and passed, and any required
-  checks on the pull request are green;
+- a verdict was established **on the head under review, against its tree**, and
+  it passed — phase 3's rule, not a local gate run specifically — and any
+  required checks on the pull request are green;
 - `gh` reports the pull request mergeable, with no conflict and no block.
 
 If any of those is unmet, say which and stop. `auto` is not an override: it
@@ -401,13 +452,14 @@ differences:
 - The target and the ticket were stated, or the absence of a ticket was.
 - The documents the changed paths reach were read at review time, not recalled,
   and read as far out as the effort in force extends.
-- A verdict on this head and this tree was established — produced here or read
-  from a record of the same head and a clean tree — or the report said which
-  target's verdict could not be read at all.
+- A verdict was established against this head and this tree — produced here, or
+  read from a record of the same — or the report said which target's verdict
+  could not be read at all.
 - Both passes ran, plus your own reading of the diff against the architecture.
-- Every reported finding quotes the rule it violates and lies inside the diff;
-  everything else was dropped, except a security or data-correctness defect
-  outside it, which was named under `## Outside this change` and owed no
+- Every reported finding quotes the rule it violates and names a defect this
+  change caused — including a document the change obliged to update and did not;
+  everything else was dropped, except a security or data-correctness defect it
+  did not cause, which was named under `## Outside this change` and owed no
   disposition.
 - Nothing was edited: the review reports, and phase 6 proposes.
 - The arguments in force were stated up front, and both policies were honoured —
