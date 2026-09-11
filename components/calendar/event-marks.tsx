@@ -39,7 +39,11 @@ export function EventMarks({
           >
             <span aria-hidden>{event.kind === "DEADLINE" ? "◷" : "•"}</span>
             <span className="sr-only">{EVENT_KIND_LABELS[event.kind]}</span>
-            <span>{event.title}</span>
+            {/* A flex item's `min-width` is `auto`, so the title keeps its
+                longest word's width and leaves the card — the day box's
+                inherited `break-words` cannot help until the box may shrink
+                (T-021, ADR-013). */}
+            <span className="min-w-0">{event.title}</span>
             {event.isOverdue && (
               <span className="text-xs">{EVENT_LABELS.overdue}</span>
             )}

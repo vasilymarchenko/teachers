@@ -28,7 +28,7 @@ for reading. Order is priority; the ID number is not.
 | [T-010](T-010-weekly-template-editor.md) | Weekly template editor with copy-on-write versioning | done | T-005, T-008, T-014 |
 | [T-011](T-011-day-override-editing.md) | Day overrides — edit, substitution, cancel a single lesson | done | T-007 |
 | [T-013](T-013-print-views.md) | Print mechanism — the `/print` route and its page layout | todo | T-007 |
-| [T-021](T-021-week-view-overflow.md) | Week view — lesson text overflows the day card from the xl breakpoint | todo | T-007 |
+| [T-021](T-021-week-view-overflow.md) | Week view — lesson text overflows the day card once the grid column is narrow | done | T-007 |
 | [T-016](T-016-sign-in-rate-limit.md) | Rate limiting on sign-in | todo | T-006 |
 | [T-022](T-022-mutation-returning-convention-test.md) | Convention test — every UPDATE in `lib/actions` checks the rows it matched | todo | T-009 |
 | [T-023](T-023-unrendered-field-errors.md) | A field error whose field is not on the screen must still be shown | todo | T-009, T-010 |
@@ -41,6 +41,7 @@ for reading. Order is priority; the ID number is not.
 | [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | in-progress | T-017, T-024 |
 | [T-030](T-030-one-migrator-smoke-definition.md) | One migrator smoke test, called by both CI and the gate | todo | T-029 |
 | [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | done | T-029 |
+| [T-032](T-032-gate-counts-under-report.md) | The gate can under-report — a missing origin/main, a dirty tree, an unresolvable opening head | todo | T-029 |
 
 ## Open questions
 
@@ -95,23 +96,24 @@ tooling every other ticket is worked and checked by, not the application. T-027
 hangs off T-017 like T-019 and T-022 — a check the review skill may only
 propose, promoted into the suite. T-029 hangs off T-017 for the review loop it
 bounds and off T-024 for the check list that loop must agree with. T-026 carried
-those same edges and is `declined`; T-029 replaces it. T-030 and T-031 hang off T-029
+those same edges and is `declined`; T-029 replaces it. T-030, T-031 and T-032 hang off T-029
 and are absent for the same reason: T-030 finishes one check T-029 routed but
-could not run, and T-031 names the runtime that made two of its checks fail for
-a cause the gate could not report. T-028 hangs off T-008 and
+could not run, T-031 names the runtime that made two of its checks fail for
+a cause the gate could not report, and T-032 collects three inputs the gate
+cannot resolve and reports as though it had. T-028 hangs off T-008 and
 is not drawn either: it is a defect in the invariant test that ticket's last
 criterion produced, not new work off it.
 No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency they
-carried is satisfied. T-011, which hangs off T-007 alone, is done too; T-013 and
-T-021, the two open tickets off T-007, are what remain of the calendar work.
+carried is satisfied. T-011 and T-021, which hang off T-007 alone, are done
+too; T-013 is what remains of the calendar work.
 
 ## Coverage
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030 and T-031 are
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031 and T-032 are
 not product scope: they are the review tooling those tickets are checked by, and
 the documents that tooling reads. T-024 is not product scope either, and is not review tooling: it
 is the deployment path checking itself, which is why it hangs off T-015 rather

@@ -3,10 +3,12 @@ import type { ScheduleView } from "@/lib/db/schema/enums";
 import type { CalendarDay } from "@/lib/domain/calendar/days";
 import type { CalendarViewName } from "@/lib/domain/calendar/views";
 import type { BellInput } from "@/lib/domain/schedule/types";
+import { cn } from "@/lib/utils";
 import { EventMarks } from "./event-marks";
 import { DAY_LABELS, EDIT_LABELS, EVENT_LABELS } from "./labels";
 import { addableLessonNumbers } from "./lessonNumbers";
 import { LessonRow } from "./lesson-row";
+import { LESSON_ROW_LAYOUT } from "./lessonRowLayout";
 import { lessonHref } from "./links";
 
 /**
@@ -64,7 +66,11 @@ export function DayLessons({
   ].sort((a, b) => a.lesson.lessonNumber - b.lesson.lessonNumber);
 
   return (
-    <div className="space-y-2">
+    // The container the lesson rows reflow against: a card about a seventh of
+    // the work area wide gets a different row from the day view's full-width
+    // one, and the width that decides it is this box's, not the viewport's
+    // (T-021, ADR-013).
+    <div className={cn("space-y-2", LESSON_ROW_LAYOUT.container)}>
       {day.isNonTeaching && (
         <p className="text-muted-foreground text-sm">
           {day.nonTeachingName ?? DAY_LABELS.unnamedNonTeaching}

@@ -21,6 +21,7 @@ deliberately drops it.
 | `components/calendar/links.ts` | `calendarHref()`, `scheduleViewOf()`, `CLASS_SEARCH_VALUE` |
 | `components/calendar/labels.ts` | every Ukrainian string and every date format the calendar shows |
 | `components/calendar/lesson-row.tsx` | `LessonRow` |
+| `components/calendar/lessonRowLayout.ts` | `LESSON_ROW_LAYOUT` — the row's layout classes and the one container-query threshold it reflows at (T-021, ADR-013) |
 | `components/calendar/day-lessons.tsx` | `DayLessons` — the day-centric unit of overview §10.2 |
 | `components/calendar/day-card.tsx` | `DayCard` — `DayLessons` with a heading, parity and the today ring |
 | `components/calendar/views.tsx` | `DayView`, `WeekView`, `MonthView`, `YearView` |
