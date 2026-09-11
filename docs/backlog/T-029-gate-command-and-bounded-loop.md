@@ -2,7 +2,7 @@
 id: T-029
 type: ticket
 title: One gate command and a bounded review loop for /teachers-ticket
-status: in-progress
+status: done
 depends_on: [T-017, T-024]
 refs:
   - docs/architecture/decisions/ADR-012-one-check-definition.md
@@ -113,7 +113,7 @@ agent — the gate's exit code and `gh pr checks`.
       `ci.yml` keep a single check definition, held in step by a test rather than
       by one calling the other — referencing `ADR-007` and `ADR-001` instead of
       re-arguing either.
-- [ ] The loop is exercised once by a session that loaded the new skills — a
+- [x] The loop is exercised once by a session that loaded the new skills — a
       different ticket, in a fresh session, after this one is merged — and this
       ticket is not `done` until it has been. **The session that writes the loop
       cannot run it:** a skill's text enters context when it is invoked, so
@@ -125,6 +125,14 @@ agent — the gate's exit code and `gh pr checks`.
       reported complete while it was still running.
 
 ## Notes
+
+The last criterion was satisfied by session `4c401314` — a fresh session, after
+a `/clear`, that loaded the merged skills and ran `/teachers-ticket T-021` to
+PR #26: three review rounds, three pushes, `npm run gate` green and `ci.yml`
+green on the pushed head `c1b6ea4`. The loop reached its exit at the round and
+push caps rather than with margin, which is itself the evidence that the caps
+are counted and enforced. The cost of that run, measured from its transcript, is
+what `T-033` and `T-034` were written from.
 
 Replaces **T-026**, which is `declined`. T-026 asked for this flow and then for a
 layer of code to police the agent's own record of it. The criteria above are

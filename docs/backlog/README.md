@@ -10,6 +10,9 @@ for reading. Order is priority; the ID number is not.
 
 | ID | Title | Status | Depends on |
 |---|---|---|---|
+| [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | todo | T-017 |
+| [T-034](T-034-bound-the-ticket-loop-context.md) | Bound the context a /teachers-ticket run accumulates | todo | T-033 |
+| [T-035](T-035-land-a-pull-request.md) | /teachers-land — the fix-and-merge loop for a pull request with no ticket bound | todo | T-034 |
 | [T-002](T-002-project-scaffold.md) | Project scaffold — Next.js, Drizzle, Vitest, Postgres in Compose | done | — |
 | [T-001](T-001-expand-fixtures.md) | Golden fixtures for `expand()` — the hard-week walkthrough | done | — |
 | [T-003](T-003-db-schema-design.md) | Detailed DB schema design document | done | T-001 |
@@ -38,7 +41,7 @@ for reading. Order is priority; the ID number is not.
 | [T-026](T-026-deterministic-ticket-loop.md) | Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop | declined | T-017, T-024 |
 | [T-027](T-027-backlog-contract-convention-tests.md) | Convention tests for the backlog and document contract | todo | T-017 |
 | [T-028](T-028-index-invariant-composite-fk-join.md) | Make the index-usage invariant accept the composite-FK join | done | T-008 |
-| [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | in-progress | T-017, T-024 |
+| [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | done | T-017, T-024 |
 | [T-030](T-030-one-migrator-smoke-definition.md) | One migrator smoke test, called by both CI and the gate | todo | T-029 |
 | [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | done | T-029 |
 | [T-032](T-032-gate-counts-under-report.md) | The gate can under-report — a missing origin/main, a dirty tree, an unresolvable opening head | todo | T-029 |
@@ -100,7 +103,13 @@ those same edges and is `declined`; T-029 replaces it. T-030, T-031 and T-032 ha
 and are absent for the same reason: T-030 finishes one check T-029 routed but
 could not run, T-031 names the runtime that made two of its checks fail for
 a cause the gate could not report, and T-032 collects three inputs the gate
-cannot resolve and reports as though it had. T-028 hangs off T-008 and
+cannot resolve and reports as though it had. T-033, T-034 and T-035 are absent for the same reason, and are placed first in
+the table because every later ticket is worked and checked by the skills they
+change. They are one chain, in that order: T-033 hangs off T-017, whose review
+skill it scopes and parameterises; T-034 hangs off T-033 for the effort argument
+its phase 7 passes, and extracts the fix loop as a named unit while rewriting
+it; T-035 hangs off T-034 for that extracted unit, and adds the second entry
+point to it (`ADR-014`). Doing them in any other order writes the loop twice. T-028 hangs off T-008 and
 is not drawn either: it is a defect in the invariant test that ticket's last
 criterion produced, not new work off it.
 No item waits on an open question any more: Q-002, the one that did, is answered
@@ -113,7 +122,7 @@ too; T-013 is what remains of the calendar work.
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031 and T-032 are
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031, T-032, T-033, T-034 and T-035 are
 not product scope: they are the review tooling those tickets are checked by, and
 the documents that tooling reads. T-024 is not product scope either, and is not review tooling: it
 is the deployment path checking itself, which is why it hangs off T-015 rather
