@@ -85,6 +85,12 @@ git checkout <branch> && git diff origin/main...<branch>   # a branch
 git diff HEAD                                              # the working tree
 ```
 
+**No fetch of this skill's own.** `origin/main` is the ref the session's
+`SessionStart` hook fetched — the root `CLAUDE.md` states what that guarantees
+and what it does not. A review run in a session whose hook could not run says so
+in its report, and does not present a range taken against an unverified ref as
+current.
+
 **Check the target out.** `gh pr diff` fetches a patch and changes nothing on
 disk, so a gate run after it tests whatever you were already sitting on — a
 clean `main` type-checks perfectly while the PR under review does not. Note

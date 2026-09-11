@@ -77,6 +77,12 @@ authoritative state and compare it against the table:
 grep -H -E '^(id|title|status|depends_on):' docs/backlog/[TQ]-*.md
 ```
 
+That reads the working tree, which is right while a run is editing an item: the
+status change it is making lives on its branch. It is the wrong source for
+**selecting** the next ticket, which happens before a branch is cut and must
+read `origin/main` — the root `CLAUDE.md`, "A session starts from a current
+main", states that discipline and `/teachers-ticket` phase 1 applies it.
+
 ## Body structure
 
 Tickets: `## Goal` (one paragraph), `## Acceptance criteria` (checkbox list),
