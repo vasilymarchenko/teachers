@@ -35,7 +35,28 @@ npm run db:studio    # Drizzle Studio
 
 Postgres runs from `docker-compose.yml` (`docker compose up -d`). Copy `.env.example` to `.env` first; `DATABASE_URL` must agree with the `POSTGRES_*` values in the same file. `docker-compose.yml` is dev-only; the production stack (web, Postgres, Caddy) is `docker-compose.prod.yml`, deployed as described in `README.md` ("Deploying to the VPS").
 
-Before pushing, run `npm run gate`. It checks the Node version against `.nvmrc` first — too old, and it names that as the reason and stops there, before selecting a single check. Otherwise it selects the checks the change actually needs — always `lint`, `typecheck`, `test`, `build` and `hygiene`, plus the database checks for `lib/db/**`, `drizzle/**`, `drizzle.config.ts` or `scripts/verify-schema.sql`, and the image builds for the `Dockerfile` or a Compose file — runs all of them without stopping at the first failure, prints one table and exits non-zero if any failed. A check it cannot run here (no Docker daemon, no `DATABASE_URL`) is reported `skipped` with the reason, which is not a pass. The routing lives in `scripts/gate/checks.ts` and is held in step with `.github/workflows/ci.yml` by a convention test — `docs/architecture/decisions/ADR-012-one-check-definition.md`. A single test file: `npx vitest run lib/time/today.test.ts`.
+Before pushing, run `npm run gate`. It checks the Node version against `.nvmrc` first — too old, and it names that as the reason and stops there, before selecting a single check. Otherwise it selects the checks the change actually needs — always `lint`, `typecheck` and `hygiene`, plus `test` and `build` for a change that contains code, the database checks for `lib/db/**`, `drizzle/**`, `drizzle.config.ts` or `scripts/verify-schema.sql`, and the image builds for the `Dockerfile` or a Compose file — runs all of them without stopping at the first failure, prints one table and exits non-zero if any failed. A check it cannot run here (no Docker daemon, no `DATABASE_URL`), or that this kind of change does not need, is reported `skipped` with the reason, which is not a pass. The routing has two dimensions and lives in `scripts/gate/checks.ts`: the paths a change touches decide which extra checks it pulls in, and `changeKind()` decides whether a diff with no code in it pays for the ones every change otherwise gets. It is held in step with `.github/workflows/ci.yml` by a convention test — `docs/architecture/decisions/ADR-012-one-check-definition.md` — and the one place the two deliberately differ, `ci.yml` running `test` and `build` on every push while the gate routes them, is declared inside that same test: `docs/architecture/decisions/ADR-016-route-by-kind-of-change.md`. A single test file: `npx vitest run lib/time/today.test.ts`.
+
+## A ticket run, or a direct change
+
+`/teachers-ticket` is the loop for work a backlog ticket describes: it plans, implements, opens a pull request and reviews that pull request against the ticket. It costs what a ticket is worth, and paying it for a change no ticket describes buys nothing.
+
+**A ticket run is needed** for anything that changes the data model, a contract other work is written against, a screen, or the behaviour a teacher sees — that is, for a `T-NNN` in `docs/backlog/`. If the work needs a ticket and has none, the ticket is written first; that writing is itself a direct change.
+
+**A direct change** — no ticket run — is the rest:
+
+- **A change confined to `docs/backlog/**` is the tracker being updated**, not work on the product. Filing a ticket, changing a `status`, correcting a `README.md` row against the frontmatter it mirrors, answering a `Q-NNN`: none of these get a ticket run of their own, and a rule that gave them one would need a ticket to file a ticket. What still holds for them in full is `docs/backlog/CLAUDE.md` — the conventions, the frontmatter contract, and the obligation to update `README.md` in the same commit — plus the checks `T-027` turns into tests.
+- A fix a review of another change already found and scoped, a typo, a broken path, a one-line correction to a document.
+
+**Direct means no ticket run. It never means no review, and never a push to `main`.** A direct change owes exactly what any change owes, minus the loop:
+
+- **a branch**, cut from `origin/main`;
+- **a commit message in the convention** — English, imperative, saying what changed and why;
+- **`npm run gate`**, which routes itself by what the change contains;
+- **a review** — `/teachers-review` against the branch or the pull request;
+- **a pull request**. `main` is written to by merging one, and by nothing else.
+
+If a direct change turns out to be larger than one commit's worth of reasoning, that is the signal it was a ticket: stop, write the ticket, and run the loop on it.
 
 ## A session starts from a current main
 

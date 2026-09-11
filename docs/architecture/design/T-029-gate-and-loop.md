@@ -15,7 +15,7 @@ mechanics — the modules, the routing table, the shape of each file under
 | File | Holds |
 |---|---|
 | `scripts/gate/caps.ts` | `CAPS` — the three cap numbers. The only place they exist. |
-| `scripts/gate/checks.ts` | `CHECKS`, `selectChecks()`, `unmetRequirement()` — the routing and the environment probes. |
+| `scripts/gate/checks.ts` | `CHECKS`, `selectChecks()`, `changeKind()`, `routedAwayByKind()`, `unmetRequirement()` — the routing, both dimensions of it, and the environment probes. |
 | `scripts/gate/nodeVersion.ts` | `unsupportedNodeVersion()` — the Node-version preflight `run()` calls before selecting a check (`T-031`). |
 | `scripts/gate/hygiene.ts` | `hygieneProblems()` (pure) and `runHygiene()` (reads the tree). |
 | `scripts/gate/ledger.ts` | Everything that touches `.gate/`, plus `counts()`. |
@@ -39,8 +39,8 @@ so two runs over one change print the same table.
 |---|---|---|---|
 | `lint` | every change | — | `checks` (`npm run lint`) |
 | `typecheck` | every change | — | `checks` (`npm run typecheck`) |
-| `test` | every change | — | `checks` (`npm test`) |
-| `build` | every change | — | `checks` (`npm run build`) |
+| `test` | every change, `code` kind only | — | `checks` (`npm test`) |
+| `build` | every change, `code` kind only | — | `checks` (`npm run build`) |
 | `hygiene` | every change | — | none — see §5 |
 | `db:migrate` | `DATABASE_PATHS` | `DATABASE_URL` | `integration` (`npm run db:migrate`) |
 | `verify-schema` | `DATABASE_PATHS` | `DATABASE_URL`, `psql` | `integration` (anchor `scripts/verify-schema.sql`) |
@@ -48,6 +48,22 @@ so two runs over one change print the same table.
 | `docker:runner` | `^Dockerfile$`, `^docker-compose*.ya?ml$` | Docker daemon | `images` (anchor `target: runner`) |
 | `docker:migrator` | same | Docker daemon | `images` (anchor `target: migrator`) |
 | `migrator-smoke` | same | — always skipped | `images` (anchor `teachers-migrator:ci`) |
+
+**The second dimension: the kind of change** (`T-037`, `ADR-016`).
+`changeKind(changedFiles)` is `documentation` when every path ends in `.md` or
+sits under `docs/`, and `code` otherwise — including for an empty list, where
+the conservative answer is the one that checks more. `routedAwayByKind()` then
+returns the reason a selected check is not run against a diff of that kind, or
+`null`. `test` and `build` carry `kinds: ["code"]` and are the only checks that
+do; `hygiene` is not among them, because its three checks are properties of a
+diff rather than of the source tree.
+
+A check the kind routes away is still selected, still in the table, still in
+`.gate/last-run.json` and still in the PR block — `skipped`, with a reason
+naming the `ci.yml` job that ran it on the pushed commit. `ci.yml` carries no
+path filter, which is what makes that reason true; `checks.ci.test.ts` asserts
+it, and that block is where the one deliberate divergence from `ADR-012` is
+declared.
 
 `DATABASE_PATHS` is `^lib/db/`, `^drizzle/`, `^drizzle\.config\.ts$` and
 `^scripts/verify-schema\.sql$` — stated once in `scripts/gate/checks.ts` and

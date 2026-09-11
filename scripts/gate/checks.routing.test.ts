@@ -1,20 +1,29 @@
 import { describe, expect, it } from "vitest";
 
-import { CHECKS, selectChecks, unmetRequirement } from "./checks";
+import {
+  CHECKS,
+  changeKind,
+  routedAwayByKind,
+  selectChecks,
+  unmetRequirement,
+} from "./checks";
 
 /**
- * The routing, against the sentence T-029 states it in:
+ * The routing, against the sentence the root `CLAUDE.md` states it in:
  *
- *   "always `lint`, `typecheck`, `test`, `build`; `lib/db/**` or `drizzle/**`
- *    adds `db:migrate`, `scripts/verify-schema.sql` and `test:integration`;
- *    `Dockerfile` or `docker-compose*.yml` adds the `runner` and `migrator`
- *    builds and the migrator smoke test."
+ *   "always `lint`, `typecheck` and `hygiene`, plus `test` and `build` for a
+ *    change that contains code; the database checks for `lib/db/**`,
+ *    `drizzle/**`, `drizzle.config.ts` or `scripts/verify-schema.sql`, and the
+ *    image builds for the `Dockerfile` or a Compose file."
  *
  * That sentence and `ci.yml` are the routing's only two authorities;
- * `checks.ci.test.ts` holds the second one.
+ * `checks.ci.test.ts` holds the second one, and is also where the one place
+ * the two deliberately differ is declared — `test` and `build` are routed by
+ * kind here and run unconditionally there (T-037, `ADR-016`).
  */
 
-const names = (files: string[]) => selectChecks(files).map((check) => check.name);
+const names = (files: string[]) =>
+  selectChecks(files).map((check) => check.name);
 
 /** `hygiene` is the gate's own, with no counterpart in `ci.yml`. */
 const ALWAYS = ["lint", "typecheck", "test", "build", "hygiene"];
@@ -29,13 +38,19 @@ describe("selectChecks", () => {
 
   it("adds the database checks for lib/db and for drizzle", () => {
     expect(names(["lib/db/schema/event.ts"])).toEqual([...ALWAYS, ...DATABASE]);
-    expect(names(["drizzle/0007_add_event.sql"])).toEqual([...ALWAYS, ...DATABASE]);
+    expect(names(["drizzle/0007_add_event.sql"])).toEqual([
+      ...ALWAYS,
+      ...DATABASE,
+    ]);
   });
 
   it("adds them for the two other files ci.yml's integration job runs against", () => {
     // A change to the assertion file alone, or to where the migrator points,
     // would otherwise run no database check locally and the full one in CI.
-    expect(names(["scripts/verify-schema.sql"])).toEqual([...ALWAYS, ...DATABASE]);
+    expect(names(["scripts/verify-schema.sql"])).toEqual([
+      ...ALWAYS,
+      ...DATABASE,
+    ]);
     expect(names(["drizzle.config.ts"])).toEqual([...ALWAYS, ...DATABASE]);
   });
 
@@ -66,7 +81,9 @@ describe("what a check needs from the machine", () => {
   it("reports the reason rather than dropping the check", () => {
     // A skip is never a pass, so it stays in the list and carries why.
     const integration = CHECKS.find((c) => c.name === "test:integration")!;
-    expect(unmetRequirement(integration, nothingAvailable)).toBe("unavailable here");
+    expect(unmetRequirement(integration, nothingAvailable)).toBe(
+      "unavailable here",
+    );
   });
 
   it("says nothing about a check with no requirements", () => {
@@ -95,7 +112,9 @@ describe("what a check needs from the machine", () => {
     // is how it would come back green the day its requirement is relaxed.
     const inProcess = CHECKS.filter((check) => check.inProcess !== undefined);
     expect(inProcess.map((check) => check.name)).toEqual(["hygiene"]);
-    expect(CHECKS.find((c) => c.name === "migrator-smoke")?.inProcess).toBeUndefined();
+    expect(
+      CHECKS.find((c) => c.name === "migrator-smoke")?.inProcess,
+    ).toBeUndefined();
   });
 
   it("keeps the migrator smoke test out of this machine and says why", () => {
@@ -105,5 +124,69 @@ describe("what a check needs from the machine", () => {
     const smoke = CHECKS.find((check) => check.name === "migrator-smoke")!;
     expect(smoke.requires).toContain("ci-only");
     expect(smoke.skipReason).toMatch(/CI only/);
+  });
+});
+
+describe("changeKind", () => {
+  it("calls a diff of prose a documentation change", () => {
+    expect(changeKind(["docs/backlog/T-037-cost-a-change.md"])).toBe(
+      "documentation",
+    );
+    expect(changeKind(["CLAUDE.md", ".claude/skills/x/SKILL.md"])).toBe(
+      "documentation",
+    );
+  });
+
+  it("calls a diff with any code in it a code change", () => {
+    expect(changeKind(["lib/time/today.ts"])).toBe("code");
+    expect(changeKind([".claude/hooks/session-start-fetch.sh"])).toBe("code");
+    expect(changeKind([".github/workflows/ci.yml"])).toBe("code");
+  });
+
+  it("classifies a mixed diff by what it contains, not by what is read", () => {
+    // The whole rule: one code file makes it a code change however much prose
+    // is beside it, and the reviewer's intention does not enter into it.
+    expect(changeKind(["docs/x.md", "CLAUDE.md", "lib/time/today.ts"])).toBe(
+      "code",
+    );
+  });
+
+  it("answers `code` for a diff it cannot resolve", () => {
+    // The conservative side. A gate that said "documentation" here would run
+    // less than CI on a change nobody had looked at.
+    expect(changeKind([])).toBe("code");
+  });
+
+  it("does not mistake a file merely named like a document", () => {
+    expect(changeKind(["lib/domain/markdown.ts"])).toBe("code");
+    expect(changeKind(["scripts/docs/build.ts"])).toBe("code");
+  });
+});
+
+describe("routedAwayByKind", () => {
+  const check = (name: string) => CHECKS.find((c) => c.name === name)!;
+
+  it("routes test and build away from a documentation change", () => {
+    for (const name of ["test", "build"]) {
+      const reason = routedAwayByKind(check(name), "documentation");
+      // The reason names `ci.yml`, which is what makes the routing safe: the
+      // check still runs against the pushed commit (ADR-016).
+      expect(reason).toMatch(/ci\.yml `checks`/);
+    }
+  });
+
+  it("runs them for a code change", () => {
+    expect(routedAwayByKind(check("test"), "code")).toBeNull();
+    expect(routedAwayByKind(check("build"), "code")).toBeNull();
+  });
+
+  it("routes nothing else away from anything", () => {
+    // `hygiene` above all: its three checks are properties of a diff, not of
+    // the source tree, so every kind of change needs it.
+    const restricted = CHECKS.filter((c) => c.kinds !== undefined);
+    expect(restricted.map((c) => c.name)).toEqual(["test", "build"]);
+    expect(routedAwayByKind(check("hygiene"), "documentation")).toBeNull();
+    expect(routedAwayByKind(check("lint"), "documentation")).toBeNull();
+    expect(routedAwayByKind(check("typecheck"), "documentation")).toBeNull();
   });
 });

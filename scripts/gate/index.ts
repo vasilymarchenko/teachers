@@ -4,9 +4,10 @@
  *
  * It edits nothing and pushes nothing; `.gate/` is the only path it writes.
  *
- * **Nothing here ever refuses to run a *selected* check.** A check this
- * machine cannot run is `skipped` with the reason, in the table and in the
- * pull request body, and a skip is never reported as a pass. `--report`
+ * **Nothing here ever drops a *selected* check from the report.** A check this
+ * machine cannot run — and, since T-037, one this kind of change does not
+ * need — is `skipped` with the reason, in the table and in the pull request
+ * body, and a skip is never reported as a pass. `--report`
  * refuses a *conclusion* — a refused measurement would block the recovery,
  * because the check is what tells the truth and an environment fix changes no
  * file (T-029).
@@ -26,7 +27,14 @@ import { readFileSync } from "node:fs";
 
 import { config } from "dotenv";
 
-import { selectChecks, unmetRequirement, type Check } from "./checks";
+import {
+  changeKind,
+  routedAwayByKind,
+  selectChecks,
+  unmetRequirement,
+  type ChangeKind,
+  type Check,
+} from "./checks";
 import { runHygiene } from "./hygiene";
 import { unsupportedNodeVersion } from "./nodeVersion";
 import {
@@ -84,8 +92,29 @@ function tail(output: string): string {
   return output.split("\n").slice(-30).join("\n");
 }
 
-function runCheck(check: Check, files: readonly string[]): CheckOutcome {
+function runCheck(
+  check: Check,
+  files: readonly string[],
+  kind: ChangeKind,
+): CheckOutcome {
   const startedAt = Date.now();
+  // The kind first, and before the environment is probed at all: a check this
+  // change does not need is not worth asking a Docker daemon about, and the
+  // reason a reader wants next to the row is the routing one, not a missing
+  // `DATABASE_URL` that has nothing to do with the change (T-037). Its reason
+  // is used verbatim rather than deferring to `skipReason`, which says why a
+  // check cannot run here and would answer a different question.
+  const routed = routedAwayByKind(check, kind);
+  if (routed !== null) {
+    return {
+      name: check.name,
+      result: "skipped",
+      exitCode: null,
+      durationMs: 0,
+      reason: routed,
+    };
+  }
+
   const skip = unmetRequirement(check);
   if (skip !== null) {
     return {
@@ -176,18 +205,32 @@ function run(): number {
   }
 
   const selected = selectChecks(files);
+  // The second dimension of the routing (T-037). It decides nothing about
+  // *which* checks are selected — every one of them is still reported — only
+  // whether a selected check is worth running against a diff of this kind.
+  const kind = changeKind(files);
+  // Both causes of a skip count the same way here, as root `CLAUDE.md` puts
+  // them in one class: a check routed away by the kind and one this machine
+  // cannot run are both reported and not run, so neither belongs in the
+  // number the header promises. `unmetRequirement` is pure and probes the
+  // environment the same way `runCheck` will.
+  const running = selected.filter(
+    (check) =>
+      routedAwayByKind(check, kind) === null && unmetRequirement(check) === null,
+  ).length;
 
   console.log(
-    `gate: ${selected.length} checks for ${files.length} changed files on ` +
+    `gate: ${running} of ${selected.length} checks for ${files.length} ` +
+      `changed files (${kind}) on ` +
       `${commit.slice(0, 7)}${dirty ? " plus uncommitted work" : ""}`,
   );
 
   const outcomes: CheckOutcome[] = [];
   for (const check of selected) {
     process.stdout.write(`  → ${check.name}\n`);
-    // Every selected check runs. Short-circuiting is what turns one report into
-    // three round-trips.
-    outcomes.push(runCheck(check, files));
+    // Every selected check runs, or is reported with the reason it did not.
+    // Short-circuiting is what turns one report into three round-trips.
+    outcomes.push(runCheck(check, files, kind));
   }
 
   return finish(outcomes, commit, dirty, files);
@@ -246,7 +289,9 @@ function finish(
   // to spawn at all and captured only `""`. The node-version preflight never
   // sets `output`; it has only a `reason`, which the table row already shows,
   // and an empty `─── name ───` block under it said nothing twice.
-  for (const failure of failed.filter((outcome) => outcome.output !== undefined)) {
+  for (const failure of failed.filter(
+    (outcome) => outcome.output !== undefined,
+  )) {
     console.log(`\n─── ${failure.name} ───\n${tail(failure.output ?? "")}`);
   }
 
@@ -290,7 +335,9 @@ function report(): number {
 
   const last = readLastRun();
   if (last === null) {
-    blockers.push(`no gate run recorded in ${LAST_RUN_PATH} — run \`npm run gate\``);
+    blockers.push(
+      `no gate run recorded in ${LAST_RUN_PATH} — run \`npm run gate\``,
+    );
   } else {
     const failed = last.checks.filter((check) => check.result === "failed");
     if (failed.length > 0) {
@@ -366,7 +413,9 @@ function pullRequestChecks(): { state: string; summary: string } {
   if (result.status === 8 || /pending|in progress|no checks/i.test(output)) {
     return { state: "pending", summary: `pending or absent — ${tail(output)}` };
   }
-  if (/not found|no pull requests|authentication|auth|gh auth login/i.test(output)) {
+  if (
+    /not found|no pull requests|authentication|auth|gh auth login/i.test(output)
+  ) {
     return { state: "unreadable", summary: `unreadable — ${tail(output)}` };
   }
   return { state: "failing", summary: `red — ${tail(output)}` };
@@ -385,7 +434,9 @@ if (args.includes("--pr-block")) {
     // The run's own commit, never `git rev-parse HEAD`: committing the work
     // between the run and the paste would publish a run against one tree as a
     // statement about another.
-    console.log(pullRequestBlock(last.checks, last.commit, last.dirty ?? false));
+    console.log(
+      pullRequestBlock(last.checks, last.commit, last.dirty ?? false),
+    );
   }
 } else {
   // `process.exitCode` rather than `process.exit()`: stdout is asynchronous

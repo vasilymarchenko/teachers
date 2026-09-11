@@ -13,6 +13,44 @@ import { spawnSync } from "node:child_process";
 /** What a check needs from the machine before it can say anything at all. */
 export type Requirement = "docker" | "database" | "psql" | "ci-only";
 
+/**
+ * What kind of change a diff is (T-037).
+ *
+ * The second dimension of the routing, beside the paths. `paths` asks which
+ * *extra* checks a change pulls in; this asks whether a check that every change
+ * pulls in is worth running on this one at all. `build` and `test` read
+ * `app/**`, `lib/**` and `components/**` and nothing else, so a diff of prose
+ * pays several minutes for an answer that cannot differ from the last one.
+ *
+ * `documentation` is the narrow side and has to be: a file is prose only when
+ * it is a `.md` or sits under `docs/`, and anything else — a hook script, a
+ * JSON setting, a workflow — is `code`, because the suite reads several such
+ * files. A diff carrying one code file is a code change however much prose is
+ * beside it; the classification is by what the diff contains, never by which
+ * part of it the reader means to look at.
+ */
+export type ChangeKind = "code" | "documentation";
+
+/** A file with no code in it. Everything else makes the change a code change. */
+const PROSE_PATHS = [/\.md$/, /^docs\//] as const;
+
+/**
+ * The kind of change, from the paths alone.
+ *
+ * An empty list is `code`. There is nothing to classify, and the conservative
+ * answer is the one that checks more: a gate that reported "documentation" for
+ * a diff it could not resolve would run less than CI on a change nobody had
+ * looked at.
+ */
+export function changeKind(changedFiles: readonly string[]): ChangeKind {
+  if (changedFiles.length === 0) return "code";
+  return changedFiles.every((file) =>
+    PROSE_PATHS.some((pattern) => pattern.test(file)),
+  )
+    ? "documentation"
+    : "code";
+}
+
 export interface Check {
   /** The name that appears in the table, the ledger and the PR body. */
   name: string;
@@ -28,6 +66,15 @@ export interface Check {
    * Matched against repository-relative paths with `/` separators.
    */
   paths: readonly RegExp[] | null;
+  /**
+   * The kinds of change that need this check. Absent means every kind.
+   *
+   * A check this routes away is reported `skipped` with the reason rather than
+   * dropped from the table, for the same reason an unmet requirement is: the
+   * gate never quietly checks less than `ci.yml`, whose `checks` job runs on
+   * every push regardless (`ADR-016`).
+   */
+  kinds?: readonly ChangeKind[];
   requires?: readonly Requirement[];
   /** The `ci.yml` job this check corresponds to, if any. */
   ciJob?: "checks" | "integration" | "images";
@@ -78,18 +125,29 @@ export const CHECKS: readonly Check[] = [
     ciScript: "typecheck",
   },
   {
+    // Routed by kind as well as by path (T-037): the unit suite is mostly
+    // `lib/domain` over code the prose does not touch, so a diff of documents
+    // rarely changes its answer — but the convention tests read `.md` files
+    // (`skills.test.ts` reads both `SKILL.md`s), so sometimes it does, and
+    // then the failure lands in CI rather than here. `ci.yml` runs the suite
+    // on the pushed commit either way; `ADR-016` § Consequences is where that
+    // cost is declared rather than hidden.
     name: "test",
     argv: ["npm", "test"],
     paths: null,
+    kinds: ["code"],
     ciJob: "checks",
     ciScript: "test",
   },
   {
     // In `ci.yml` and in neither skill before T-029, which is how a pull
-    // request could be verified locally and be red in CI.
+    // request could be verified locally and be red in CI. Routed by kind for
+    // the same reason as `test`, and more so: it is the slowest check here and
+    // `next build` compiles no document at all.
     name: "build",
     argv: ["npm", "run", "build"],
     paths: null,
+    kinds: ["code"],
     ciJob: "checks",
     ciScript: "build",
   },
@@ -190,6 +248,25 @@ export function selectChecks(changedFiles: readonly string[]): Check[] {
 }
 
 /**
+ * Why this kind of change does not need this check, or `null` when it does.
+ *
+ * The reason names `ci.yml`, because that is what makes the routing safe: the
+ * `checks` job runs on every push with no path filter on its trigger, so a
+ * check routed away here is still run against the commit before anything can be
+ * merged. A reader of the table — or of the pull request body, which carries
+ * the same rows — is told which of the two ran it (`ADR-016`).
+ */
+export function routedAwayByKind(
+  check: Check,
+  kind: ChangeKind,
+): string | null {
+  if (check.kinds === undefined || check.kinds.includes(kind)) return null;
+  const job =
+    check.ciJob === undefined ? "ci.yml" : `ci.yml \`${check.ciJob}\``;
+  return `not needed for a ${kind} change — ${job} runs it on every push`;
+}
+
+/**
  * The first requirement this machine does not meet, with the reason that goes
  * in the table next to `skipped`, or `null` when the check can run.
  *
@@ -229,6 +306,8 @@ function probeEnvironment(requirement: Requirement): string | null {
 }
 
 function commandExists(command: string): boolean {
-  return spawnSync("sh", ["-c", `command -v ${command}`], { stdio: "ignore" })
-    .status === 0;
+  return (
+    spawnSync("sh", ["-c", `command -v ${command}`], { stdio: "ignore" })
+      .status === 0
+  );
 }

@@ -236,10 +236,12 @@ step with `ci.yml` the moment either changes. Which checks exist is
 `scripts/gate/checks.ci.test.ts` (`ADR-012`), and nothing about them belongs in
 this file.
 
-A check that cannot run here — no Docker daemon, no `DATABASE_URL` — comes back
-`skipped` with the reason. **A skip is never a pass.** Carry every one of them
-into the PR body with its reason; `npm run gate -- --pr-block` prints the block
-to paste.
+A check the gate does not run comes back `skipped` with the reason — because
+this machine cannot run it (no Docker daemon, no `DATABASE_URL`), or because
+the kind of change routed it away and `ci.yml` runs it on the pushed commit
+instead (`ADR-016`). **A skip is never a pass**, and the reason column is what
+tells the two apart. Carry every one of them into the PR body with its reason;
+`npm run gate -- --pr-block` prints the block to paste.
 
 Push with `git push -u origin <branch>`, then open the PR. Check for a PR
 template first (`.github/pull_request_template.md`,
@@ -318,8 +320,9 @@ run of rounds that did not converge is information; one more rarely adds any.
    That flag selects self-review defaults — no merge, no inline comments, and no
    questions to the user about anything this ticket already answers. It resolves
    the diff, reads the documents that govern the code you changed, runs the
-   `teachers-review-contract` agent and `/code-review`, and returns ranked
-   findings. The standard is those documents, not a checklist — so a rule you
+   passes the kind of that diff calls for — `/teachers-review`'s kind table is
+   the one place that states which those are, and this file does not restate it
+   — and returns ranked findings. The standard is those documents, not a checklist — so a rule you
    added to the architecture in this very ticket is one the review applies to it.
 
    **`--effort` names the level in `/code-review`'s vocabulary, and this line is
@@ -417,8 +420,9 @@ every check that did not run here.
 - Branch, commits and PR follow the naming and language conventions.
 - Backlog frontmatter, checkboxes and `README.md` agree with each other and with
   the work.
-- `npm run gate` is green on the pushed head, and every check it could not run
-  is reported as skipped, with its reason, rather than as a pass.
+- `npm run gate` is green on the pushed head, and every check it did not run —
+  whether this machine could not, or the kind of change routed it away — is
+  reported as skipped, with its reason, rather than as a pass.
 - Phase 7 looped to its exit criterion or to a cap, each round is in
   `.gate/findings.json` with every finding disposed, and the PR body reflects
   the final state.
