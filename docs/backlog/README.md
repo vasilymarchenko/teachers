@@ -10,7 +10,7 @@ for reading. Order is priority; the ID number is not.
 
 | ID | Title | Status | Depends on |
 |---|---|---|---|
-| [T-033](T-033-review-scope-and-depth.md) | Scope /teachers-review to the change under review, and make its depth a parameter | todo | T-017 |
+| [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | todo | T-017 |
 | [T-034](T-034-bound-the-ticket-loop-context.md) | Bound the context a /teachers-ticket run accumulates | todo | T-033 |
 | [T-002](T-002-project-scaffold.md) | Project scaffold — Next.js, Drizzle, Vitest, Postgres in Compose | done | — |
 | [T-001](T-001-expand-fixtures.md) | Golden fixtures for `expand()` — the hard-week walkthrough | done | — |
@@ -40,7 +40,7 @@ for reading. Order is priority; the ID number is not.
 | [T-026](T-026-deterministic-ticket-loop.md) | Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop | declined | T-017, T-024 |
 | [T-027](T-027-backlog-contract-convention-tests.md) | Convention tests for the backlog and document contract | todo | T-017 |
 | [T-028](T-028-index-invariant-composite-fk-join.md) | Make the index-usage invariant accept the composite-FK join | done | T-008 |
-| [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | in-progress | T-017, T-024 |
+| [T-029](T-029-gate-command-and-bounded-loop.md) | One gate command and a bounded review loop for /teachers-ticket | done | T-017, T-024 |
 | [T-030](T-030-one-migrator-smoke-definition.md) | One migrator smoke test, called by both CI and the gate | todo | T-029 |
 | [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | done | T-029 |
 | [T-032](T-032-gate-counts-under-report.md) | The gate can under-report — a missing origin/main, a dirty tree, an unresolvable opening head | todo | T-029 |
@@ -105,7 +105,7 @@ a cause the gate could not report, and T-032 collects three inputs the gate
 cannot resolve and reports as though it had. T-033 and T-034 are absent for the same reason, and are placed first in the
 table because every later ticket is worked and checked by the two skills they
 change: T-033 hangs off T-017, whose review skill it scopes and parameterises,
-and T-034 hangs off T-033 for the depth argument its phase 7 passes. T-028 hangs off T-008 and
+and T-034 hangs off T-033 for the effort argument its phase 7 passes. T-028 hangs off T-008 and
 is not drawn either: it is a defect in the invariant test that ticket's last
 criterion produced, not new work off it.
 No item waits on an open question any more: Q-002, the one that did, is answered

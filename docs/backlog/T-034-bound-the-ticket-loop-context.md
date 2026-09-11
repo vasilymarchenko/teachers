@@ -38,8 +38,12 @@ two habits that keep each call small.
 - [ ] Phase 7 exits when the previous round produced no finding inside the diff,
       without running a further round. Hitting a cap remains the other exit, and
       the caps stay in `scripts/gate/caps.ts` with no number restated in prose.
-- [ ] Phase 7 passes an explicit `--depth` to `/teachers-review`, and the skill
-      states which depth each round gets.
+- [ ] Phase 7 passes an explicit `--effort` to `/teachers-review` and states
+      which level each round gets — the level names are `/code-review`'s, which
+      `T-033` puts into `teachers-review` unchanged.
+- [ ] The frontmatter `description` of `teachers-ticket` names `--resume`
+      alongside the flags it already takes, so the arguments are readable from
+      the skill list.
 - [ ] Phases 6 and 7 do not run `npm run gate` against a tree it has already
       been run against; the ledger is read instead.
 - [ ] No `sleep` is used to wait for CI; the skill names what it reads instead.
@@ -64,6 +68,7 @@ in six of them, and the widest — the round-3 `/code-review` fork — reached a
 ~113K context of its own. The boundary in phase 7 earns its keep because the
 round's input and output are both small, not because it is a subagent.
 
-The phase-7 exit criterion touches `scripts/gate/caps.ts`, which `T-029` owns
-and is still `in-progress`; this ticket changes when the loop exits, not what
-the caps are.
+The phase-7 exit criterion touches `scripts/gate/caps.ts`, which `T-029`
+introduced; this ticket changes when the loop exits, not what the caps are. The
+run this ticket is measured against is the one that closed `T-029`'s last
+criterion.

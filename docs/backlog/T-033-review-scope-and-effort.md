@@ -1,7 +1,7 @@
 ---
 id: T-033
 type: ticket
-title: Scope /teachers-review to the change under review, and make its depth a parameter
+title: Scope /teachers-review to the change under review, and make its effort level a parameter
 status: todo
 depends_on: [T-017]
 refs:
@@ -17,18 +17,34 @@ refs:
 `/teachers-review` runs one fixed breadth on every invocation — `/code-review
 <target> high`, every pass, every self-review round — and reports findings from
 files the diff does not touch. Give the skill a resolved scope, so a review
-spends its budget on the change it was pointed at, and a resolved depth, so the
-caller chooses how much reading a review is worth.
+spends its budget on the change it was pointed at, and a resolved effort level,
+so the caller chooses how much reading a review is worth. The level is
+`/code-review`'s own argument: this skill borrows its vocabulary rather than
+inventing a second one beside it.
 
 ## Acceptance criteria
 
-- [ ] `--depth low|standard|deep` is resolved in phase 1 beside `--merge` and
+- [ ] `--effort low|medium|high|max` is resolved in phase 1 beside `--merge` and
       `--comment`, appears in the arguments table with its default in review mode
       and in self-review mode, and is stated in the same line that states the
-      target and the ticket.
-- [ ] One table in the skill maps `--depth` to what runs: the `/code-review`
-      effort level, how far phase 2's reading extends, and whether phase 6 runs.
-      No effort level is named anywhere else in the file.
+      target and the ticket. The name and the four level names are
+      `/code-review`'s, unchanged: one word means one thing in both skills.
+- [ ] The skill states what each level buys, in `/code-review`'s own terms — low
+      and medium give fewer, high-confidence findings; high and max give broader
+      coverage and may include uncertain ones — and attributes that sentence to
+      `/code-review` as its source, so a change there is detectable here rather
+      than silently contradicted.
+- [ ] One table in the skill maps `--effort` to what runs: the level passed
+      through to `/code-review`, how far phase 2's reading extends, and whether
+      phase 6 runs. No level is named anywhere else in the file.
+- [ ] The frontmatter `description` of `teachers-review` names `--effort` and its
+      levels beside `--merge` and `--comment`, which it already names, so a
+      caller reading the skill list sees what the argument does without opening
+      the file. `teachers-ticket`'s description does the same for the arguments
+      it takes.
+- [ ] `--effort` defaults to `high` in review mode, leaving a deliberate
+      standalone review as broad as it is today. What each self-review round
+      gets is `T-034`'s to set.
 - [ ] `/code-review` is invoked with the target phase 1 resolved **and** a scope
       restricted to the paths the diff touches.
 - [ ] A finding whose `file:line` lies outside the diff is not reported as a
@@ -37,17 +53,17 @@ caller chooses how much reading a review is worth.
       `## Outside this change` section of the report instead.
 - [ ] Phase 2 reads the documents governing the paths the diff touches, and the
       skill states how that set is derived from the diff rather than listing it.
-- [ ] Phase 6 runs at `--depth deep` only.
+- [ ] Phase 6 runs at `--effort max` only.
 - [ ] In self-review mode the skill reuses a gate run recorded in
       `.gate/ledger.jsonl` when that run's head and tree match the checked-out
       target, and names the reused run in the report; any difference in either
       re-runs the gate. The guarantee `T-017` found the hard way — a gate that
       ran against a different tree is not evidence — still holds.
-- [ ] The self-review default depth is stated in exactly one of
+- [ ] The self-review default level is stated in exactly one of
       `teachers-review` and `teachers-ticket`; the other references it.
 - [ ] The skill still carries no architectural rule and no check list
       (`ADR-001`, `ADR-012`).
-- [ ] An ADR records the scoping decision and the depth parameter, the
+- [ ] An ADR records the scoping decision and the effort parameter, the
       alternatives rejected, and what a narrowed review no longer catches.
 
 ## Notes
