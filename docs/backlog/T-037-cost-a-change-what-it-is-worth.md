@@ -2,7 +2,7 @@
 id: T-037
 type: ticket
 title: A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all
-status: todo
+status: done
 depends_on: [T-033]
 refs:
   - .claude/skills/teachers-review/SKILL.md
@@ -10,6 +10,8 @@ refs:
   - CLAUDE.md
   - scripts/gate/checks.ts
   - docs/architecture/decisions/ADR-012-one-check-definition.md
+  - docs/architecture/decisions/ADR-016-route-by-kind-of-change.md
+  - docs/architecture/design/T-029-gate-and-loop.md §2
   - docs/backlog/T-027-backlog-contract-convention-tests.md
 ---
 
@@ -23,35 +25,40 @@ change needs a `/teachers-ticket` run at all.
 
 ## Acceptance criteria
 
-- [ ] `/teachers-review`'s table gains a second dimension beside `--effort`: the
+- [x] `/teachers-review`'s table gains a second dimension beside `--effort`: the
       kind of change, derived from the paths in the diff. The table states which
       passes run for each kind, and it is the one place that states it.
-- [ ] For a diff with no code in it, `/code-review` does not run, and the report
+- [x] For a diff with no code in it, `/code-review` does not run, and the report
       says which passes ran rather than implying all of them did. The contract
       pass always runs: the ticket-against-documents check is the whole subject
       of a documentation change, not a reduced version of a code review.
-- [ ] A mixed diff — code and documents together — is a code change and runs
+- [x] A mixed diff — code and documents together — is a code change and runs
       everything. The classification is by what the diff contains, never by
       which parts of it the reviewer intends to look at.
-- [ ] The gate does not run `build` and `test` for a change that contains no
+- [x] The gate does not run `build` and `test` for a change that contains no
       code. `hygiene` still runs on every change: its three checks are
       properties of a diff, not of the source tree.
-- [ ] `ADR-012`'s guarantee survives. `ci.yml` runs its `checks` job on every
+- [x] `ADR-012`'s guarantee survives. `ci.yml` runs its `checks` job on every
       push, so a path filter added to `scripts/gate/checks.ts` alone makes the
       two definitions disagree, and `scripts/gate/checks.ci.test.ts` is what
       says so. Either both carry the filter or the parity test is scoped to say
       why they differ — what is not acceptable is the gate quietly checking less
       than CI does.
-- [ ] Root `CLAUDE.md` states when a `/teachers-ticket` run is needed and when a
+- [x] Root `CLAUDE.md` states when a `/teachers-ticket` run is needed and when a
       change is made directly. A change confined to `docs/backlog/**` is the
       tracker being updated, and does not get a ticket run of its own; what
       still holds for it is the backlog's own conventions and the checks `T-027`
       turns into tests.
-- [ ] The rule names what a direct change still owes: a branch, a commit
+- [x] The rule names what a direct change still owes: a branch, a commit
       message in the convention, and a pull request. Direct means no ticket run,
       never no review and never a push to `main`.
 
 ## Notes
+
+Done. `ADR-016` records the decision and the one divergence from `ADR-012` it
+creates; `changeKind()` in `scripts/gate/checks.ts` is the single definition of
+the kind, read by the gate and cited by `/teachers-review` rather than copied
+into it.
 
 The measured cost of the full loop on a change is
 `docs/architecture/design/T-034-context-cost-baseline.md`; this ticket is about

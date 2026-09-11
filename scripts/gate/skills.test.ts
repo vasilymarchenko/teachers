@@ -52,6 +52,18 @@ describe("the skills and the gate", () => {
     ]);
   });
 
+  it("routes the review by a kind it reads from the code, not from a copy", () => {
+    // T-037 gives the review a second dimension beside `--effort`, and the
+    // classification is `changeKind()` in `scripts/gate/checks.ts` — the same
+    // one the gate routes itself by, so one diff is one kind in both tools. A
+    // path list transcribed into the skill is the copy that goes on being
+    // right until the code changes; this asserts the pointer, the way the cap
+    // assertion above asserts a path rather than a number.
+    const review = sources.find((s) => s.path.includes("teachers-review"))!;
+    expect(review.text).toContain("changeKind()");
+    expect(review.text).toContain("scripts/gate/checks.ts");
+  });
+
   // That neither skill *states a cap value* is not asserted mechanically, and
   // deliberately. A regex cannot tell a numeral naming a cap from an ordinal
   // naming one of them — "the second and third are the loops T-026 left open"

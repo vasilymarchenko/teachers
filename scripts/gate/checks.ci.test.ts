@@ -19,6 +19,17 @@ import { CHECKS, type Check } from "./checks";
  * purpose — a docs build, a release note — must not have to become a gate check
  * to keep this suite green.
  *
+ * **One divergence is deliberate, and `where the gate deliberately checks less`
+ * below is where it is declared.** `test` and `build` carry `kinds: ["code"]`,
+ * so the gate routes them away from a diff of prose while `ci.yml`'s `checks`
+ * job runs them on every push (T-037, `ADR-016`). Set equality above is
+ * untouched by that — both files still hold the same four scripts — and the
+ * property that keeps the divergence safe is asserted here instead: the push
+ * trigger carries no path filter, so the checks the gate routed away are run
+ * against the commit before anything can be merged. The day a `paths:` filter
+ * appears on that trigger the two definitions really do differ, and this test
+ * is what makes someone say so.
+ *
  * There is no YAML parser in this project and this does not justify adding one:
  * the file is sliced at its job headers instead. That is a few lines more than
  * matching the whole file, and it is the reason to prefer it — a whole-file
@@ -127,12 +138,55 @@ describe(`the gate and ${WORKFLOW}`, () => {
 
   it("claims a job for every check that has one, and none for hygiene", () => {
     const jobs = new Set(
-      CHECKS.flatMap((check) => (check.ciJob === undefined ? [] : [check.ciJob])),
+      CHECKS.flatMap((check) =>
+        check.ciJob === undefined ? [] : [check.ciJob],
+      ),
     );
     expect([...jobs].sort()).toEqual([...GATE_JOBS].sort());
     // The three things it looks for are properties of a diff, and CI checks
     // out a commit rather than reviewing one.
-    expect(CHECKS.find((check) => check.name === "hygiene")?.ciJob).toBeUndefined();
+    expect(
+      CHECKS.find((check) => check.name === "hygiene")?.ciJob,
+    ).toBeUndefined();
+  });
+});
+
+describe("where the gate deliberately checks less than ci.yml", () => {
+  /** Everything above `jobs:` — `on:`, `concurrency:`, `env:`, `permissions:`. */
+  const trigger = workflow.slice(0, workflow.indexOf("\njobs:"));
+
+  it("declares every check the gate routes by kind", () => {
+    // Named, not counted. A third one added silently is the failure this
+    // assertion exists to catch: the divergence is allowed because it is
+    // declared here and argued in ADR-016, and a check that slipped in without
+    // either would be the gate quietly checking less than CI.
+    const byKind = CHECKS.filter((check) => check.kinds !== undefined);
+    expect(byKind.map((check) => check.name)).toEqual(["test", "build"]);
+    for (const check of byKind) {
+      expect(check.kinds).toEqual(["code"]);
+      // The job that runs it unconditionally, which is what makes the routing
+      // safe — and what the skip reason names in the table and the PR body.
+      expect(check.ciJob).toBe("checks");
+    }
+  });
+
+  it("runs the checks job on every push, with no path filter on the trigger", () => {
+    // ADR-016's whole premise. A `paths:` or `paths-ignore:` here would mean a
+    // documentation change runs `test` and `build` in neither place, and the
+    // gate's skip reason — "ci.yml `checks` runs it on every push" — would be
+    // a false statement printed on every run.
+    expect(trigger).toMatch(/^on:$/m);
+    expect(trigger).toMatch(/^ {2}push:$/m);
+    expect(trigger).not.toMatch(/^\s+paths(-ignore)?:/m);
+    // The slice really is the trigger block and not the whole file, or the
+    // assertion above would be vacuous the moment `jobs:` moved.
+    expect(trigger).not.toContain("runs-on:");
+  });
+
+  it("puts no condition on the checks job itself", () => {
+    // A job-level `if:` would skip the whole job for some commits, which is the
+    // same hole as a path filter on the trigger by another route.
+    expect(slices.get("checks")).not.toMatch(/^ {4}if:/m);
   });
 });
 
@@ -195,9 +249,8 @@ describe("the slicer itself", () => {
   });
 
   it("reads both spellings of the unit suite", () => {
-    expect(npmScriptsIn("- run: npm test\n- run: npm run test:integration")).toEqual([
-      "test",
-      "test:integration",
-    ]);
+    expect(
+      npmScriptsIn("- run: npm test\n- run: npm run test:integration"),
+    ).toEqual(["test", "test:integration"]);
   });
 });

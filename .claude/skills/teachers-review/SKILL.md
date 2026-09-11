@@ -1,6 +1,6 @@
 ---
 name: teachers-review
-description: Review a pull request, a branch, or the uncommitted working tree against this repository's own documents — the acceptance criteria of the ticket it implements, the architecture, and the conventions. It reviews only, never edits, and touches a pull request afterwards solely under its two policy flags — --merge=no|ask|auto, which defaults to asking, and --comment/--no-comment, which defaults to posting. --effort low|medium|high|max, defaulting to high, sets how much reading one review is worth and is the level passed through to /code-review. Use when the user invokes /teachers-review (optionally with a PR number, a PR URL or a branch name), asks to "review PR NNN", "review my changes", "review this branch before I push", or when /teachers-ticket phase 7 reviews its own PR.
+description: Review a pull request, a branch, or the uncommitted working tree against this repository's own documents — the acceptance criteria of the ticket it implements, the architecture, and the conventions. It reviews only, never edits, and touches a pull request afterwards solely under its two policy flags — --merge=no|ask|auto, which defaults to asking, and --comment/--no-comment, which defaults to posting. --effort low|medium|high|max, defaulting to high, sets how much reading one review is worth and is the level passed through to /code-review; which passes run at all is routed separately, by the kind of change the diff's paths make it. Use when the user invokes /teachers-review (optionally with a PR number, a PR URL or a branch name), asks to "review PR NNN", "review my changes", "review this branch before I push", or when /teachers-ticket phase 7 reviews its own PR.
 ---
 
 # Review
@@ -66,6 +66,44 @@ nothing outside it does, so changing a default is an edit to the block and to
 the description, and no phase below can contradict the table because no phase
 below names a level at all.
 
+**The kind of change — the second dimension, beside the effort.** `--effort`
+says how far out to read; the kind says which passes there are to run at all.
+
+It is not an argument and cannot be given as one. It is derived from the paths
+in the diff, and **the derivation is `changeKind()` in `scripts/gate/checks.ts`**
+— the same function `npm run gate` routes itself by, so one diff is one kind in
+both tools. Read it there rather than from a copy here: which paths count as
+prose is a list that changes, and a list transcribed into this file is the one
+that goes on being right until the code changes, after which nothing says it is
+wrong. The two kinds are `code` and `documentation`, and the short of it is
+whether the diff has any code in it at all.
+
+| Kind | Contract pass | `/code-review` | Your own reading of the diff | Phase 3's verdict |
+|---|---|---|---|---|
+| `code` | yes | yes | yes | yes |
+| `documentation` | yes | **no** | yes | yes |
+
+**This table is the one place that states which passes a kind runs.** No phase
+below restates it; phase 4 sends what the row in force says and no more.
+
+Two things the table is saying, spelled out because getting either wrong costs a
+whole pass:
+
+- **The contract pass always runs.** The ticket against the documents is the
+  *whole subject* of a documentation change, not a reduced version of a code
+  review — a `README.md` row that disagrees with the frontmatter it mirrors, a
+  criterion still naming a renamed argument, a `## Notes` paragraph calling a
+  ticket `in-progress` after it was set `done`. All three are defects a diff of
+  prose can carry and a generic code review cannot see.
+- **A mixed diff is a code change and runs everything.** The classification is by
+  what the diff *contains*, never by which parts of it you intend to look at. One
+  `.ts` file in a diff of twenty documents makes it a code change, and the whole
+  of it is reviewed as one.
+
+**The report says which passes ran.** Not "both passes ran" when one of them was
+routed away — name the kind, and name the passes, so nobody reads an empty
+`/code-review` result into a review that never ran it.
+
 **An explicit flag always wins over a mode default**, in both directions: a
 `/teachers-ticket` run told `--comment` posts comments, and a standalone review told
 `--merge=no` does not offer to merge.
@@ -117,8 +155,10 @@ If none resolves, say so in one line — *"no ticket id found; reviewing against
 the documents only"* — and carry on. Do not guess a ticket from a resemblance; a
 review against the wrong acceptance criteria is worse than a review against none.
 
-State the target, the ticket, the arguments in force and the diff size in one
-line before moving on.
+State the target, the ticket, the arguments in force, the kind of change and
+the diff size in one line before moving on. The kind belongs in that line for
+the same reason the arguments do: a pass nobody saw routed away is a pass the
+reader will assume ran.
 
 ## Phase 2 — Read the standard
 
@@ -243,16 +283,19 @@ Nothing a rule can decide should cost a reviewer's attention. A failure here is
 a finding and does not stop the review — a broken build usually has more wrong
 with it than the error says.
 
-## Phase 4 — Two passes, in parallel
+## Phase 4 — The passes the kind calls for, in parallel
 
-Send both in one message so they run at once.
+**Which passes there are is the kind table in phase 1.** Read the row in force
+and send exactly what it says, in one message so they run at once. On a
+documentation change that is the contract pass alone, and the phase is finished
+when it returns — do not substitute something for the pass that was routed away.
 
 1. **`teachers-review-contract`** (the subagent) — the diff against the ticket and the
    documents. Give it the diff or the command that produces it, the ticket id,
    and the ticket path. This is the pass a general-purpose reviewer cannot do,
    because it needs the ticket.
 2. **`/code-review`** — generic correctness, reuse, simplification, efficiency.
-   Invoke it with the target phase 1 resolved, the level the effort table gives
+   Only on the kind whose row calls for it. Invoke it with the target phase 1 resolved, the level the effort table gives
    for the `--effort` in force, **and** a scope restricted to the paths the diff
    touches.
 
@@ -292,6 +335,9 @@ Then judge the diff against what you read in phase 2 yourself. That is the
 architecture pass, and it is yours: the contract agent owns the ticket and the
 documents' consistency with each other, `/code-review` owns generic correctness,
 and neither knows whether this diff obeys the invariants the architecture states.
+It runs on every kind — the invariants a documentation change can break are the
+language-by-audience rule, the no-fact-in-two-places rule and the glossary, and
+no other pass reads for them.
 
 ## Phase 5 — Reconcile, drop, rank, report
 
@@ -350,7 +396,13 @@ having reached the condition under which that decision said it should be
 revisited, and code that contradicts a recorded default or implements it in a
 second place. Read the decision before you report against it.
 
-**Reconcile** the two passes: one defect found by both is one finding, not two —
+**Say which passes ran**, at the head of the report, from the kind table rather
+than from a memory of what you sent: the kind, and the passes that kind runs. A
+report that says "both passes ran" on a change where one was routed away is the
+one failure this routing can cause, and it costs the reader the distinction
+between a pass that found nothing and a pass that never looked.
+
+**Reconcile** the passes that ran: one defect found by both is one finding, not two —
 two phrasings of one problem read as two problems. **Rank** by severity: a security or
 data-correctness defect, then a violated architectural invariant, then a broken
 contract with the ticket or the documents, then reuse and simplification.
@@ -487,7 +539,10 @@ differences:
 - A verdict was established against this head and this tree — produced here, or
   read from a record of the same — or the report said which target's verdict
   could not be read at all.
-- Both passes ran, plus your own reading of the diff against the architecture.
+- The kind of change was stated, and every pass its row calls for ran — the
+  contract pass on every kind, plus your own reading of the diff against the
+  architecture — and the report says which ran rather than implying all of them
+  did.
 - Every reported finding quotes the rule it violates and names a defect this
   change caused — including a document the change obliged to update and did not;
   everything else was dropped, except a security or data-correctness defect it
