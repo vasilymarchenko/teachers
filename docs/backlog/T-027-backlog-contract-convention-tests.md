@@ -50,6 +50,19 @@ same shape as `T-022`.
       `docs/architecture/glossary.md` appears in the code, and that a term with
       no code yet is marked as such in the glossary rather than being
       indistinguishable from one that has silently drifted.
+- [ ] A test asserts the status-against-checkboxes invariant: a ticket that is
+      `done` has every acceptance-criteria box ticked, and a ticket whose boxes
+      are all ticked is `done`. `declined` is exempt, and so is a ticket with no
+      criteria. It enforces what `/teachers-ticket` phase 7 states:
+
+      > Tick a box **only where the evidence names a `file:line` or a test**;
+      > anything else stays unticked with the reason, and the ticket stays
+      > `in-progress`.
+
+- [ ] That test admits the one shape a `done` ticket may legitimately carry an
+      unticked box in: the box names a `T-NNN` that exists, carrying what is left
+      — see the homework below. An unticked box in a `done` ticket that names no
+      such ticket is the defect the check is for.
 - [ ] Each test fails against a deliberately broken fixture — a README row edited
       away from its frontmatter, a `refs:` path that does not exist, a glossary
       identifier that appears nowhere — so a green run means the check ran rather
@@ -97,6 +110,21 @@ glossary and in no code. Both are legitimately second-phase — `README.md`'s
 *Coverage* records that the class list (§9) has no tickets by design — so the
 check cannot be shipped as written. The glossary needs a way to say "named, not
 yet built", and that is a change to the glossary, not only to a test.
+
+The status-against-checkboxes check, run against `main` at `9797c76`, reported
+one: `T-024` is `done` with one of fifteen boxes unticked. It is correct as it
+stands — the box asks for branch protection on `main`, which is repository
+configuration that no commit can contain, and its own text says so and names
+`T-025` as carrying it. So the naive rule fails correct state, which is the
+second criterion above: a `done` ticket may leave a box unticked when that box
+names the ticket the remainder moved to. Narrowed that way the check passes the
+repository today and still catches the case it exists for — a run interrupted
+after the work but before phase 7, or a phase 7 that ticked the boxes and forgot
+the `status`.
+
+It does **not** catch a run that stopped before ticking anything: boxes unticked
+and `status: in-progress` is a consistent state, and the check cannot know the
+work was finished. Resuming such a run is `T-034`'s `--resume` and `T-035`.
 
 **A fourth check was considered and rejected: the language rule.** Root
 `CLAUDE.md` fixes language by audience, and a test for "no Ukrainian in the
