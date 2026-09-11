@@ -125,10 +125,13 @@ export const CHECKS: readonly Check[] = [
     ciScript: "typecheck",
   },
   {
-    // Routed by kind as well as by path (T-037): the unit suite reads
-    // `lib/**`, `app/**`, `components/**` and `scripts/**`, so a diff of prose
-    // cannot change its answer. `ci.yml` runs it on the pushed commit either
-    // way — `ADR-016` is why that divergence is declared rather than hidden.
+    // Routed by kind as well as by path (T-037): the unit suite is mostly
+    // `lib/domain` over code the prose does not touch, so a diff of documents
+    // rarely changes its answer — but the convention tests read `.md` files
+    // (`skills.test.ts` reads both `SKILL.md`s), so sometimes it does, and
+    // then the failure lands in CI rather than here. `ci.yml` runs the suite
+    // on the pushed commit either way; `ADR-016` § Consequences is where that
+    // cost is declared rather than hidden.
     name: "test",
     argv: ["npm", "test"],
     paths: null,

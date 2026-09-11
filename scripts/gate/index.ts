@@ -209,8 +209,14 @@ function run(): number {
   // *which* checks are selected — every one of them is still reported — only
   // whether a selected check is worth running against a diff of this kind.
   const kind = changeKind(files);
+  // Both causes of a skip count the same way here, as root `CLAUDE.md` puts
+  // them in one class: a check routed away by the kind and one this machine
+  // cannot run are both reported and not run, so neither belongs in the
+  // number the header promises. `unmetRequirement` is pure and probes the
+  // environment the same way `runCheck` will.
   const running = selected.filter(
-    (check) => routedAwayByKind(check, kind) === null,
+    (check) =>
+      routedAwayByKind(check, kind) === null && unmetRequirement(check) === null,
   ).length;
 
   console.log(

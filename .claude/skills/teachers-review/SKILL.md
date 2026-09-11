@@ -258,8 +258,10 @@ npm run gate
 
 One command, and the only one this skill runs to check a change. It resolves
 what the branch adds to `origin/main` plus the uncommitted change, selects the
-checks that change needs, runs **all** of them without short-circuiting, prints
-one table and exits non-zero if any failed. A review that reports a lint error
+checks that change needs, runs **all** of them it is going to run without
+short-circuiting — a check it does not run is reported with the reason, never
+skipped over silently and never hidden by an earlier failure — prints one table
+and exits non-zero if any failed. A review that reports a lint error
 while three tests are also red costs the author three round-trips instead of
 one — and a chain of commands joined so that the first failure hides the rest is
 precisely how that happens. The gate is what stops it.
@@ -271,9 +273,12 @@ a check list copied here is a list that disagrees with the workflow the first
 time the workflow changes, which is the same reason this skill carries no
 architectural rule.
 
-A check this machine cannot run — no Docker daemon, no `DATABASE_URL` — comes
-back `skipped` with the reason. **Report it as a skip, with the reason. Never
-imply it passed.**
+A check the gate does not run comes back `skipped` with the reason — because
+this machine cannot run it (no Docker daemon, no `DATABASE_URL`), or because
+the kind of change routed it away and `ci.yml` runs it on the pushed commit
+instead (`ADR-016`). **Report it as a skip, with the reason. Never imply it
+passed** — and the reason column is what tells a missing capability here from a
+check CI owns.
 
 Where the verdict came from elsewhere, carry its skips too: a `skipped` row in a
 ledger written on this machine is still a skip, and `ci.yml` is worth reading
