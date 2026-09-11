@@ -10,6 +10,7 @@ for reading. Order is priority; the ID number is not.
 
 | ID | Title | Status | Depends on |
 |---|---|---|---|
+| [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | todo | — |
 | [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | todo | T-017 |
 | [T-034](T-034-bound-the-ticket-loop-context.md) | Bound the context a /teachers-ticket run accumulates | todo | T-033 |
 | [T-035](T-035-land-a-pull-request.md) | /teachers-land — the fix-and-merge loop for a pull request with no ticket bound | todo | T-034 |
@@ -103,8 +104,11 @@ those same edges and is `declined`; T-029 replaces it. T-030, T-031 and T-032 ha
 and are absent for the same reason: T-030 finishes one check T-029 routed but
 could not run, T-031 names the runtime that made two of its checks fail for
 a cause the gate could not report, and T-032 collects three inputs the gate
-cannot resolve and reports as though it had. T-033, T-034 and T-035 are absent for the same reason, and are placed first in
-the table because every later ticket is worked and checked by the skills they
+cannot resolve and reports as though it had. T-036 is absent from the diagram for the same reason and depends on nothing: it
+makes every session start from a current `main`, which is a precondition of
+working any item rather than a step in one, so it is placed first and can be
+done before the chain below. T-033, T-034 and T-035 are absent for the same
+reason, and are placed after it because every later ticket is worked and checked by the skills they
 change. They are one chain, in that order: T-033 hangs off T-017, whose review
 skill it scopes and parameterises; T-034 hangs off T-033 for the effort argument
 its phase 7 passes, and extracts the fix loop as a named unit while rewriting
@@ -122,7 +126,7 @@ too; T-013 is what remains of the calendar work.
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031, T-032, T-033, T-034 and T-035 are
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031, T-032, T-033, T-034, T-035 and T-036 are
 not product scope: they are the review tooling those tickets are checked by, and
 the documents that tooling reads. T-024 is not product scope either, and is not review tooling: it
 is the deployment path checking itself, which is why it hangs off T-015 rather
