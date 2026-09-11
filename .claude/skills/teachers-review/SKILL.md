@@ -58,11 +58,13 @@ on the user's behalf. Asked for it, say that and stop.
 | `high` | `high` | that, plus the architecture sections for the layers those paths belong to, the glossary for the terms they use, and `docs/tech-stack.md` | no |
 | `max` | `max` | that, plus the code the diff does not change but depends on, read for the assumptions the change makes of it | yes |
 
-A level is named in three places in this file and nowhere else: the frontmatter
+A level is named in exactly two places in this file: the frontmatter
 `description`, so the skill list shows what the argument does without the file
-being opened; the argument row above; and this table. Change a default and all
-three are the edit. **No phase below names one** — a phase says what it does and
-which column decides whether it runs, so no phase can contradict the table.
+being opened, and **this block** — from the argument row above, through both
+paragraphs, to the table itself. Everything inside it may name a level and
+nothing outside it does, so changing a default is an edit to the block and to
+the description, and no phase below can contradict the table because no phase
+below names a level at all.
 
 **An explicit flag always wins over a mode default**, in both directions: a
 `/teachers-ticket` run told `--comment` posts comments, and a standalone review told
@@ -85,9 +87,17 @@ git diff HEAD                                              # the working tree
 
 **Check the target out.** `gh pr diff` fetches a patch and changes nothing on
 disk, so a gate run after it tests whatever you were already sitting on — a
-clean `main` type-checks perfectly while the PR under review does not. Either
-check the target out, or say in the report that the gate did not run against it.
-Note where you started, and return there when the review is done.
+clean `main` type-checks perfectly while the PR under review does not. Note
+where you started, and return there when the review is done.
+
+This is no longer only phase 3's problem. Phase 2 derives every document it
+reads from the range this checkout defines, so reviewing a pull request from a
+`main` checkout yields an empty range, no documents, a generic pass scoped to
+nothing, and an empty report indistinguishable from a clean change. **If the
+target cannot be checked out**, take the paths from the pull request itself —
+`gh pr diff <n> --name-only` — and say in the report that the tree was not the
+target's, so no local verdict was produced against it. What you must never do is
+carry on from the wrong tree silently.
 
 Then find the ticket, because half the review is unusable without one.
 `--self-review T-NNN` names it, and there is nothing to search for; otherwise
@@ -112,20 +122,20 @@ holds mechanics, which holds conventions — and that map, not this file, is how
 you find what applies to the diff in front of you.
 
 **Which documents, is derived from the diff — never from a list kept here.**
-Start from the paths the change touches:
+Start from the paths the change touches, over the range phase 1 resolved:
 
 ```sh
 git diff --name-only origin/main...HEAD      # a pull request, or a branch
 git diff --name-only HEAD                    # the working tree
 ```
 
-Take the range phase 1 resolved, not this one by habit: on a dirty working tree
+Take that range, not the first line by habit: on a dirty working tree
 `origin/main...HEAD` is empty, and a review that derives no paths reads no
 document, scopes the generic pass to nothing, and reports an empty result that
 looks exactly like a clean change.
 
-and follow the map outward from them: the conventions file of every directory
-those paths sit in — a directory may carry its own, and it wins over the root
+Then follow the map outward from those paths: the conventions file of every
+directory they sit in — a directory may carry its own, and it wins over the root
 for that subtree — then the ticket and its `refs:` (`path §N` means section N),
 the decision records covering that area, the architecture sections for the
 layers those paths belong to, and the glossary for every domain term they use. A
@@ -154,7 +164,7 @@ request, a better-equipped machine has usually produced it already.
 | Target | Where the verdict comes from |
 |---|---|
 | a pull request | what `ci.yml` reported on the head under review — `ADR-007` makes it the authoritative gate, and it runs the checks this machine reports as `skipped` |
-| a pull request whose CI verdict is not readable yet | the `.gate/ledger.jsonl` row for that head, written by whoever last gated it |
+| a pull request whose CI verdict is not readable yet | `.gate/last-run.json`, if that run was against this head and tree |
 | a branch, or the working tree | `npm run gate`, because nothing else has |
 
 **The rows are in precedence order and the first that fits wins.** Self-review is
@@ -163,6 +173,17 @@ because the caller has just pushed and CI has not finished. Where CI's verdict o
 that same head becomes readable it supersedes the ledger row — it ran the checks
 the local run reports as `skipped`, so the two are not equal evidence even when
 they agree.
+
+**Read a local verdict as a whole run, never as a row.** `.gate/ledger.jsonl` is
+append-only with one row per check per run, so a head that was gated, failed,
+fixed and re-gated carries passing and failing rows for the same `commit`, and
+"the row for that head" would let a reviewer find one passing `lint` row and
+merge a branch whose `build` failed. `.gate/last-run.json` is the whole of the
+last run — its `commit`, its `dirty`, and every check with its result — and
+`npm run gate -- --report` is what reads it and refuses when it does not match
+`HEAD`. Use those. Selecting rows out of the ledger by hand reimplements a
+question the gate already answers, which is what `ADR-012` exists to stop; the
+ledger is where the loop's counts come from, not where a verdict is.
 
 **The local gate still runs wherever no verdict on this exact head exists, is
 pending, or cannot be read** — `gh` unauthenticated, a run still in flight, no
@@ -242,10 +263,12 @@ Send both in one message so they run at once.
    *target* — an alternative to a pull request number, not a filter laid over
    one — so passing both asks for something its interface does not promise, and
    the paths may simply be ignored. Pass the target first and the paths after
-   it, and read the result: a pass that returns nothing at all on a substantial
-   diff has most likely taken the paths as its target and read an empty working
-   tree, and the answer is to re-run it with the target alone rather than to
-   report that both passes ran. **What actually enforces the scope is phase 5**,
+   it, and read *what the result says it reviewed*. An empty finding list is
+   not the signal — a clean pull request gives one too, and re-running on that
+   guess doubles the cost of the pass in exactly the case this scoping was
+   meant to make cheap. The signal is the pass reporting that it found no
+   changes, read an empty tree, or reviewed files outside the scope you gave
+   it. Then re-run with the target alone, and say in the report that you did. **What actually enforces the scope is phase 5**,
    which drops a finding the change did not cause whatever produced it. The
    argument is the saving; the drop rule is the guarantee.
 
@@ -393,9 +416,12 @@ review target.**
 Whatever the policy, merging requires all of:
 
 - the review reported **no findings** — not "none serious", none;
-- a verdict was established **on the head under review, against its tree**, and
-  it passed — phase 3's rule, not a local gate run specifically — and any
-  required checks on the pull request are green;
+- **`ci.yml` reported green on the head being merged**, and any required checks
+  on the pull request are green. Merging is the one place phase 3's fallbacks do
+  not carry: a local run's verdict lives in a gitignored file on one machine and
+  skips the checks CI does not, so `ADR-007`'s authoritative gate is the only
+  one a merge may rest on. A verdict that is merely established is enough to
+  review on and never enough to merge on;
 - `gh` reports the pull request mergeable, with no conflict and no block.
 
 If any of those is unmet, say which and stop. `auto` is not an override: it

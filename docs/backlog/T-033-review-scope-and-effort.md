@@ -10,6 +10,7 @@ refs:
   - .claude/skills/teachers-ticket/SKILL.md
   - docs/architecture/decisions/ADR-001-review-reads-the-documents.md
   - docs/architecture/decisions/ADR-012-one-check-definition.md
+  - docs/architecture/decisions/ADR-015-review-scoped-to-the-change.md
 ---
 
 ## Goal
@@ -95,6 +96,24 @@ criteria together describe: a level appears in the argument row, the buys
 sentence and the effort table — all adjacent — and in the frontmatter, and **no
 phase below the table names one**, so no phase can contradict it. The skill
 states those places rather than claiming the table is the only one.
+
+Criterion 7 is written as a location test — a finding whose `file:line` lies
+outside the diff. It is implemented as a **causation** test, which the location
+of a line answers in nearly every case but not in one: a file this change
+obliged to update and did not — a `README.md` row against the frontmatter it
+mirrors, the glossary against a term the change introduces. That defect sits
+outside the diff and this change caused it, and a location test would drop
+exactly the findings `.claude/agents/teachers-review-contract.md` exists to
+produce, which `docs/backlog/CLAUDE.md` calls "a bug, not a stale detail". The
+criterion's purpose — that a round is not spent on code nobody touched — is
+unaffected.
+
+Criterion 10 names self-review as a case of the verdict rule. It is implemented
+as a **precedence**: CI's verdict on the head, then the ledger row for it, then
+a local run. Self-review is not a fourth target but the second row's usual case,
+because the caller has just pushed and CI has not finished. Stated as a mode it
+would let a ledger row outrank a finished CI run on the same head, and `ADR-007`
+makes that run the authoritative gate.
 
 Evidence: the efficiency analysis of session `4c401314` (the `/teachers-ticket
 T-021` run). Round 3 of that run's review loop cost 31.6% of the session and

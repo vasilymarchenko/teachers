@@ -23,6 +23,15 @@ round alone was 9.46M tokens, roughly double either of the two rounds before it.
 The loop had to dispose of findings about code the branch could not fix without
 widening itself.
 
+`ADR-014`, accepted the same day, states that `/teachers-review` "reports
+findings, proposes in phase 6, and edits nothing", and rests part of its case for
+extracting the fix loop on that phase existing. Gating phase 6 by effort level
+narrows when it runs without removing it, so that decision is not superseded and
+`ADR-014`'s Decision still describes this skill — but the concession below, that
+the phase then runs in no invocation the repository makes by default, is a cost
+`ADR-014` did not anticipate, and it is named here rather than left to be
+discovered from the two records together.
+
 `ADR-001` anticipated this. It settled that the review tooling reads the
 documents at review time rather than carrying a copy of them, and named the
 condition for revisiting: *"if the read-everything pass becomes too expensive to
@@ -100,22 +109,54 @@ review; `/teachers-review` references the caller and states no self-review value
 
 **Both passes are scoped to the change.** Phase 2 derives the documents it reads
 from the paths the diff touches; phase 4 passes `/code-review` the resolved
-target *and* those paths. A finding whose `file:line` lies outside the diff is
-not a finding of this review and owes the caller no disposition — except a
-security or data-correctness defect, which is named in a separate
-`## Outside this change` section that nothing in the review's verdict or the
-caller's loop turns on.
+target *and* those paths, and that argument is a saving rather than a guarantee,
+because a path in `/code-review`'s grammar is a target and not a filter over one.
 
-**Phase 3 establishes a verdict rather than always producing one**: on a pull
-request, what `ci.yml` reported on the head under review (`ADR-007`); in
-self-review, the `.gate/ledger.jsonl` row for that head; on a branch or working
-tree, `npm run gate`, because nothing else has. The local gate still runs
-wherever no verdict on this exact head exists, is pending, or cannot be read.
+**What enforces the scope is a causation test, not a line-number test.** A
+finding the change did not cause is not a finding of this review and owes the
+caller no disposition; a `file:line` outside the diff is how that is nearly
+always read. The one place the two part company is a file the change obliged to
+update and did not — a backlog row against the frontmatter it mirrors, an index
+against the file it lists, the glossary against a term the change introduces.
+That defect's `file:line` is outside the diff and the change caused it, so it is
+reported like any other finding. A location test would drop exactly those, which
+are the whole lens of the contract pass and one line each for the author to fix;
+`T-033`'s criterion is written as a location test and this is the reading taken,
+recorded in that ticket's `## Notes`.
+
+A security or data-correctness defect the change did **not** cause is the
+remaining exception: named in a separate `## Outside this change` section that
+nothing in the review's verdict or the caller's loop turns on, and routed to the
+reader rather than to a phase that may not run.
+
+**Phase 3 establishes a verdict rather than always producing one**, by a rule
+that resolves in precedence order: on a pull request, what `ci.yml` reported on
+the head under review (`ADR-007`); where that is not readable yet,
+`.gate/last-run.json`, read as a whole run rather than as rows selected by hand
+out of the append-only ledger, which carries both the failing and the passing
+row for a head that was gated twice; on a branch or working tree,
+`npm run gate`, because nothing else has. The local gate still runs wherever no
+verdict on this exact head exists, is pending, or cannot be read.
+
+Self-review is not a fourth case in that rule. It is a pull request, and it is
+the second row's usual one, because the caller has just pushed and CI has not
+finished — which is what `T-033`'s criterion means by "in self-review, the
+ledger row". Stating it as a *mode* would make the ledger row outrank a finished
+CI run on the same head, and `ADR-007` makes that run the authoritative gate; a
+rule cannot borrow CI's authority for the cheap path and then override it. The
+reading is recorded in `T-033`'s `## Notes`.
+
 What the guarantee turns on is **the head and the tree the verdict was produced
 against, not which command produced it**: a verdict from a different head or a
 dirty tree is not evidence, whether it came from CI, from the ledger or from a
 local run. Where no verdict can be established, the report says so — never that
 it passed.
+
+**A merge rests on `ci.yml` alone.** Phase 3's fallbacks make a review possible
+where CI cannot be read; they do not make a merge safe. A local verdict lives in
+a gitignored file on one machine and skips the checks that machine cannot run,
+so `--merge` requires the authoritative gate's own verdict on the head being
+merged and nothing weaker.
 
 **No document content is cached into the tooling.** `ADR-001` holds unchanged:
 what narrows is which documents a given diff reaches, derived from its paths at
