@@ -54,17 +54,30 @@ inventing a second one beside it.
 - [ ] Phase 2 reads the documents governing the paths the diff touches, and the
       skill states how that set is derived from the diff rather than listing it.
 - [ ] Phase 6 runs at `--effort max` only.
-- [ ] In self-review mode the skill reuses a gate run recorded in
-      `.gate/ledger.jsonl` when that run's head and tree match the checked-out
-      target, and names the reused run in the report; any difference in either
-      re-runs the gate. The guarantee `T-017` found the hard way — a gate that
-      ran against a different tree is not evidence — still holds.
+- [ ] Phase 3 establishes the **mechanical verdict** on the target rather than
+      always producing one. The skill states one rule by target: on a pull
+      request, read what `ci.yml` reported on the head under review, which
+      `ADR-007` makes the authoritative gate and which runs the checks this
+      machine reports as `skipped`; in self-review, the `.gate/ledger.jsonl` row
+      for that head; on a branch or a working tree, run `npm run gate`, because
+      nothing else has. The local gate still runs wherever no verdict on this
+      exact head exists, is pending, or cannot be read.
+- [ ] What the guarantee `T-017` found the hard way turns on is stated as the
+      head and tree the verdict was produced against, not as which command
+      produced it: a verdict from a different head or a dirty tree is not
+      evidence, whether it came from CI, the ledger or a local run. Where the
+      verdict cannot be established at all, the report says so — never that it
+      passed.
 - [ ] The self-review default level is stated in exactly one of
       `teachers-review` and `teachers-ticket`; the other references it.
 - [ ] The skill still carries no architectural rule and no check list
       (`ADR-001`, `ADR-012`).
-- [ ] An ADR records the scoping decision and the effort parameter, the
-      alternatives rejected, and what a narrowed review no longer catches.
+- [ ] An ADR records the scoping decision, the effort parameter and the verdict
+      rule, the alternatives rejected, and what a narrowed review no longer
+      catches. It names `ADR-001`'s revisit condition as the one being exercised
+      — narrowing *which* documents are read for a given diff by routing better —
+      and states that no document content is cached into the tooling, which that
+      ADR rules out.
 
 ## Notes
 

@@ -31,6 +31,10 @@ two habits that keep each call small.
       remains — and each phase's first instruction is to read it.
 - [ ] `/teachers-ticket --resume` picks a run up from that file alone, carrying
       no context from the session that wrote it.
+- [ ] The loop is extracted as a named unit with a written contract — what a
+      caller supplies, what it returns, where its state lives — invoked by
+      `/teachers-ticket` phase 7 as its one consumer. A second caller must need
+      no rewrite of it (`ADR-014`, implemented by `T-035`).
 - [ ] Phase 7 runs each review round in a subagent whose input is the state
       file, the ticket path and the pull request number, and whose output is
       that round's findings in the `.gate/findings.json` shape. The round's own
