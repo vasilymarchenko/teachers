@@ -38,9 +38,10 @@ two habits that keep each call small.
 - [ ] Phase 7 exits when the previous round produced no finding inside the diff,
       without running a further round. Hitting a cap remains the other exit, and
       the caps stay in `scripts/gate/caps.ts` with no number restated in prose.
-- [ ] Phase 7 passes an explicit `--effort` to `/teachers-review` and states
-      which level each round gets — the level names are `/code-review`'s, which
-      `T-033` puts into `teachers-review` unchanged.
+- [ ] Phase 7 passes `--effort medium` to `/teachers-review`, on every round,
+      and `teachers-ticket` is the one file that states it — `teachers-review`
+      references it rather than restating the value. The level names are
+      `/code-review`'s, which `T-033` puts into `teachers-review` unchanged.
 - [ ] The frontmatter `description` of `teachers-ticket` names `--resume`
       alongside the flags it already takes, so the arguments are readable from
       the skill list.
@@ -67,6 +68,13 @@ Subagents are not a saving on their own: that run already spent 40% of its cost
 in six of them, and the widest — the round-3 `/code-review` fork — reached a
 ~113K context of its own. The boundary in phase 7 earns its keep because the
 round's input and output are both small, not because it is a subagent.
+
+`medium` is the self-review level because a round's breadth is no longer what
+keeps it honest: `T-033` scopes the pass to the diff, and the exit criterion
+above stops the loop at the first round with no finding inside it. `high` bought
+the measured run its third round and none of that round's findings were in the
+pull request. A deliberate standalone `/teachers-review` still defaults to
+`high`, and any round can be re-run by hand at a higher level.
 
 The phase-7 exit criterion touches `scripts/gate/caps.ts`, which `T-029`
 introduced; this ticket changes when the loop exits, not what the caps are. The
