@@ -1,6 +1,6 @@
 ---
 name: teachers-ticket
-description: Take a backlog ticket from docs/backlog, plan it, implement it on a fresh branch, open a well-described PR, then re-review that PR against the ticket, the architecture documents and the repository conventions and push the fixes. Use when the user invokes /teachers-ticket (optionally with a ticket id such as /teachers-ticket T-005), or asks to "take the next ticket", "work the backlog", "implement T-NNN", or "pick up the next item from docs/backlog".
+description: Take a backlog ticket from docs/backlog, plan it, implement it on a fresh branch, open a well-described PR, then re-review that PR against the ticket, the architecture documents and the repository conventions and push the fixes. Use when the user invokes /teachers-ticket (optionally with a ticket id such as /teachers-ticket T-005, and --persist-plan or --no-persist-plan, which force where phase 4's plan lives and override every trigger), or asks to "take the next ticket", "work the backlog", "implement T-NNN", or "pick up the next item from docs/backlog".
 ---
 
 # Work a backlog ticket
@@ -286,11 +286,18 @@ run of rounds that did not converge is information; one more rarely adds any.
 1. **Review.**
 
    ```sh
-   /teachers-review <pr> --self-review T-NNN
+   /teachers-review <pr> --self-review T-NNN --effort high
    ```
 
    That flag selects self-review defaults — no merge, no inline comments, and no
-   questions to the user about anything this ticket already answers. It fetches
+   questions to the user about anything this ticket already answers.
+
+   **`--effort` is `/code-review`'s own argument, and this line is the one place
+   the level a self-review round gets is stated.** `/teachers-review` documents
+   what each level buys and takes what it is given; it states no self-review
+   value of its own, so the word is not written in two files that can disagree.
+   Raise it by hand for a round that needs wider reading — and know that the
+   round costs what you raised it to. It fetches
    the diff, reads the documents that govern the code you changed, runs the
    `teachers-review-contract` agent and `/code-review`, and returns ranked
    findings. The standard is those documents, not a checklist — so a rule you
@@ -328,7 +335,11 @@ run of rounds that did not converge is information; one more rarely adds any.
    exist passes any validator anyone could write. What makes the file worth
    keeping is that the next round reads it, and that a resumed session can.
 
-3. **Dispose of every finding.** These dispositions, and each costs something:
+3. **Dispose of every finding the review reported.** Findings outside the diff
+   are not among them: `/teachers-review` drops them, and the
+   `## Outside this change` section it may print is information about code this
+   branch did not touch, not a list this loop owes anything. These dispositions,
+   and each costs something:
 
    | Disposition | What it takes | What it costs |
    |---|---|---|

@@ -2,7 +2,7 @@
 id: T-033
 type: ticket
 title: Scope /teachers-review to the change under review, and make its effort level a parameter
-status: todo
+status: in-progress
 depends_on: [T-017]
 refs:
   - .claude/skills/teachers-review/SKILL.md
@@ -80,6 +80,13 @@ inventing a second one beside it.
       ADR rules out.
 
 ## Notes
+
+The scoping decision, the `--effort` parameter and the phase 3 verdict rule are
+recorded in `docs/architecture/decisions/ADR-015-review-scoped-to-the-change.md`.
+
+The self-review level is stated in `.claude/skills/teachers-ticket/SKILL.md`
+phase 7, and stays at today's value here: `T-034` is what lowers it, along with
+the rest of the loop it rewrites.
 
 Evidence: the efficiency analysis of session `4c401314` (the `/teachers-ticket
 T-021` run). Round 3 of that run's review loop cost 31.6% of the session and
