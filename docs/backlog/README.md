@@ -10,7 +10,7 @@ for reading. Order is priority; the ID number is not.
 
 | ID | Title | Status | Depends on |
 |---|---|---|---|
-| [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | todo | T-017 |
+| [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | done | T-017 |
 | [T-034](T-034-bound-the-ticket-loop-context.md) | Bound the context a /teachers-ticket run accumulates | todo | T-033 |
 | [T-035](T-035-land-a-pull-request.md) | /teachers-land — the fix-and-merge loop for a pull request with no ticket bound | todo | T-034 |
 | [T-002](T-002-project-scaffold.md) | Project scaffold — Next.js, Drizzle, Vitest, Postgres in Compose | done | — |

@@ -13,6 +13,7 @@ refs:
   - docs/architecture/decisions/ADR-001-review-reads-the-documents.md
   - docs/architecture/decisions/ADR-007-ci-gate.md
   - docs/backlog/T-026-deterministic-ticket-loop.md
+  - docs/architecture/decisions/ADR-015-review-scoped-to-the-change.md
 ---
 
 ## Goal
@@ -227,3 +228,8 @@ performs it as a five-step orchestration, and transcribing that into a second
 file is the local reimplementation this ticket's own `## Notes` rule out. It is
 therefore never reported as checked locally. `T-030` unifies the two into one
 script called by both.
+
+`T-033` superseded one rule this ticket settled: `/teachers-review` phase 3 no
+longer runs the gate unconditionally. What replaced it, and why, is
+`ADR-015-review-scoped-to-the-change.md`. The criterion above stays ticked as
+the record of what was true when it was ticked.
