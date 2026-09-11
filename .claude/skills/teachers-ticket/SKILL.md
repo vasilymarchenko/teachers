@@ -27,11 +27,25 @@ phase 4's output; note the flag and carry it forward.
 
 Otherwise take the **first ticket in `docs/backlog/README.md` table order whose
 `status` is `todo`** — the table is ordered by priority, the id number is not.
-Verify against the authoritative frontmatter, not the table:
+Verify against the authoritative frontmatter, not the table.
+
+**Read the frontmatter from `origin/main`, not from disk.** This is the one
+phase that runs before a branch is cut, so the files in the working tree are
+whatever the last checkout left there — possibly a finished ticket still marked
+`todo`, and a run started on work someone already did. The root `CLAUDE.md`
+states the discipline; here is the sweep it applies to:
 
 ```sh
-grep -H -E '^(id|title|status|depends_on):' docs/backlog/[TQ]-*.md
+for f in $(git ls-tree --name-only origin/main docs/backlog/ | grep -E '/[TQ]-.*\.md$'); do
+  printf '%s: ' "$f"; git show "origin/main:$f" | grep -E '^(id|title|status|depends_on):' | tr '\n' ' '; echo
+done
 ```
+
+The same holds for `docs/backlog/README.md`, whose table order decides which
+ticket is first. It is only *selection* that reads `origin/main`: once the run
+has a ticket and phase 2 has cut its branch, every read is from the working tree
+that checkout populated — including the ticket file itself, which is where this
+run's own status change is being written.
 
 If the table and a frontmatter disagree, the frontmatter is right; fix the table
 in your first commit and say so.
@@ -48,9 +62,27 @@ Then check the gate before starting:
 
 State the chosen ticket — id, title, why this one — in one line before moving on.
 
-## Phase 2 — Understand it
+## Phase 2 — Cut the branch, then understand the ticket
 
-Read, in this order:
+**Cut the branch first**, before reading anything but the ticket's own id:
+
+```sh
+git checkout -b claude/ticket-t-NNN-<short-slug> origin/main
+```
+
+(If the session was handed a designated branch, use that name instead — never
+push to a different branch than the one you were given.)
+
+No fetch here: `origin/main` is the ref the session's `SessionStart` hook
+fetched, and the checkout fills the working tree from it. That is the point of
+cutting the branch now rather than in phase 5 — everything read below comes from
+a tree that is current, and the only window in which this run can read a stale
+file is phase 1's frontmatter sweep, which reads `origin/main` directly for
+exactly that reason. A branch cut for a ticket the user declines in phase 3 is
+deleted (`git checkout main && git branch -D <branch>`), which is cheaper than a
+plan built against stale code.
+
+Then read, in this order:
 
 1. The ticket file: `## Goal`, every acceptance criterion, `## Notes`.
 2. Every path in `refs:`. `path §N` means section N of that document — read that
@@ -152,16 +184,10 @@ keep it reconciled in phase 7: after the review, either update the document to
 what was actually built or change its `**Status:**` line to say what superseded
 it. A plan file that contradicts the merged code is worse than no plan file.
 
-## Phase 5 — Implement on a new branch
+## Phase 5 — Implement
 
-Branch from the up-to-date default branch, one branch per ticket:
-
-```sh
-git fetch origin main && git checkout -b claude/ticket-t-NNN-<short-slug> origin/main
-```
-
-(If the session was handed a designated branch, use that name instead — never
-push to a different branch than the one you were given.)
+On the branch phase 2 cut — one branch per ticket, and nothing here fetches or
+branches again.
 
 While implementing, hold the rules that are easy to break silently. They are
 stated once, in the documents phase 2 put in front of you — the root
@@ -290,7 +316,7 @@ run of rounds that did not converge is information; one more rarely adds any.
    ```
 
    That flag selects self-review defaults — no merge, no inline comments, and no
-   questions to the user about anything this ticket already answers. It fetches
+   questions to the user about anything this ticket already answers. It resolves
    the diff, reads the documents that govern the code you changed, runs the
    `teachers-review-contract` agent and `/code-review`, and returns ranked
    findings. The standard is those documents, not a checklist — so a rule you

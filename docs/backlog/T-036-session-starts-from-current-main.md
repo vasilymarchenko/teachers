@@ -2,7 +2,7 @@
 id: T-036
 type: ticket
 title: A session starts from a current main — fetched by a hook, not by remembering
-status: todo
+status: in-progress
 depends_on: []
 refs:
   - CLAUDE.md
@@ -24,27 +24,27 @@ phase 1 reads before any branch is cut.
       at the start of every session. It is the harness that runs it, not the
       agent: a freshness rule stated only in a prompt is the kind that was
       forgotten.
-- [ ] The hook fast-forwards the working tree too, but only where that is safe
+- [x] The hook fast-forwards the working tree too, but only where that is safe
       and unambiguous: `HEAD` is `main`, the tree is clean, and `main` is
       strictly behind `origin/main`. It uses `--ff-only` and never creates a
       merge commit. In every other case it leaves the tree alone and says how
       far behind it is.
-- [ ] The hook never runs `git pull`: on a feature branch it does nothing
+- [x] The hook never runs `git pull`: on a feature branch it does nothing
       useful for `main`, and on a dirty tree it either fails or merges without
       being asked.
-- [ ] Root `CLAUDE.md` states the rule once — what the hook guarantees, and the
+- [x] Root `CLAUDE.md` states the rule once — what the hook guarantees, and the
       reading discipline below — and no skill restates it (`ADR-001`).
-- [ ] **The reading discipline.** Content whose current value decides something,
+- [x] **The reading discipline.** Content whose current value decides something,
       read before a branch is cut from `origin/main`, is read from `origin/main`
       and not from disk — `git show origin/main:<path>`. This is what a fetch
       alone does not fix, and it holds whatever branch the session is sitting
       on and whether or not the tree is clean.
-- [ ] Ticket selection names that discipline explicitly: the frontmatter sweep
+- [x] Ticket selection names that discipline explicitly: the frontmatter sweep
       that decides which ticket is next reads the `origin/main` copies. The
       ticket file a run is already editing is read from the branch, where its
       own status change lives — the discipline is about selection, not about
       the work in progress.
-- [ ] The branch is cut at the **start of phase 2**, not in phase 5. Everything
+- [x] The branch is cut at the **start of phase 2**, not in phase 5. Everything
       read after ticket selection — the `refs:` sections, the glossary, the code
       the ticket touches, the neighbouring module — then comes from a working
       tree `origin/main` has just populated, and the window in which the tree can
@@ -52,10 +52,10 @@ phase 1 reads before any branch is cut.
       ticket, which the discipline above already covers. A branch cut for a
       ticket the user declines in phase 3 is deleted, which is cheaper than a
       plan built against stale code.
-- [ ] A session whose hook could not run — no network, no remote — is told so
+- [x] A session whose hook could not run — no network, no remote — is told so
       and works from what it has, with the report saying the repository state
       was not verified. It is never reported as current.
-- [ ] `npm run gate` and `/teachers-review` resolve their diff base against the
+- [x] `npm run gate` and `/teachers-review` resolve their diff base against the
       fetched ref, and neither carries a fetch of its own.
 
 ## Notes
@@ -79,3 +79,39 @@ before it, which is what the hook guarantees.
 
 `T-034` also moves work between these phases. Neither ticket depends on the
 other; whichever lands second reconciles the phase boundaries.
+
+**T-036 implementation.** The hook script is
+`.claude/hooks/session-start-fetch.sh`; the rule it guarantees is stated in the
+root `CLAUDE.md` under "A session starts from a current main". `npm run gate`
+already resolved `origin/main...HEAD` without a fetch of its own — that
+criterion needed a comment recording why, not a behaviour change.
+
+**Outstanding: the `SessionStart` registration in `.claude/settings.json`.**
+The first criterion's hook entry is written and the script beside it is
+complete, but the entry itself is not in the repository: the session that
+implemented this ticket could not write a hook registration into its own
+settings (the harness refuses a hook install from the agent, which is the same
+instinct this ticket is built on). The entry to add, verbatim:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start-fetch.sh\"",
+            "timeout": 60,
+            "statusMessage": "Fetching origin"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+`bash <path>` rather than the bare path, so the hook does not depend on the
+script's executable bit surviving a checkout.
+

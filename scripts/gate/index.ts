@@ -56,6 +56,11 @@ config({ path: ".env", quiet: true });
  * The change under review: what the branch adds to `origin/main`, plus whatever
  * is not committed yet — the gate must see a fix before it is committed, or the
  * loop of phase 7 would need a commit per attempt.
+ *
+ * `origin/main` is the ref the session's `SessionStart` hook fetched (T-036,
+ * root `CLAUDE.md`). The gate does not fetch: one fetch per session, in one
+ * place, or every command that takes a diff grows its own network call and its
+ * own answer to what to do when it fails.
  */
 function changedFiles(): string[] {
   const committed =

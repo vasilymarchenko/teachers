@@ -37,6 +37,17 @@ Postgres runs from `docker-compose.yml` (`docker compose up -d`). Copy `.env.exa
 
 Before pushing, run `npm run gate`. It checks the Node version against `.nvmrc` first — too old, and it names that as the reason and stops there, before selecting a single check. Otherwise it selects the checks the change actually needs — always `lint`, `typecheck`, `test`, `build` and `hygiene`, plus the database checks for `lib/db/**`, `drizzle/**`, `drizzle.config.ts` or `scripts/verify-schema.sql`, and the image builds for the `Dockerfile` or a Compose file — runs all of them without stopping at the first failure, prints one table and exits non-zero if any failed. A check it cannot run here (no Docker daemon, no `DATABASE_URL`) is reported `skipped` with the reason, which is not a pass. The routing lives in `scripts/gate/checks.ts` and is held in step with `.github/workflows/ci.yml` by a convention test — `docs/architecture/decisions/ADR-012-one-check-definition.md`. A single test file: `npx vitest run lib/time/today.test.ts`.
 
+## A session starts from a current main
+
+Every diff this repository takes — `npm run gate`, `/teachers-review`, the branch a ticket is cut on — is resolved against `origin/main`, which is a local snapshot left by the last fetch. Keeping it current is the harness's job, not something to remember: a `SessionStart` hook in `.claude/settings.json` runs `.claude/hooks/session-start-fetch.sh` at the start of every session. It does exactly two things and says which of them happened:
+
+- **`git fetch origin`** — this is what makes `origin/main` current, and it is all that anything keyed on the ref needs. Nothing else in the repository fetches: neither the gate nor the review carries a fetch of its own.
+- **A fast-forward of the working tree, only where it is safe and unambiguous** — `HEAD` is `main`, the tree is clean, and `main` is strictly behind `origin/main`; then `git merge --ff-only`. In every other case the tree is left alone and the hook says how far behind it is. The hook never runs `git pull`: on a feature branch it does nothing useful for `main`, and on a dirty tree it either fails or merges without being asked.
+
+**The reading discipline.** A fetch moves the ref; it does not touch the files on disk. So: content whose current value decides something, read before a branch is cut from `origin/main`, is read from `origin/main` and not from disk — `git show origin/main:<path>`. That holds whatever branch the session is sitting on and whether or not the tree is clean. After a branch is cut with `git checkout -b <branch> origin/main` the working tree *is* the fetched `origin/main`, and everything read from then on is read from disk normally.
+
+**A session whose hook could not run** — no network, no remote — works from what it has and says so: any report it produces states that the repository state was not verified. It is never reported as current.
+
 ## Code layout
 
 `app/` is the App Router; `components/` holds React and shadcn/ui wrappers; `lib/` is split into `domain/` (pure, DB-free logic — the tested part), `db/` (Drizzle client, `schema/` one file per aggregate, `queries/`), `actions/` (Server Actions), `validation/` (Zod), `auth/` and `time/`. The reasoning is in `docs/architecture/architect-overview.md` §2 — that document, not this one, is the place to change the layout.
