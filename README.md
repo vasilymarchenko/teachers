@@ -60,6 +60,7 @@ npm run dev                   # http://localhost:3000
 | `npm run db:migrate` | apply migrations — also an explicit deploy step |
 | `npm run db:seed` | reset the demo teacher and re-insert the fixture scenario |
 | `npm run db:studio` | Drizzle Studio |
+| `npm run cost` | what one session cost, read out of its own transcript |
 
 ### Migrations
 

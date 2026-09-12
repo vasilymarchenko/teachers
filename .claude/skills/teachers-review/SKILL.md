@@ -419,7 +419,8 @@ output, which is also what keeps it visibly separate from the findings the
 caller must dispose of.
 
 **In self-review mode, report a finding in the shape the caller records it in.**
-`/teachers-ticket` phase 7 writes each one to `.gate/findings.json`, which wants
+`/teachers-fix-loop` — which phase 7 calls, and which owns that record — writes
+each one to `.gate/findings.json`, which wants
 an id, the `file:line`, the rule quoted from the document it came from, a
 one-sentence summary, and which pass found it. The bar above already produces
 all but the last — name the pass too, so the caller does not have to guess it.
@@ -462,8 +463,9 @@ So the output is a proposal, and it carries its homework:
   how a reviewer starts producing confident nonsense.
 
 In self-review mode the caller turns an accepted proposal into a backlog ticket,
-as `/teachers-ticket` already requires of any real finding that is out of scope. On a
-standalone review, name it in the report and leave the filing to the user.
+as `/teachers-fix-loop`'s `deferred` disposition already requires of any real
+finding that is out of scope. On a standalone review, name it in the report and
+leave the filing to the user.
 
 The same applies to the documents: if a rule you enforced was hard to find, or
 you had to infer it from prose that also carries reasoning, that is a finding
