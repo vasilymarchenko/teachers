@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { CAPS } from "./caps";
@@ -22,6 +22,23 @@ const sources = SKILLS.map((path) => ({
   path,
   text: readFileSync(path, "utf8"),
 }));
+
+/**
+ * Every file a copy of the loop could be pasted into: the skills and the agent
+ * definitions alike. Globbed rather than listed, so the next skill or agent is
+ * covered by the invariant on the commit that adds it rather than on the commit
+ * that remembers to add it here.
+ */
+const contracts = [
+  ...readdirSync(".claude/skills").map(
+    (name) => `.claude/skills/${name}/SKILL.md`,
+  ),
+  ...readdirSync(".claude/agents")
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => `.claude/agents/${name}`),
+]
+  .sort()
+  .map((path) => ({ path, text: readFileSync(path, "utf8") }));
 
 describe("the skills and the gate", () => {
   for (const { path, text } of sources) {
@@ -70,8 +87,12 @@ describe("the skills and the gate", () => {
     // copy of what it owns is what the decision forbids. The dispositions
     // table is the part of it a copy would be recognisable by — four rows a
     // caller would have to restate to re-decide anything. One file may hold
-    // it; `/teachers-ticket` calls that file instead (T-034).
-    const holders = sources.filter(({ text }) =>
+    // it; `/teachers-ticket` calls that file instead (T-034). Searched over
+    // every skill *and* agent definition: `teachers-review-round.md` describes
+    // a round and is the natural place for the table to be pasted into, and it
+    // is exactly the file that must not carry it — disposing of a finding is
+    // the loop's job, not the round's.
+    const holders = contracts.filter(({ text }) =>
       text.includes("| `deferred` |"),
     );
     expect(holders.map(({ path }) => path)).toEqual([

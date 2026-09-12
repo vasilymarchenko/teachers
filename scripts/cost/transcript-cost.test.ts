@@ -18,6 +18,9 @@ import {
 function assistant(options: {
   phaseText?: string;
   stateFile?: number;
+  /** A state file moved from one phase to the next by an `Edit`. */
+  stateEdit?: [number, number];
+  toolUses?: number;
   usage?: Partial<{
     input_tokens: number;
     cache_creation_input_tokens: number;
@@ -25,6 +28,7 @@ function assistant(options: {
     output_tokens: number;
   }>;
   sidechain?: boolean;
+  requestId?: string;
 }): string {
   const content: unknown[] = [];
   if (options.phaseText !== undefined) {
@@ -40,9 +44,25 @@ function assistant(options: {
       },
     });
   }
+  if (options.stateEdit !== undefined) {
+    const [from, to] = options.stateEdit;
+    content.push({
+      type: "tool_use",
+      name: "Edit",
+      input: {
+        file_path: ".gate/run.json",
+        old_string: `"phase": ${from}`,
+        new_string: `"phase": ${to}`,
+      },
+    });
+  }
+  for (let i = 0; i < (options.toolUses ?? 0); i += 1) {
+    content.push({ type: "tool_use", name: "Read", input: { file_path: "a.ts" } });
+  }
   return JSON.stringify({
     type: "assistant",
     isSidechain: options.sidechain ?? false,
+    ...(options.requestId ? { requestId: options.requestId } : {}),
     timestamp: "2026-09-12T09:00:00.000Z",
     message: {
       content,
@@ -54,6 +74,12 @@ function assistant(options: {
 describe("phaseMarker", () => {
   it("reads the phase out of a written state file", () => {
     expect(phaseMarker(JSON.parse(assistant({ stateFile: 5 })))).toBe("5");
+  });
+
+  it("reads the phase being entered out of an edited state file", () => {
+    // `Edit` carries both phases: the old one in `old_string`. The marker is
+    // the phase the run is moving into, or the whole table is one boundary late.
+    expect(phaseMarker(JSON.parse(assistant({ stateEdit: [5, 6] })))).toBe("6");
   });
 
   it("falls back to the phase the assistant named in prose", () => {
@@ -68,6 +94,14 @@ describe("phaseMarker", () => {
         JSON.parse(assistant({ phaseText: "phase 2 is done", stateFile: 3 })),
       ),
     ).toBe("3");
+  });
+
+  it("takes the phase a transition sentence ends on, not the one it leaves", () => {
+    expect(
+      phaseMarker(
+        JSON.parse(assistant({ phaseText: "Phase 6 is done — starting phase 7." })),
+      ),
+    ).toBe("7");
   });
 
   it("reads nothing out of a user entry", () => {
@@ -126,6 +160,32 @@ describe("callsFrom", () => {
     expect(callsFrom(lines)[1].context).toBe(245);
   });
 
+  it("folds the entries of one response into one call", () => {
+    // The CLI writes one entry per content block, each repeating that call's
+    // usage. Counted per entry, this is three calls and three times the tokens.
+    const response = [
+      assistant({
+        requestId: "req_1",
+        toolUses: 1,
+        usage: { cache_read_input_tokens: 400, output_tokens: 8 },
+      }),
+      assistant({
+        requestId: "req_1",
+        toolUses: 1,
+        usage: { cache_read_input_tokens: 400, output_tokens: 8 },
+      }),
+      assistant({
+        requestId: "req_2",
+        usage: { cache_read_input_tokens: 500, output_tokens: 2 },
+      }),
+    ];
+    const folded = callsFrom(response);
+    expect(folded).toHaveLength(2);
+    expect(folded[0].tokens).toMatchObject({ cacheRead: 400, output: 8 });
+    // The tool uses were spread across the entries; the count is the response's.
+    expect(folded[0].toolUses).toBe(2);
+  });
+
   it("survives a half-written last line", () => {
     expect(callsFrom(['{"type":"assistant"'])).toEqual([]);
   });
@@ -155,10 +215,41 @@ describe("summarise", () => {
     expect(report.sidechainCalls).toBe(1);
   });
 
-  it("reports the context at the first call, the last and the widest", () => {
+  it("takes the growth curve from the main thread alone", () => {
+    // The last call of the run is a subagent's, carrying its own narrow
+    // context. Reporting it as `contextLast` would say the run had shrunk.
     expect(report.contextFirst).toBe(100);
-    expect(report.contextLast).toBe(900);
+    expect(report.contextLast).toBe(300);
+    expect(report.contextWidest).toBe(300);
+  });
+
+  it("takes the totals row over every call, sidechain included", () => {
+    expect(report.contextMin).toBe(100);
     expect(report.contextMax).toBe(900);
+  });
+
+  it("never states a total narrower than a phase row's minimum", () => {
+    const min = Math.min(...report.phases.map((phase) => phase.contextMin));
+    expect(report.contextMin).toBeLessThanOrEqual(min);
+    expect(formatReport(report)).toContain(short(report.contextMin));
+  });
+
+  it("gives each phase its share of the re-sent context", () => {
+    expect(report.phases[1].cacheReadShare).toBeCloseTo(900 / 1300);
+    expect(formatReport(report)).toContain("phase 7 is 69.2% of the re-sent context");
+  });
+
+  it("counts the calls that carried more than one tool use", () => {
+    const busy = summarise(
+      "t.jsonl",
+      callsFrom([
+        assistant({ toolUses: 2, usage: { input_tokens: 1 } }),
+        assistant({ toolUses: 1, usage: { input_tokens: 1 } }),
+      ]),
+    );
+    expect(busy.multiToolCalls).toBe(1);
+    expect(busy.calls).toBe(2);
+    expect(busy.callDetail.map((call) => call.toolUses)).toEqual([2, 1]);
   });
 
   it("keeps the four token classes apart", () => {

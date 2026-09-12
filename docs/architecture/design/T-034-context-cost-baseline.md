@@ -20,13 +20,20 @@ line — and reports, per phase and in total:
 
 | Column | What it is |
 |---|---|
-| `calls` | API calls. One `usage` on an `assistant` entry is one call. |
+| `calls` | API calls. A response is written as one entry per content block, each repeating that call's `usage`; the entries are folded back together by `requestId`, so one response is one call. |
 | `sub` | how many of them were made inside a subagent (`isSidechain`). |
 | `input` | fresh input tokens: what a call sent that no earlier call had sent. |
 | `cache w` | `cache_creation_input_tokens` — written into the cache by this call. |
 | `cache r` | `cache_read_input_tokens` — the re-sent context, charged again on every call. |
 | `output` | `output_tokens`. |
 | `ctx min/med/max` | the context each call carried: the three input classes together. |
+
+The `all` row is that table over every call, sidechain included. The growth line
+under it — "context in the main thread: X at the first call, Y at the last" — is
+the main thread alone: a subagent carries its own narrow context, and a run whose
+last activity is inside a review fork would otherwise read as having shrunk.
+`--json` adds what the table has no column for: every call, with the number of
+tool uses its message carried.
 
 **Phase attribution** comes from two markers, in that order of trust: the
 `"phase": N` a run writes into `.gate/run.json` at each boundary, which is the
@@ -41,7 +48,18 @@ a real transcript is the one input a CI runner does not have.
 
 ## The baseline — session `4c401314`, the `/teachers-ticket T-021` run
 
-Taken from that session's transcript before any of T-034's changes existed:
+Taken from that session's transcript before any of T-034's changes existed.
+
+**Re-take these before comparing anything against them.** Both tables below were
+produced by the instrument before it folded a response's entries together: each
+counted one *entry* as one call, so their call counts and all four token totals
+are multiplied by however many content blocks a response happened to have — a
+factor above two on the sessions measured since, and not a constant. The context
+columns are unaffected: a repeated entry repeats the same context, so every
+`ctx` figure, and the first → last growth, stands as written. Re-running
+`npm run cost` against the same two transcripts restores the rest; the numbers
+here are kept, marked, rather than silently corrected, because `ADR-017` quotes
+them.
 
 | | |
 |---|---|
@@ -71,7 +89,8 @@ the thing being replaced.
 
 What exists so far is the instrument, run against the session that wrote it —
 a direct change, not a ticket run, so its phase rows come from prose markers and
-not from a state file:
+not from a state file, and its `calls`, `input`, `cache w`, `cache r` and
+`output` cells carry the per-entry inflation described above:
 
 ```
 phase  calls  sub  input  cache w  cache r  output  ctx min  ctx med  ctx max

@@ -65,8 +65,11 @@ two habits that keep each call small.
 Baseline from session `4c401314` (the `/teachers-ticket T-021` run), measured
 from the transcript: 535 API calls, 58.85M cache-read tokens against 1,070
 fresh input tokens, and a context that grew from 67K to 244K across the run
-without one reset. Phase 7 was 71.8% of it. All 141 tool calls in the main
-session were issued one per assistant message.
+without one reset. Phase 7 was 71.8% of it. The call count and the token totals
+in that sentence were taken before the instrument folded a response's transcript
+entries into one call and are inflated by the blocks-per-response factor — see
+the note in `docs/architecture/design/T-034-context-cost-baseline.md`, which is
+authoritative for the measurements; the context figures are unaffected.
 
 Subagents are not a saving on their own: that run already spent 40% of its cost
 in six of them, and the widest — the round-3 `/code-review` fork — reached a
@@ -85,7 +88,13 @@ introduced; this ticket changes when the loop exits, not what the caps are. The
 run this ticket is measured against is the one that closed `T-029`'s last
 criterion.
 
-The work landed as a direct change, not as a `/teachers-ticket` run. Every
+The work landed as a direct change, not as a `/teachers-ticket` run, and it is
+the one shape of change that cannot be worked as one: the ticket rewrites the
+loop, and a run of the loop being rewritten would be measuring — and following —
+the thing it replaces. `CLAUDE.md`'s rule stands unamended and this is not a
+precedent for a ticket that touches the product: a change to the data model, a
+contract or a screen has no such argument available to it, because none of those
+is the instrument doing the work. Every
 criterion above is ticked against a file except the second half of the
 measurement one: the reworked skill has not yet been run on a real ticket, so
 `docs/architecture/design/T-034-context-cost-baseline.md` carries the baseline
