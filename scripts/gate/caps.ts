@@ -3,9 +3,10 @@
  * under. They live here, in code, because a number restated in two skill files
  * drifts out of step with itself the first time one of them is edited (T-029).
  *
- * Both `.claude/skills/teachers-ticket/SKILL.md` and
- * `.claude/skills/teachers-review/SKILL.md` cite this path instead of a
- * numeral. `scripts/gate/skills.test.ts` holds them to that.
+ * The file that states the caps in prose is
+ * `.claude/skills/teachers-fix-loop/SKILL.md`, which owns the loop they bound
+ * (T-034); every other skill that mentions them cites this path instead of a
+ * numeral. `scripts/gate/skills.test.ts` holds them all to that.
  *
  * They are durable, not unskippable. `npm run gate -- --report` refuses to
  * report a ticket done past a cap, and the counts come from files the agent

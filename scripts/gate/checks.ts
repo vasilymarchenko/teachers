@@ -128,8 +128,9 @@ export const CHECKS: readonly Check[] = [
     // Routed by kind as well as by path (T-037): the unit suite is mostly
     // `lib/domain` over code the prose does not touch, so a diff of documents
     // rarely changes its answer — but the convention tests read `.md` files
-    // (`skills.test.ts` reads both `SKILL.md`s), so sometimes it does, and
-    // then the failure lands in CI rather than here. `ci.yml` runs the suite
+    // (`skills.test.ts` reads every `SKILL.md` and every agent definition
+    // under `.claude/`), so sometimes it does, and then the failure lands in
+    // CI rather than here. `ci.yml` runs the suite
     // on the pushed commit either way; `ADR-016` § Consequences is where that
     // cost is declared rather than hidden.
     name: "test",
