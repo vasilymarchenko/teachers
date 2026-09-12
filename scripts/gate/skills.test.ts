@@ -15,6 +15,7 @@ import { CAPS } from "./caps";
 const SKILLS = [
   ".claude/skills/teachers-ticket/SKILL.md",
   ".claude/skills/teachers-review/SKILL.md",
+  ".claude/skills/teachers-fix-loop/SKILL.md",
 ] as const;
 
 const sources = SKILLS.map((path) => ({
@@ -62,6 +63,20 @@ describe("the skills and the gate", () => {
     const review = sources.find((s) => s.path.includes("teachers-review"))!;
     expect(review.text).toContain("changeKind()");
     expect(review.text).toContain("scripts/gate/checks.ts");
+  });
+
+  it("writes the loop down once", () => {
+    // `ADR-014`: the fix loop is one unit with two entry points, and a second
+    // copy of what it owns is what the decision forbids. The dispositions
+    // table is the part of it a copy would be recognisable by — four rows a
+    // caller would have to restate to re-decide anything. One file may hold
+    // it; `/teachers-ticket` calls that file instead (T-034).
+    const holders = sources.filter(({ text }) =>
+      text.includes("| `deferred` |"),
+    );
+    expect(holders.map(({ path }) => path)).toEqual([
+      ".claude/skills/teachers-fix-loop/SKILL.md",
+    ]);
   });
 
   // That neither skill *states a cap value* is not asserted mechanically, and

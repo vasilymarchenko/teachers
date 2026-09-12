@@ -34,8 +34,8 @@ is a policy nobody agreed to.
 |---|---|---|---|
 | `--merge` | `no` \| `ask` \| `auto` | `ask` | `no` |
 | `--comment` / `--no-comment` | — | `--comment` | `--no-comment` |
-| `--self-review` | `T-NNN` | off | set by `/teachers-ticket` phase 7 |
-| `--effort` | `low` \| `medium` \| `high` \| `max` | `high` | set by `/teachers-ticket` phase 7, which is where the level is stated |
+| `--self-review` | `T-NNN` | off | set by the round of `/teachers-fix-loop` that `/teachers-ticket` phase 7 calls |
+| `--effort` | `low` \| `medium` \| `high` \| `max` | `high` | set by `/teachers-ticket` phase 7, which is where the level is stated, and passed through by `/teachers-fix-loop` |
 
 **What a level buys, and what it changes.** The four level names are
 `/code-review`'s own, unchanged, so one word means one thing in both skills
@@ -508,9 +508,9 @@ be able to see what was reviewed, not just that it passed.
 
 ## Self-review mode
 
-`/teachers-ticket` phase 7 calls this skill as `/teachers-review <pr>
---self-review T-NNN --effort <level>`. Same method, same passes; the
-differences:
+`/teachers-ticket` phase 7 reaches this skill through `/teachers-fix-loop`,
+whose round agent invokes it as `/teachers-review <pr> --self-review T-NNN
+--effort <level>`. Same method, same passes; the differences:
 
 - **The ticket is given, not inferred.** Phase 1 skips the search and never
   reports "no ticket id found".
@@ -521,13 +521,14 @@ differences:
   comments on your own PR, which you are about to fix in the same session, are
   notes to yourself in a public place.
 - **The effort level comes from the caller, which is where it is stated.**
-  `/teachers-ticket` phase 7 names the level a round gets; this skill takes what
+  `/teachers-ticket` phase 7 names the level a round gets, and the loop passes
+  it through unchanged; this skill takes what
   it is given and states no self-review value of its own, so the one word is not
   written in two files that can disagree. Any round can be re-run by hand at
   another level.
-- **The caller's loop is bounded.** It runs a fixed number of rounds, gate runs
-  and pushes — the numbers are `scripts/gate/caps.ts`, and this skill states no
-  number of its own. Two consequences for what is reported: a round that finds
+- **The caller's loop is bounded.** `/teachers-fix-loop` runs a fixed number of
+  rounds, gate runs and pushes — the numbers are `scripts/gate/caps.ts`, and
+  this skill states no number of its own. Two consequences for what is reported: a round that finds
   nothing undisposed is how the loop *ends*, so an empty report is a result and
   not a failure to look hard enough; and padding the list with maybes spends a
   round the author cannot get back.

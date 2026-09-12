@@ -1,6 +1,6 @@
 ---
 name: teachers-ticket
-description: Take a backlog ticket from docs/backlog, plan it, implement it on a fresh branch, open a well-described PR, then re-review that PR against the ticket, the architecture documents and the repository conventions and push the fixes. Use when the user invokes /teachers-ticket (optionally with a ticket id such as /teachers-ticket T-005, and --persist-plan or --no-persist-plan, which force where phase 4's plan lives and override every trigger), or asks to "take the next ticket", "work the backlog", "implement T-NNN", or "pick up the next item from docs/backlog".
+description: Take a backlog ticket from docs/backlog, plan it, implement it on a fresh branch, open a well-described PR, then re-review that PR against the ticket, the architecture documents and the repository conventions and push the fixes. Use when the user invokes /teachers-ticket (optionally with a ticket id such as /teachers-ticket T-005, --resume, which picks an interrupted run up from its state file alone and carries no context from the session that wrote it, and --persist-plan or --no-persist-plan, which force where phase 4's plan lives and override every trigger), or asks to "take the next ticket", "work the backlog", "implement T-NNN", or "pick up the next item from docs/backlog".
 ---
 
 # Work a backlog ticket
@@ -19,7 +19,55 @@ read at review time — `/teachers-review` holds the method, not a copy of the r
 (`docs/architecture/decisions/ADR-001-review-reads-the-documents.md`). This file
 does not restate them either.
 
+## The run state file
+
+A run writes `.gate/run.json` **at every phase boundary**, and **every phase's
+first instruction is to read it**. It is the run's memory outside the
+conversation: a session that is compacted, interrupted or replaced picks the run
+up from this file, and a phase never re-derives what an earlier phase already
+established.
+
+```json
+{
+  "ticket": "T-034",
+  "ticketPath": "docs/backlog/T-034-bound-the-ticket-loop-context.md",
+  "branch": "claude/ticket-t-034-bound-the-loop",
+  "pr": 32,
+  "phase": 5,
+  "flags": { "persistPlan": false, "effort": "medium" },
+  "plan": ["one line per file the plan adds or changes, and what it does"],
+  "criteria": [{ "id": 1, "work": "scripts/cost/transcript-cost.ts", "state": "done" }],
+  "filesTouched": ["CLAUDE.md", ".claude/skills/teachers-ticket/SKILL.md"],
+  "remaining": ["what this phase has not finished"],
+  "designDoc": "docs/architecture/design/T-034-….md",
+  "updatedAt": "2026-09-12T09:14:00.000Z"
+}
+```
+
+`.gate/` is git-ignored, so the file never reaches a diff, and it sits beside
+the two records the loop already reads — `.gate/ledger.jsonl` and
+`.gate/findings.json` (`scripts/gate/ledger.ts` owns those paths).
+
+**The plan is condensed into it, not copied.** One line per file and one row per
+acceptance criterion is what a later phase needs; the argument for the plan
+belongs in the conversation and in the pull request body.
+
+**Write it before the phase ends, not after the next one starts.** A phase that
+finished work the file does not record is work the resumed run will do twice.
+
+**`--resume` picks a run up from that file alone.** It reads `.gate/run.json`,
+checks out the branch named there, states the ticket, the pull request and the
+phase it is resuming at in one line, and continues from that phase — carrying no
+context from the session that wrote the file, and asking the user for none. If
+the file is missing, or names a branch that does not exist, say so and stop:
+a run that cannot be resumed is not a run to start over silently.
+
 ## Phase 1 — Choose the ticket
+
+**`--resume` skips this phase.** With that flag the run has already been chosen:
+read `.gate/run.json`, check out the branch it names, and continue at the phase
+it records. Everything below is about choosing a ticket the session does not
+have yet.
 
 If the invocation carries an id (`/teachers-ticket T-005`), that is the ticket. The
 invocation may also carry `--persist-plan` or `--no-persist-plan`, which decide
@@ -60,9 +108,13 @@ Then check the gate before starting:
   is unmet and ask whether to proceed anyway (`AskUserQuestion`) rather than
   quietly starting.
 
-State the chosen ticket — id, title, why this one — in one line before moving on.
+State the chosen ticket — id, title, why this one — in one line before moving on,
+and write `.gate/run.json` with the ticket, its path, the flags in force and
+`phase: 1` — the branch is still empty at this point and phase 2 fills it in.
 
 ## Phase 2 — Cut the branch, then understand the ticket
+
+Read `.gate/run.json` first — phase 1 wrote the ticket and the branch into it.
 
 **Cut the branch first**, before reading anything but the ticket's own id:
 
@@ -97,7 +149,11 @@ Then read, in this order:
    question usually has a *current default* that the code must implement, in one
    named place.
 
+Write the branch and `phase: 2` into `.gate/run.json` before moving on.
+
 ## Phase 3 — Ask before assuming
+
+Read `.gate/run.json` first.
 
 Ask the user — with `AskUserQuestion`, options first, one round if possible —
 when:
@@ -114,7 +170,12 @@ Do not ask what the documents already answer, and do not ask for permission to
 follow the conventions. Do everything that does not depend on the answer while
 you wait, and batch the questions into one round rather than trickling them.
 
+Record the answers in `.gate/run.json` — an answer the user gave once is not a
+question a resumed run may ask again — and set `phase: 3`.
+
 ## Phase 4 — Plan first
+
+Read `.gate/run.json` first.
 
 Produce a written implementation plan **before any edit**. For a ticket that
 touches more than two or three files, delegate the exploration to the `Plan`
@@ -136,7 +197,11 @@ The plan must state:
   earns an ADR (phase 5), and the backlog status update.
 - **Risks and trade-offs**, including anything the plan deliberately leaves out.
 
-Present the plan and get the user's approval before implementing.
+Present the plan and get the user's approval before implementing. Then condense
+it into `.gate/run.json` — one line per file, one row per acceptance criterion,
+the design document's path if the plan is persisted — and set `phase: 4`. That
+condensation is what phases 5 to 7 read; the argument for the plan stays in the
+conversation and in the pull request body.
 
 ### Where the plan lives
 
@@ -186,6 +251,8 @@ it. A plan file that contradicts the merged code is worse than no plan file.
 
 ## Phase 5 — Implement
 
+Read `.gate/run.json` first.
+
 On the branch phase 2 cut — one branch per ticket, and nothing here fetches or
 branches again.
 
@@ -218,7 +285,13 @@ reference from `## Notes`, not buried in the ticket.
 Commit message: `T-NNN: <what changed>`, English, imperative, body explaining the
 non-obvious choices.
 
+Update `.gate/run.json` as you go — the files touched, the criteria now covered,
+what remains — and set `phase: 5` before phase 6 starts. A criterion finished
+but not recorded is a criterion the resumed run implements twice.
+
 ## Phase 6 — Verify, then open the PR
+
+Read `.gate/run.json` first.
 
 Everything must pass before the PR exists, and one command says whether it does:
 
@@ -235,6 +308,13 @@ step with `ci.yml` the moment either changes. Which checks exist is
 `scripts/gate/checks.ts`, held level with the workflow by
 `scripts/gate/checks.ci.test.ts` (`ADR-012`), and nothing about them belongs in
 this file.
+
+**Gate a tree that has not been gated.** Read `.gate/last-run.json` before
+running it: if its `commit` is the current `HEAD` and the tree is clean now
+(`git status --porcelain` is empty), that table already describes this tree and
+the gate does not run again — read the table from the file instead. The same
+holds in phase 7, where the loop gates after each fix. A second run over an
+unchanged tree measures nothing and spends a `gateRunsPerRound` count.
 
 A check the gate does not run comes back `skipped` with the reason — because
 this machine cannot run it (no Docker daemon, no `DATABASE_URL`), or because
@@ -260,157 +340,83 @@ one exists. Otherwise write the body as:
 
 Title: `T-NNN: <ticket title>`. English, like everything else developer-facing.
 
-## Phase 7 — Review, fix and re-review, until nothing is left undisposed
+Write the pull request number and `phase: 6` into `.gate/run.json`. Phase 7 and
+every subagent it launches read the number from there, not from the
+conversation.
+
+## Phase 7 — The bounded fix loop, with the ticket bound
+
+Read `.gate/run.json` first.
 
 This phase is a **loop**, not a step, and it is not a re-read of your own diff
-from memory:
+from memory. The loop is not written here: it is `/teachers-fix-loop`, one unit
+with one written contract, and this phase is a call into it (`ADR-014`,
+`ADR-017`). Everything the loop owns — the caps in `scripts/gate/caps.ts`, the
+four dispositions, the rule that a count comes from a record the agent did not
+author, the round's subagent boundary, the exit criterion — is stated there and
+in no second place, this file included.
+
+**The call:**
 
 ```
-review → triage → fix → gate → re-review
+/teachers-fix-loop --state .gate/run.json --pr <n> --ticket docs/backlog/T-NNN-….md --effort medium
 ```
 
-**It ends when the latest round leaves no finding undisposed** — every finding
-that round produced carries one of the four dispositions below — or when a cap
-stops it. Nothing else ends it: not a round that felt thorough, and not a report
-you have already drafted.
+**`--effort medium`, on every round, and this line is the one place the level a
+self-review round gets is stated.** The names are `/code-review`'s own
+vocabulary, which `/teachers-review` carries unchanged; that skill takes what it
+is given and states no self-review value of its own, so the one word is not
+written in two files that can disagree. `medium` is the level because a round's
+breadth is no longer what keeps it honest — the review is scoped to the diff
+(`ADR-015`) and the loop stops at the first round with no finding inside it.
+Raise it by hand for a round that needs wider reading, and know that the round
+costs what you raised it to.
 
-### The caps
+**What comes back** is the loop's return value: the exit reason, the rounds, what
+is still undisposed, the `## Outside this change` items and what the gate and CI
+said. Take it as it stands. Do not re-run a round to check it, and do not
+re-read the diff to form a second opinion — the second opinion is what the round
+was bought to avoid.
 
-They live in one module — `scripts/gate/caps.ts` — and this file states no
-number of its own, because a number restated in prose goes on being right until
-that module changes, after which nothing says it is wrong. Read them there:
+### What only the ticket makes possible — this phase's own work
 
-| Cap | Bounds |
-|---|---|
-| `reviewRounds` | review passes over the pull request |
-| `gateRunsPerRound` | `npm run gate` invocations inside one round |
-| `pushesAfterOpening` | pushes after the one that opened the pull request |
+The loop does none of this, because a caller with no ticket has none of it to do.
+After it returns:
 
-The last two bound the loops that are easiest to leave open: a red check fixed
-and re-gated inside a round, and a red CI run fixed and re-pushed after it.
-`npm run gate` prints every count against its cap on each run, so a cap being
-approached is visible in the terminal without anyone opening a file for it.
-
-**Every count is derived from a record you did not write.** The gate runs in this
-round are the distinct run ids the gate itself appended to `.gate/ledger.jsonl`
-since the round's timestamp; the pushes come from the branch's own history. Only
-the round number is yours, in `.gate/findings.json`. **A count held in the
-conversation is not a count** — that is the one thing a compacted context is
-guaranteed to take. Read them; never recall them.
-
-**Re-running the gate against an unchanged tree, hoping for a different answer,
-is not one of those attempts. It is not permitted.** The gate will still run it
-and still count it — nothing here refuses a *measurement*, because the check is
-what tells the truth and an environment fix changes no file. If the tree has not
-changed, either the answer has not either, or what changed is the environment,
-and that is worth saying out loud rather than re-rolling.
-
-**Hitting any cap stops the loop.** Report what is still open — which findings,
-which check, which count ran out — rather than starting another of anything. A
-run of rounds that did not converge is information; one more rarely adds any.
-
-### One round
-
-1. **Review.**
-
-   ```sh
-   /teachers-review <pr> --self-review T-NNN --effort high
-   ```
-
-   That flag selects self-review defaults — no merge, no inline comments, and no
-   questions to the user about anything this ticket already answers. It resolves
-   the diff, reads the documents that govern the code you changed, runs the
-   passes the kind of that diff calls for — `/teachers-review`'s kind table is
-   the one place that states which those are, and this file does not restate it
-   — and returns ranked findings. The standard is those documents, not a checklist — so a rule you
-   added to the architecture in this very ticket is one the review applies to it.
-
-   **`--effort` names the level in `/code-review`'s vocabulary, and this line is
-   the one place the level a self-review round gets is stated.**
-   `/teachers-review` documents what each level buys and takes what it is given;
-   it states no self-review value of its own, so the word is not written in two
-   files that can disagree. Raise it by hand for a round that needs wider
-   reading — and know that the round costs what you raised it to.
-
-2. **Record the round in `.gate/findings.json` before fixing anything**, so
-   round *N* and round *N+1* are two lists that can be compared:
-
-   ```json
-   {
-     "rounds": [
-       {
-         "round": 1,
-         "startedAt": "2026-09-10T11:04:00.000Z",
-         "head": "9f2c1ab",
-         "findings": [
-           {
-             "id": "R1-1",
-             "location": "lib/db/queries/events.ts:42",
-             "rule": "userId is the first argument of every function in lib/db/queries — CLAUDE.md, Code layout",
-             "summary": "listEvents takes the range first, so a caller can omit the tenant filter.",
-             "pass": "contract",
-             "disposition": "fixed",
-             "note": "commit 4d1e0aa"
-           }
-         ]
-       }
-     ]
-   }
-   ```
-
-   `startedAt` and `head` are what the counts are measured from. **No code
-   validates this file.** A validator can check that a field is not empty, never
-   that it is true — a disposition recorded `fixed` against code that does not
-   exist passes any validator anyone could write. What makes the file worth
-   keeping is that the next round reads it, and that a resumed session can.
-
-3. **Dispose of every finding the review reported.** A defect this change did
-   not cause is not among them: `/teachers-review` drops it, and the
-   `## Outside this change` section it may print is information about code this
-   branch did not touch, not a list this loop owes anything. Carry that section
-   into the report at the end of this phase, though — it is how a severe defect
-   nobody here caused reaches the person who can file it. These dispositions,
-   and each costs something:
-
-   | Disposition | What it takes | What it costs |
-   |---|---|---|
-   | `fixed` | a commit that changes the named `file:line` | the fix has to survive the gate |
-   | `rejected` | the document text that refutes the quoted rule, quoted back | having actually read the document, and being right |
-   | `deferred` | a `T-NNN` that **exists** — file it, mirror it in `README.md` | the backlog carries it, and someone must do it |
-   | `accepted` | the user said so, in this conversation | a question spent out of the user's attention |
-
-   Nothing else is a disposition. "Noted", "will keep an eye on it" and silence
-   are how a finding reaches `main`.
-
-4. **Fix, then gate.** Apply the fixes on the same branch as one commit —
-   `T-NNN review fixes: <what>` — then `npm run gate`. Every failing check is in
-   one table: fix them together rather than one round-trip each.
-
-5. **Push, then re-review.** A round that leaves nothing undisposed is the exit.
+- **Tick the acceptance criteria**, in the ticket file, and mirror the `status`
+  in `docs/backlog/README.md`. Tick a box **only where the evidence names a
+  `file:line` or a test**; anything else stays unticked with the reason, and the
+  ticket stays `in-progress`. They are ticked here, after the checks have run —
+  not in phase 5, where nothing had been checked yet. `status: done` only when
+  every box is ticked.
+- **Reconcile a persisted plan**, if phase 4 wrote one: update the document to
+  what was actually built, or change its `**Status:**` line to say what
+  superseded it.
+- **Carry the loop's `deferred` ticket ids** into the pull request body's
+  follow-ups, and its `## Outside this change` items into the final report.
 
 ### Before the ticket may be called done
 
-- **`npm run gate` is green**, and every check it skipped is named as skipped,
-  with its reason, in the PR body. A skip is not a pass.
-- **Tick the acceptance criteria now**, in the ticket file, and mirror the
-  `status` in `docs/backlog/README.md`. Tick a box **only where the evidence
-  names a `file:line` or a test**; anything else stays unticked with the reason,
-  and the ticket stays `in-progress`. They are ticked here, after the checks have
-  run — not in phase 5, where nothing had been checked yet.
-- **`gh pr checks` on the pushed head is the last gate.** `ci.yml` is the
-  authoritative one (`ADR-007`) and it checks the commit you actually pushed, on
-  a machine that has the Docker daemon and the database this one may not. The
-  ticket is not done while that run is red or pending. Where `gh` cannot read
-  it — not installed, not authenticated, no PR — say exactly that. **Never that
+- **The gate is green on the tree that was pushed.** Read
+  `.gate/last-run.json` — the loop gated after its last fix, and a tree that has
+  not changed since does not get gated again. Every check it skipped is named as
+  skipped, with its reason, in the pull request body. A skip is not a pass.
+- **CI on the pushed head is the last gate.** `ci.yml` is the authoritative one
+  (`ADR-007`); it checks the commit you actually pushed, on a machine that has
+  the Docker daemon and the database this one may not. The ticket is not done
+  while that run is red or pending. Read it with `gh pr checks` — **never with
+  a `sleep`**; `gh pr checks <n> --watch --interval 30` blocks inside `gh`
+  instead of holding the context open. Where `gh` cannot read it — not
+  installed, not authenticated, no pull request — say exactly that. **Never that
   it passed.**
 - **`npm run gate -- --report`** answers the whole question in one exit code: it
   runs no check, reads the counts and what CI said, and refuses — naming which
   cap, or what CI reported. It refuses a *conclusion*, never a measurement.
-- If the plan was persisted, reconcile the document against what was actually
-  built: updated, or its `**Status:**` line marked superseded and by what.
+- **Write `.gate/run.json` one last time**, with the exit reason and what is
+  still open, before reporting.
 
-Report back with the PR link, what the review changed, what is still open, and
-every check that did not run here.
+Report back with the pull request link, what the loop changed, what is still
+open, and every check that did not run here.
 
 ## Definition of done
 
@@ -423,9 +429,11 @@ every check that did not run here.
 - `npm run gate` is green on the pushed head, and every check it did not run —
   whether this machine could not, or the kind of change routed it away — is
   reported as skipped, with its reason, rather than as a pass.
-- Phase 7 looped to its exit criterion or to a cap, each round is in
+- `/teachers-fix-loop` returned `converged` or a named cap, each round is in
   `.gate/findings.json` with every finding disposed, and the PR body reflects
   the final state.
+- `.gate/run.json` was written at every phase boundary, and the run could have
+  been resumed from it at any of them.
 - The acceptance criteria were ticked in phase 7, against evidence, and `status`
   is `done` only if all of them are.
 - `gh pr checks` on the pushed head is green, or the report says plainly that it

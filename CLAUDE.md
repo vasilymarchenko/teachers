@@ -31,6 +31,7 @@ npm run db:generate  # drizzle-kit generate — migration from lib/db/schema
 npm run db:migrate   # drizzle-kit migrate — also an explicit deploy step
 npm run db:seed      # reset the demo teacher and re-insert the fixture scenario
 npm run db:studio    # Drizzle Studio
+npm run cost         # what one session cost, read out of its own transcript
 ```
 
 Postgres runs from `docker-compose.yml` (`docker compose up -d`). Copy `.env.example` to `.env` first; `DATABASE_URL` must agree with the `POSTGRES_*` values in the same file. `docker-compose.yml` is dev-only; the production stack (web, Postgres, Caddy) is `docker-compose.prod.yml`, deployed as described in `README.md` ("Deploying to the VPS").
@@ -68,6 +69,13 @@ Every diff this repository takes — `npm run gate`, `/teachers-review`, the bra
 **The reading discipline.** A fetch moves the ref; it does not touch the files on disk. So: content whose current value decides something, read before a branch is cut from `origin/main`, is read from `origin/main` and not from disk — `git show origin/main:<path>`. That holds whatever branch the session is sitting on and whether or not the tree is clean. After a branch is cut with `git checkout -b <branch> origin/main` the working tree *is* the fetched `origin/main`, and everything read from then on is read from disk normally.
 
 **A session whose hook could not run** — no network, no remote — works from what it has and says so: any report it produces states that the repository state was not verified. It is never reported as current.
+
+## Two habits that keep a call small
+
+Every tool call re-sends everything the session has read so far, so the cost of a session grows with the square of the number of calls it makes, and a single inlined command output is paid for again on every call that follows it. Two rules follow. They hold in any session, not only in a `/teachers-ticket` run:
+
+- **Independent reads, searches and shell calls go in one message, not one per turn.** If the next call's arguments do not depend on the previous call's result, issue them together. A file to read, a grep to run and a `git log` to look at are one message with three tool calls; the turn that waits for each in order pays for the whole transcript three times.
+- **Command output larger than a screen is written to a file and read back narrowed — never inlined.** Redirect it (`… > .gate/out.txt 2>&1`), then read what you actually need out of it with `grep`, `sed -n` or `tail`. A full `npm test` log, a long `git diff` or a whole-directory listing pasted into the context is bought once and paid for on every subsequent call in the session.
 
 ## Code layout
 
