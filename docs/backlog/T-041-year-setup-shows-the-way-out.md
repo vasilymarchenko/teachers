@@ -26,7 +26,8 @@ comes next, and the save that completes setup changes nothing they can see.
       sees, without scrolling, which item is next and can reach it in one click.
       Saving the year's dates is the case that must not dead-end: the
       checklist still lists the semesters and the bell schedule as missing.
-- [ ] The save that completes setup — whichever of the four it is — tells the
+- [ ] The save that completes setup — whichever of the three it is: the year
+      with its initial parity, the semesters, or the bell schedule — tells the
       teacher, in Ukrainian and in view of the button they pressed, that setup
       is complete and the rest of the app is open, and offers the next step as
       a prominent action rather than the link at the bottom of the page.
@@ -41,10 +42,16 @@ comes next, and the save that completes setup changes nothing they can see.
 - [ ] The behaviour of the gate itself does not change: the four conditions,
       `getSetupStatus()`, `requireCompleteSetup()` and the redirect stay as
       T-038 left them.
-- [ ] A browser-level test walks a teacher with no rows through all four
-      items in the order the page presents them and asserts, after each save,
-      what the teacher sees: the next missing item, and finally the completion
-      notice with the full navigation.
+- [ ] A browser-level test walks a teacher with no rows through the three
+      saves — the year with its initial parity, both semesters, the bell
+      schedule — in the order the page presents them, and asserts after each
+      save what the teacher sees: the next missing item, and finally the
+      completion notice with the full navigation.
+- [ ] That test is run by `npm run gate` and by `ci.yml` through the one check
+      definition (`ADR-012`). Its browser-test dependency and the seeded
+      database it renders from — the costs `ADR-013` recorded when it
+      deferred a browser test — are recorded in an ADR and in
+      `docs/tech-stack.md`.
 
 ## Notes
 
@@ -60,10 +67,8 @@ the production build, with Playwright. The gate works as T-038 specified:
   bell schedule are still missing. The checklist is plain text, the semester
   form is below the two year forms, and the bell schedule is near the end of a
   page about three screens long — nothing on screen says what to do next;
-- after the fourth item is saved, the full menu does appear without a reload
-  (`revalidatePath(YEAR_SETUP_PATH)` from a Server Action re-renders the
-  `(app)` layout too), but the checklist disappears at the top of the page, out
-  of view, and the only way on is «Перейти до календаря» at the very bottom.
-  On a narrow screen the new menu items are behind the collapsed menu.
-
-So the defect is the screen's flow, not the gate's logic or a stale layout.
+- after the last save, the full menu does appear without a reload, as
+  `ADR-018` (Consequences) says it will, but the checklist disappears at the top
+  of the page, out of view, and the only way on is «Перейти до календаря» at the
+  very bottom. On a narrow screen the new menu items are behind the collapsed
+  menu.
