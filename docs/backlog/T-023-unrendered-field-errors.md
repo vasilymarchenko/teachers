@@ -52,6 +52,6 @@ name is not decidable from the syntax of `lib/actions`, which is where the
 message is written. Hence a runtime fallback plus a test, not a lint rule.
 
 The mechanism, and why it sits at render rather than in the action helpers:
-`docs/architecture/decisions/ADR-023-a-form-shows-every-field-error.md`. With it
+`docs/architecture/decisions/ADR-024-a-form-shows-every-field-error.md`. With it
 `boundaryRefusal()` in `lib/actions/scheduleTemplate.ts` no longer inspects the
 submission; it always names the field.

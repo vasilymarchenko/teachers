@@ -1,5 +1,5 @@
 ---
-id: ADR-023
+id: ADR-024
 title: A form shows every field error, claimed or not
 status: accepted
 date: 2026-10-01

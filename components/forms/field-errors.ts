@@ -1,6 +1,6 @@
 /**
  * The errors of one submission, handed out so that none of them can be lost —
- * overview §8.2, ADR-023.
+ * overview §8.2, ADR-024.
  *
  * An action keys a field error by the `name=` it expects the form to spell
  * (`FormState.fieldErrors`), but it cannot always know which form submitted: a

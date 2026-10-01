@@ -166,7 +166,7 @@ async function boundaryFor(
  * `END_OF_SEMESTER` of specification §5.1 has nothing to resolve against until
  * the year has semesters. Where the message is shown is the form's business,
  * not this action's: a form that renders the field puts it on the control, and
- * one that does not shows it as a form-level message (overview §8.2, ADR-023).
+ * one that does not shows it as a form-level message (overview §8.2, ADR-024).
  */
 function unresolvableBoundary(kind: BoundaryKind): {
   field: string;
