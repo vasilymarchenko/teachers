@@ -44,43 +44,46 @@ decides how the command ships.
       session cookie issued before it lands on `/sign-in`; and no row of the
       teacher's data has been deleted.
 - [ ] A deactivated teacher gets no session through the sign-in form or through
-      `POST /api/auth/sign-in/email`. The form shows the same Ukrainian message
-      as a wrong password — not the error page, and not a message that reveals
-      the account exists.
+      `POST /api/auth/sign-in/email`. Both answer exactly as for a wrong
+      password, whether the password given is right or wrong: the endpoint
+      returns the same status and `INVALID_EMAIL_OR_PASSWORD` code, and the form
+      shows the same Ukrainian message — not the error page. Neither response
+      reveals that the account exists or that the password was right
+      (`ADR-019`).
 - [ ] After `activate` the teacher signs in and finds the data as it was.
 - [ ] `list` prints each teacher's address, name, whether active, and when
       created — and nothing derived from a password.
 - [ ] `password`, `deactivate` and `activate` on an address that does not exist,
       and `create` on one that does, exit non-zero with a message naming the
       address and write nothing.
-- [ ] The command runs against the deployed stack with no source checkout on
-      the VPS, at the same `IMAGE_TAG` as `web`, and that is proven on a built
-      image — not only under `tsx`. An ADR records how it ships: first choice a
+- [ ] The command runs against the deployed stack from the published images
+      alone — no Node, `npm` or TypeScript sources on the VPS, and nothing run
+      from the checkout there — at the same `IMAGE_TAG` as `web`, and that is
+      proven on a built image — not only under `tsx`. An ADR records how it ships: first choice a
       single bundled file in the `runner` image, run with `docker compose exec
       web`; if bundling does not hold, the `migrator` image, with that ADR
       saying what changes in `ADR-003`.
 - [ ] Integration tests cover each operation end to end against Postgres,
       including a real sign-in after `create` and after `password`, and the two
       points `ADR-019` §Consequences lists as inferred and not run.
-- [ ] `деактивація` is in `docs/architecture/glossary.md`, bound to
-      `user.deactivatedAt`, before the identifier appears anywhere else.
 - [ ] The documents state the new truth: `README.md` "Deploying to the VPS"
       says how the first teacher is created and how the command is run there;
       `docs/demo-scenario.md` §2 describes the new command in place of
       `create-teacher`; `design/schema.md` §5.2 and the header comment of
       `lib/db/schema/auth.ts` name the one added column;
-      `design/T-006-auth-boundary.md` §7 covers the deactivation hook and the
-      error code `isBadCredentials()` now also accepts; `architect-overview.md`
-      §8.3 states the outcome and links `ADR-019`.
+      `design/T-006-auth-boundary.md` §7 covers the deactivation hook and that
+      it answers with the wrong-password error; §7 and the comment on
+      `disabledPaths` in `lib/auth/auth.ts` say an account comes from the new
+      command, not from `npm run db:seed` alone; `architect-overview.md` §8.3
+      states the outcome and links `ADR-019`.
 
 ## Notes
 
 Out of scope, each a ticket of its own if wanted: an admin page, roles, a
 teacher changing her own password from the app, password reset by email.
 
-`ADR-003` rejected shipping `drizzle-kit` in `runner` partly because it would
-put a capability next to the process that must not use it. The ADR this ticket
-writes has to say why a bundled account command is or is not the same case.
+The ADR this ticket writes says whether a bundled account command is the case
+`ADR-003` option 2 rejected.
 
 The command name on the VPS depends on how it ships; the README states it once
 the ADR is written.

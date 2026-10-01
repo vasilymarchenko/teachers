@@ -9,14 +9,14 @@ ticket: T-039
 ## Context
 
 There is no sign-up screen, on purpose: `lib/auth/auth.ts` closes
-`/sign-up/email`, and an account is created by `scripts/create-teacher.ts`
-calling `auth.api.signUpEmail()` with no request and no session
-(`design/T-006-auth-boundary.md` §7). That script is the whole of account
+`/sign-up/email` (`design/T-006-auth-boundary.md` §7), and an account is created
+by `scripts/create-teacher.ts` calling `auth.api.signUpEmail()` with no request
+and no session (`docs/demo-scenario.md` §2). That script is the whole of account
 management. It takes the password from `.env`, cannot change a password, cannot
 stop a teacher signing in, cannot list who exists, and cannot run on the VPS at
 all (how it ships is a separate decision, taken in T-039).
 
-What is wanted is four operations — create, set a password, deactivate and
+What is wanted is five operations — create, set a password, deactivate and
 reactivate without deleting data, list — available from a console now and from
 an admin page later. No admin user exists, no role exists, and nothing may be
 added to the public surface: `toNextJsHandler` serves every endpoint better-auth
@@ -36,7 +36,7 @@ The facts below were read out of the installed `better-auth` 1.7.2
   `impersonatedBy` to `session` (`plugins/admin/schema.mjs:2-31`).
 - A ban is enforced by a `session.create.before` database hook
   (`plugins/admin/admin.mjs:33-50`) and by
-  `internalAdapter.deleteUserSessions(userId)` (`routes.mjs:547`). There is no
+  `internalAdapter.deleteUserSessions(userId)` (`routes.mjs:540`, in `banUser`). There is no
   check on `getSession`; a live session ends because its row is gone.
 - The same building blocks are reachable without the plugin:
   `(await auth.$context).password.hash()` (`context/create-context.mjs:181-189`),
@@ -84,6 +84,14 @@ Option 3.
 - A deactivated teacher is refused in better-auth's own
   `databaseHooks.session.create.before`, not in `signInAction`, so the refusal
   covers `POST /api/auth/sign-in/email` as well as the form.
+- The hook throws exactly what a wrong password throws —
+  `APIError("UNAUTHORIZED", INVALID_EMAIL_OR_PASSWORD)` — and nothing more
+  specific. `signInEmail()` verifies the password before it creates a session
+  (`api/routes/sign-in.mjs:333-338`, then `:354`), so the hook runs only when
+  the password is right; a code of its own, such as the admin plugin's
+  `BANNED_USER`, would tell a caller of the public endpoint that the account
+  exists and that the password guessed for it is correct. The same code also
+  means `isBadCredentials()` in `lib/auth/signInError.ts` needs no change.
 - Deactivating deletes the teacher's sessions through
   `internalAdapter.deleteUserSessions()`.
 - A password is hashed with `auth.$context`'s `password.hash()` and written with
