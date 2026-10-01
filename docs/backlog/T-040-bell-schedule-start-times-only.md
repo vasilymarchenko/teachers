@@ -30,6 +30,13 @@ without a migration of the rows this ticket writes (overview §9).
 - [ ] The bells section shows one time input per lesson number 0–9 — the
       start — and one whole-minutes input for `lessonMinutes` above the grid.
       There is no input for the end of a lesson.
+- [ ] Every time on the section is 24-hour `HH:MM` — `08:30`, `13:30`,
+      `15:10` — whatever the browser's or the operating system's locale: the
+      start inputs, their placeholders and the computed ends. No AM/PM is
+      ever shown. The native `<input type="time">` cannot promise this — it
+      follows the browser locale, not `lang="uk"` — so the start is a text
+      input with a numeric keyboard and the `HH:MM` check `clockTimeField`
+      already makes. A start typed as `8:30` is accepted and shown as `08:30`.
 - [ ] Next to each filled start the section shows the computed end, and the
       ends follow the start and `lessonMinutes` as the teacher types, before
       the form is saved.
