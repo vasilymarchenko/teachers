@@ -2,7 +2,7 @@
 id: T-022
 type: ticket
 title: Convention test — every UPDATE in lib/actions checks the rows it matched
-status: in-progress
+status: done
 depends_on: [T-009]
 refs:
   - docs/architecture/design/T-009-year-setup.md §5
@@ -31,18 +31,18 @@ over `lib/actions`.
 
 ## Acceptance criteria
 
-- [ ] A test asserts that every `.update(` chain in `lib/actions/**` either
+- [x] A test asserts that every `.update(` chain in `lib/actions/**` either
       chains `.returning(` or is followed by an explicit row-count check, and
       names the file and the offending line when it fails.
-- [ ] It fails against a deliberately broken fixture — a `.update()` chain with
+- [x] It fails against a deliberately broken fixture — a `.update()` chain with
       no `.returning()` — and passes against the four real update actions, so a
       green run means the check ran rather than matched nothing.
-- [ ] It flags nothing in `lib/actions` as it stands: the sketch below was run
+- [x] It flags nothing in `lib/actions` as it stands: the sketch below was run
       against the T-009 branch before the fixes and reported exactly the two
       real defects and no others.
-- [ ] It runs in `npm test` — no database, no network. The check is over source
+- [x] It runs in `npm test` — no database, no network. The check is over source
       text or its AST, like `queryDiscipline.test.ts`.
-- [ ] The rule the test enforces is the one §5 states, quoted in the test file
+- [x] The rule the test enforces is the one §5 states, quoted in the test file
       so a future reader can tell the check from an opinion.
 
 ## Notes
@@ -94,4 +94,4 @@ The checker sits in `lib/db`, not `lib/actions`, because
 
 Run over `lib/actions` as it stood on the commit before T-009's review fixes
 (`4835092^`), it reports the same two lines as the sketch above and nothing
-else. What remains: the review loop and CI on the pull request.
+else.
