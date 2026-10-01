@@ -1,5 +1,6 @@
 "use client";
 
+import type { FormErrors } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ export function DateField({
   label,
   state,
   stored,
-  error,
+  errors,
   hint,
   required = true,
 }: {
@@ -27,12 +28,13 @@ export function DateField({
   state: FormState;
   /** What the row holds today; absent on a form that adds one. */
   stored?: string;
-  error?: string;
+  /** The form's errors; the field takes its own out of them. */
+  errors: FormErrors;
   hint?: string;
   required?: boolean;
 }) {
   return (
-    <FormField error={error} hint={hint} label={label} name={name}>
+    <FormField error={errors.for(name)} hint={hint} label={label} name={name}>
       {(props) => (
         <Input
           {...props}

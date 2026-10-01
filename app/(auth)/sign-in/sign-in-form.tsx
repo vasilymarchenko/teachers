@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -11,6 +12,7 @@ const initialState: SignInState = {};
 
 export function SignInForm() {
   const [state, formAction] = useActionState(signInAction, initialState);
+  const errors = formErrorsOf(state);
 
   return (
     <form action={formAction} className="space-y-6" noValidate>
@@ -22,7 +24,7 @@ export function SignInForm() {
       <FormField
         name="email"
         label="Електронна пошта"
-        error={state.fieldErrors?.email}
+        error={errors.for("email")}
       >
         {(props) => (
           <Input
@@ -35,13 +37,13 @@ export function SignInForm() {
         )}
       </FormField>
 
-      <FormField name="password" label="Пароль" error={state.fieldErrors?.password}>
+      <FormField name="password" label="Пароль" error={errors.for("password")}>
         {(props) => (
           <Input {...props} type="password" autoComplete="current-password" required />
         )}
       </FormField>
 
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
 
       <SubmitButton className="w-full" pendingLabel="Входимо…">
         Увійти

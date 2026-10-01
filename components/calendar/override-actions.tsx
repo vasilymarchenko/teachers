@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { DeleteButton } from "@/components/forms/delete-button";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
 import {
@@ -53,6 +54,7 @@ export function ClearLessonForm({
     clearLessonAction.bind(null, slot),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   return (
     <form action={formAction} className="space-y-2">
@@ -66,7 +68,7 @@ export function ClearLessonForm({
       <p className="text-muted-foreground text-xs">
         {overwrites ? OVERRIDE_LABELS.clearOverwritesHint : OVERRIDE_LABELS.clearHint}
       </p>
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
     </form>
   );
 }
@@ -98,6 +100,7 @@ export function RemoveOverrideForm({
     removeDayOverrideAction.bind(null, slot),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   return (
     <form action={formAction} className="space-y-2">
@@ -116,7 +119,7 @@ export function RemoveOverrideForm({
           ? OVERRIDE_LABELS.removeHint
           : OVERRIDE_LABELS.removeHintNoPlanned}
       </p>
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
     </form>
   );
 }

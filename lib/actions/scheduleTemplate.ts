@@ -161,12 +161,12 @@ async function boundaryFor(
  * A symbol that resolved to nothing usable, as a message and the field it
  * belongs to.
  *
- * The field only helps on the form that has it. A day save and a parity copy
+ * The field is named whichever form submitted. A day save and a parity copy
  * carry no boundary inputs, and they reach this too — the default
  * `END_OF_SEMESTER` of specification §5.1 has nothing to resolve against until
- * the year has semesters. Putting the message on `boundaryKind` there would
- * render it nowhere at all, and the teacher would press «Зберегти» and watch
- * nothing happen. `boundaryRefusal()` below is what decides.
+ * the year has semesters. Where the message is shown is the form's business,
+ * not this action's: a form that renders the field puts it on the control, and
+ * one that does not shows it as a form-level message (overview §8.2, ADR-024).
  */
 function unresolvableBoundary(kind: BoundaryKind): {
   field: string;
@@ -193,22 +193,10 @@ function unresolvableBoundary(kind: BoundaryKind): {
   }
 }
 
-/**
- * The refusal, on the field that shows it when there is one and on the form as
- * a whole when there is not.
- *
- * `fromBoundaryForm` is whether this submission carried the boundary inputs —
- * i.e. whether the teacher is looking at the control the message names.
- */
-function boundaryRefusal(
-  kind: BoundaryKind,
-  fromBoundaryForm: boolean,
-  formData: FormData,
-): FormState {
+/** The refusal, keyed to the boundary field it is about. */
+function boundaryRefusal(kind: BoundaryKind, formData: FormData): FormState {
   const { field, message } = unresolvableBoundary(kind);
-  return fromBoundaryForm
-    ? rejectedField(field, message, formData)
-    : rejected(message, formData);
+  return rejectedField(field, message, formData);
 }
 
 /**
@@ -251,7 +239,7 @@ async function applyTemplateEdit(
   if ("error" in boundary) {
     return boundary.error === "noYear"
       ? rejected(NO_YEAR, formData)
-      : boundaryRefusal(boundary.kind, choice !== undefined, formData);
+      : boundaryRefusal(boundary.kind, formData);
   }
 
   // The new version stops where a later one starts, rather than running into it
@@ -267,7 +255,7 @@ async function applyTemplateEdit(
   // after the cut — so this holds for every path above, and `planTemplateEdit()`
   // would throw rather than write a range the check constraint rejects.
   if (validTo <= cutAt) {
-    return boundaryRefusal("DATE", choice !== undefined, formData);
+    return boundaryRefusal("DATE", formData);
   }
 
   const plan = planTemplateEdit({

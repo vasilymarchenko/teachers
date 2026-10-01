@@ -76,7 +76,8 @@ must reach `requireUser()` (`lib/auth/queryDiscipline.test.ts`).
 | File | Exports |
 |---|---|
 | `components/forms/form-field.tsx` | `FormField` — label, control, `aria-invalid`, `aria-describedby` |
-| `components/forms/form-message.tsx` | `FormMessage` — the `role="alert"` line for `FormState.error` |
+| `components/forms/field-errors.ts` | `formErrorsOf()` — the one way a form reads `FormState.fieldErrors` (overview §8.2, T-023) |
+| `components/forms/form-message.tsx` | `FormMessage` — the `role="alert"` block for `FormState.error` and every field error no control claimed; `FieldMessage` — one field's message beside a control `FormField` does not wrap |
 | `components/forms/date-field.tsx` | `DateField` |
 | `components/forms/submit-button.tsx` | `SubmitButton` |
 | `components/forms/delete-button.tsx` | `DeleteButton` |

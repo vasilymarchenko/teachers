@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { DateField } from "@/components/forms/date-field";
 import { DeleteButton } from "@/components/forms/delete-button";
+import { formErrorsOf, type FormErrors } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -52,23 +53,24 @@ export function DeadlineForm({ event }: { event?: EventEditRow }) {
       : updateDeadlineAction.bind(null, event.id),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   return (
     <Row>
       <form action={formAction} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <TitleField event={event} state={state} />
+          <TitleField errors={errors} event={event} state={state} />
           <DateField
-            error={state.fieldErrors?.[EVENT_FIELD.dateFrom]}
+            errors={errors}
             label={EVENT_FORM.deadlineDate}
             name={EVENT_FIELD.dateFrom}
             state={state}
             stored={event?.dateFrom}
           />
-          <NoteField event={event} state={state} />
+          <NoteField errors={errors} event={event} state={state} />
         </div>
 
-        <FormMessage>{state.error}</FormMessage>
+        <FormMessage errors={errors} />
 
         <div className="flex flex-wrap gap-2">
           <SubmitButton pendingLabel={ACTION_LABELS.saving}>
@@ -94,6 +96,7 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
       : updateInfoEventAction.bind(null, event.id),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   // The boundary fields are meaningless without a repetition, so they follow the
   // select rather than sitting there greyed out. That needs the chosen value in
@@ -122,18 +125,18 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
     <Row>
       <form action={formAction} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <TitleField event={event} state={state} />
+          <TitleField errors={errors} event={event} state={state} />
           <DateField
-            error={state.fieldErrors?.[EVENT_FIELD.dateFrom]}
+            errors={errors}
             label={EVENT_FORM.dateFrom}
             name={EVENT_FIELD.dateFrom}
             state={state}
             stored={event?.dateFrom}
           />
-          <NoteField event={event} state={state} />
+          <NoteField errors={errors} event={event} state={state} />
 
           <FormField
-            error={state.fieldErrors?.[EVENT_FIELD.recurrenceKind]}
+            error={errors.for(EVENT_FIELD.recurrenceKind)}
             label={EVENT_FORM.recurrenceKind}
             name={EVENT_FIELD.recurrenceKind}
           >
@@ -156,7 +159,7 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
           {repeats ? (
             <>
               <FormField
-                error={state.fieldErrors?.[EVENT_FIELD.boundaryKind]}
+                error={errors.for(EVENT_FIELD.boundaryKind)}
                 hint={EVENT_FORM.boundaryHint}
                 label={EVENT_FORM.boundaryKind}
                 name={EVENT_FIELD.boundaryKind}
@@ -181,7 +184,7 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
               </FormField>
 
               <DateField
-                error={state.fieldErrors?.[EVENT_FIELD.lastDay]}
+                errors={errors}
                 hint={EVENT_FORM.lastDayHint}
                 label={EVENT_FORM.lastDay}
                 name={EVENT_FIELD.lastDay}
@@ -198,7 +201,7 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
             </>
           ) : (
             <DateField
-              error={state.fieldErrors?.[EVENT_FIELD.dateTo]}
+              errors={errors}
               hint={EVENT_FORM.dateToHint}
               label={EVENT_FORM.dateTo}
               name={EVENT_FIELD.dateTo}
@@ -209,7 +212,7 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
           )}
         </div>
 
-        <FormMessage>{state.error}</FormMessage>
+        <FormMessage errors={errors} />
 
         <div className="flex flex-wrap gap-2">
           <SubmitButton pendingLabel={ACTION_LABELS.saving}>
@@ -229,15 +232,17 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
 }
 
 function TitleField({
+  errors,
   event,
   state,
 }: {
+  errors: FormErrors;
   event?: EventEditRow;
   state: FormState;
 }) {
   return (
     <FormField
-      error={state.fieldErrors?.[EVENT_FIELD.title]}
+      error={errors.for(EVENT_FIELD.title)}
       label={EVENT_FORM.title}
       name={EVENT_FIELD.title}
     >
@@ -255,15 +260,17 @@ function TitleField({
 }
 
 function NoteField({
+  errors,
   event,
   state,
 }: {
+  errors: FormErrors;
   event?: EventEditRow;
   state: FormState;
 }) {
   return (
     <FormField
-      error={state.fieldErrors?.[EVENT_FIELD.note]}
+      error={errors.for(EVENT_FIELD.note)}
       label={EVENT_FORM.note}
       name={EVENT_FIELD.note}
     >
