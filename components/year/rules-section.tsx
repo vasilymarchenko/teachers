@@ -41,12 +41,18 @@ import { Empty, Row, Section } from "./section";
 export function RulesSection({
   academicYearId,
   rules,
+  optionalMark,
 }: {
   academicYearId: string;
   rules: WeekdayRuleRow[];
+  optionalMark?: string;
 }) {
   return (
-    <Section title={RULES_SECTION.title} description={RULES_SECTION.description}>
+    <Section
+      description={RULES_SECTION.description}
+      optionalMark={optionalMark}
+      title={RULES_SECTION.title}
+    >
       {rules.length === 0 ? (
         <Empty>{RULES_SECTION.empty}</Empty>
       ) : (

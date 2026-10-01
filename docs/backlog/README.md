@@ -10,7 +10,7 @@ for reading. Order is priority; the ID number is not.
 
 | ID | Title | Status | Depends on |
 |---|---|---|---|
-| [T-038](T-038-first-run-year-setup-gate.md) | A teacher whose year setup is incomplete is sent to year setup, and nowhere else | todo | T-009, T-014 |
+| [T-038](T-038-first-run-year-setup-gate.md) | A teacher whose year setup is incomplete is sent to year setup, and nowhere else | done | T-009, T-014 |
 | [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | done | — |
 | [T-037](T-037-cost-a-change-what-it-is-worth.md) | A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all | done | T-033 |
 | [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | done | T-017 |

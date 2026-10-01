@@ -19,7 +19,13 @@ import { NavLinks } from "./nav-links";
  * the page, the back button), and the link callback catches a tap on the screen
  * already open, which changes no pathname at all.
  */
-export function MobileNav({ footer }: { footer: React.ReactNode }) {
+export function MobileNav({
+  footer,
+  setupComplete,
+}: {
+  footer: React.ReactNode;
+  setupComplete: boolean;
+}) {
   const pathname = usePathname();
   const ref = useRef<HTMLDetailsElement>(null);
 
@@ -40,7 +46,7 @@ export function MobileNav({ footer }: { footer: React.ReactNode }) {
       </summary>
       <div className="flex flex-col gap-4 px-3 pb-4">
         <nav aria-label="Головне меню">
-          <NavLinks onNavigate={close} />
+          <NavLinks onNavigate={close} setupComplete={setupComplete} />
         </nav>
         {footer}
       </div>

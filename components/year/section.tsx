@@ -10,16 +10,30 @@
 export function Section({
   title,
   description,
+  optionalMark,
   children,
 }: {
   title: string;
   description: string;
+  /**
+   * Shown beside the heading while the year setup is incomplete, on the
+   * sections the teacher may skip (overview §8.6). The word comes from the
+   * caller's labels; absent, the heading is the ordinary one.
+   */
+  optionalMark?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{title}</h2>
+        <h2 className="text-lg font-semibold">
+          {title}
+          {optionalMark === undefined ? null : (
+            <span className="text-muted-foreground ml-2 text-sm font-normal">
+              ({optionalMark})
+            </span>
+          )}
+        </h2>
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
       {children}

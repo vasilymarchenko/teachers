@@ -14,7 +14,7 @@ import { TemplateSwitchers } from "@/components/schedule/switchers";
 import { VersionNotice } from "@/components/schedule/version-notice";
 import { WeekGrid } from "@/components/schedule/week-grid";
 import { Section } from "@/components/year/section";
-import { requireUser } from "@/lib/auth/session";
+import { requireCompleteSetup } from "@/lib/auth/setupGate";
 import { getBellSchedule } from "@/lib/db/queries/bells";
 import {
   getTemplateVersionInForce,
@@ -51,8 +51,9 @@ export default async function Page({
 }: {
   searchParams: Promise<TemplateSearchParams>;
 }) {
-  // The boundary first, before anything reads (overview §8.3).
-  const { id: userId } = await requireUser();
+  // The boundary first, before anything reads (overview §8.3), and the
+  // year-setup gate with it (§8.6).
+  const { id: userId } = await requireCompleteSetup();
 
   const params = await searchParams;
   const cutAt = today();

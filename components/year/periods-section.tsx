@@ -39,12 +39,15 @@ import { Empty, Row, Section } from "./section";
 export function PeriodsSection({
   academicYearId,
   periods,
+  optionalMark,
 }: {
   academicYearId: string;
   periods: NonTeachingPeriodEditRow[];
+  optionalMark?: string;
 }) {
   return (
     <Section
+      optionalMark={optionalMark}
       title={PERIODS_SECTION.title}
       description={PERIODS_SECTION.description}
     >

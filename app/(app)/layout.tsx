@@ -1,5 +1,6 @@
 import { AppNav } from "@/components/navigation/app-nav";
 import { requireUser } from "@/lib/auth/session";
+import { getSetupStatus } from "@/lib/db/queries/setupStatus";
 import { getTeacher } from "@/lib/db/queries/teacher";
 
 // The session is read per request; nothing here may be frozen into the build.
@@ -24,11 +25,20 @@ export default async function AppLayout({
   // it reads data, so it starts here — and every page below it is behind the
   // same check.
   const { id: userId } = await requireUser();
-  const teacher = await getTeacher(userId);
+  // The status decides which menu is offered and nothing else. It is not the
+  // gate: a layout is not rendered again on a navigation between its pages, so
+  // the redirect is each page's own `requireCompleteSetup()` (overview §8.6).
+  const [teacher, setup] = await Promise.all([
+    getTeacher(userId),
+    getSetupStatus(userId),
+  ]);
 
   return (
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
-      <AppNav teacherName={teacher?.name ?? "Учитель"} />
+      <AppNav
+        setupComplete={setup.complete}
+        teacherName={teacher?.name ?? "Учитель"}
+      />
       <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10">
         <div className="mx-auto w-full max-w-5xl">{children}</div>
       </main>

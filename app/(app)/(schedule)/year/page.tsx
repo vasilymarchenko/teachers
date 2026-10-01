@@ -1,16 +1,22 @@
 import Link from "next/link";
 import { BellsSection } from "@/components/year/bells-section";
-import { PAGE_LABELS, YEAR_SECTION } from "@/components/year/labels";
+import {
+  PAGE_LABELS,
+  SETUP_GATE,
+  YEAR_SECTION,
+} from "@/components/year/labels";
 import { ParitySection } from "@/components/year/parity-section";
 import { PeriodsSection } from "@/components/year/periods-section";
 import { RulesSection } from "@/components/year/rules-section";
 import { Section } from "@/components/year/section";
 import { pickYear } from "@/components/year/selection";
 import { SemestersSection } from "@/components/year/semesters-section";
+import { SetupChecklist } from "@/components/year/setup-checklist";
 import { YearForm } from "@/components/year/year-form";
 import { YearSwitcher } from "@/components/year/year-switcher";
 import { requireUser } from "@/lib/auth/session";
 import { getBellSchedule } from "@/lib/db/queries/bells";
+import { getSetupStatus } from "@/lib/db/queries/setupStatus";
 import {
   listAcademicYears,
   listNonTeachingPeriods,
@@ -40,6 +46,12 @@ export const dynamic = "force-dynamic";
  * The sections are client components — each form needs `useActionState` — but
  * every read happens here, on the server, and no section fetches anything of
  * its own.
+ *
+ * This is the one page of the `(app)` group that does **not** call
+ * `requireCompleteSetup()`: it is where the gate sends a teacher whose setup is
+ * incomplete (overview §8.6). In that state it says so, lists what is still
+ * missing, marks the sections she may skip, and offers no way out to a screen
+ * that would only send her back.
  */
 export default async function Page({
   searchParams,
@@ -50,11 +62,12 @@ export default async function Page({
   const { id: userId } = await requireUser();
 
   const { year: requested } = await searchParams;
-  const [years, bells] = await Promise.all([
+  const [years, bells, setup] = await Promise.all([
     listAcademicYears(userId),
     // Not scoped to the year: `bell_schedule` is keyed by user and lesson
     // number alone (schema §4.5), so it is read whether or not a year exists.
     getBellSchedule(userId),
+    getSetupStatus(userId),
   ]);
 
   const selected = pickYear(
@@ -73,12 +86,18 @@ export default async function Page({
           listParityAnchors(userId, { from: selected.dateFrom, to: selected.dateTo }),
         ]);
 
+  const optionalMark = setup.complete ? undefined : SETUP_GATE.optional;
+
   return (
     <div className="space-y-10">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">{PAGE_LABELS.title}</h1>
         <p className="text-muted-foreground text-sm">{PAGE_LABELS.intro}</p>
       </div>
+
+      {setup.complete ? null : (
+        <SetupChecklist academicYearId={selected?.id ?? null} status={setup} />
+      )}
 
       <Section
         title={YEAR_SECTION.title}
@@ -134,11 +153,13 @@ export default async function Page({
           <PeriodsSection
             academicYearId={selected.id}
             key={`periods-${selected.id}`}
+            optionalMark={optionalMark}
             periods={frame[1]}
           />
           <RulesSection
             academicYearId={selected.id}
             key={`rules-${selected.id}`}
+            optionalMark={optionalMark}
             rules={frame[2]}
           />
         </>
@@ -155,11 +176,14 @@ export default async function Page({
         />
       ) : null}
 
-      <p className="text-sm">
-        <Link className="underline underline-offset-2" href="/calendar">
-          {PAGE_LABELS.toCalendar}
-        </Link>
-      </p>
+      {/* Not while the gate is up: the calendar would send her straight back. */}
+      {setup.complete ? (
+        <p className="text-sm">
+          <Link className="underline underline-offset-2" href="/calendar">
+            {PAGE_LABELS.toCalendar}
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
 }

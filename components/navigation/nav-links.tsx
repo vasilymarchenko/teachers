@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { navItems } from "./nav-items";
+import { navItemsFor } from "./nav-items";
 
 /**
  * The menu itself.
@@ -16,12 +16,19 @@ import { navItems } from "./nav-items";
  * already open. The mobile disclosure needs that: a re-tap of the current item
  * changes no pathname, so an effect watching the pathname never sees it.
  */
-export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+export function NavLinks({
+  setupComplete,
+  onNavigate,
+}: {
+  /** Decides which items there are — `navItemsFor()`, overview §8.6. */
+  setupComplete: boolean;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
     <ul className="flex flex-col gap-1">
-      {navItems.map(({ label, href, icon: Icon }) => {
+      {navItemsFor(setupComplete).map(({ label, href, icon: Icon }) => {
         // `/calendar/2026-09-01` is still the calendar, so match the prefix —
         // but on a segment boundary, or `/year` would also light up `/yearbook`.
         const isCurrent = pathname === href || pathname.startsWith(`${href}/`);
