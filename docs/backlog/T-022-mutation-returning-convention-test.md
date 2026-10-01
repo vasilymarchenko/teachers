@@ -2,7 +2,7 @@
 id: T-022
 type: ticket
 title: Convention test — every UPDATE in lib/actions checks the rows it matched
-status: todo
+status: in-progress
 depends_on: [T-009]
 refs:
   - docs/architecture/design/T-009-year-setup.md §5
@@ -74,3 +74,22 @@ Two things the implementation has to decide, neither settled here:
   usually benign — the row was already gone, which is what the teacher wanted —
   so the rule as written does not ask for it. Worth confirming rather than
   extending by analogy.
+
+**Both decided when the work was done.** The checker is
+`lib/db/updateDiscipline.ts`, walked over `lib/actions` by
+`lib/db/updateDiscipline.test.ts`.
+
+- It is the strict version, over the TypeScript AST: a chain passes when its
+  `.returning()` result is bound to a name that is read, or consumed where it
+  stands; a chain without `.returning()` passes only if `rowCount` is read off
+  its result. A `.returning()` whose result is discarded is reported.
+- `.delete()` is not covered — confirmed, not assumed. `onConflictDoUpdate` is
+  not covered either: an upsert always has a row.
+
+The checker sits in `lib/db`, not `lib/actions`, because
+`lib/auth/queryDiscipline.test.ts` requires every function exported from
+`lib/actions` to reach `requireUser()`.
+
+Run over `lib/actions` as it stood on the commit before T-009's review fixes
+(`4835092^`), it reports the same two lines as the sketch above and nothing
+else. What remains: the review loop and CI on the pull request.
