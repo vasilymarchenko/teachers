@@ -10,6 +10,8 @@ refs:
   - docs/architecture/architect-overview.md §8.5
   - docs/architecture/architect-overview.md §9
   - docs/architecture/design/schema.md §4.5
+  - docs/architecture/design/T-009-year-setup.md §3
+  - docs/architecture/design/T-009-year-setup.md §4
   - docs/architecture/glossary.md §1
 ---
 
@@ -35,8 +37,8 @@ without a migration of the rows this ticket writes (overview §9).
       and `lessonMinutes`. The form preview and the Server Action both call
       it; the action never accepts an end from the request. Unit tests cover
       it, including an end that would pass midnight.
-- [ ] The default of 45 is one named constant, and the only place the number
-      appears in code.
+- [ ] The default of 45 is one named constant, and outside tests the only
+      place the number appears in code.
 - [ ] Saving writes, for each filled row, `timeFrom` = the start and `timeTo` =
       the computed end. A cleared start deletes the row, as it does today. No
       migration: `bell_schedule` keeps both columns and its constraints, and
@@ -51,8 +53,12 @@ without a migration of the rows this ticket writes (overview §9).
       a lesson that would end after 23:59 is refused; starts grow with the
       lesson number; and a lesson may not end after the next filled lesson
       starts.
-- [ ] Every word the section shows lives in `components/year/labels.ts`; the
-      description no longer talks about an end time.
+- [ ] Every word the section shows lives in `components/year/labels.ts`: the
+      `timeTo` label is gone, and there are labels for `lessonMinutes`, for
+      the computed end, and for the note about stored rows of mixed length.
+- [ ] `design/T-009-year-setup.md` §3 lists the bells form's new fields, and
+      §4 says `saveBellScheduleAction` computes each end instead of reading
+      one from the request.
 - [ ] `lib/validation/bellSchedule.test.ts` covers the new input shape and
       every refusal above. `npm run db:seed` and the fixtures need no change
       (their lessons are 45 minutes already) — or, if they do, the change is
@@ -64,7 +70,5 @@ without a migration of the rows this ticket writes (overview §9).
 
 ## Notes
 
-Filed from the first real use of `/year`: twenty time inputs for a schedule
-whose lessons are all one length. The design choice — the end is stored and
-the length is only a form field — and the two deferred cases are rows of
-overview §9, not decisions this file records.
+The choice to store the end and keep the length a form field, and the two
+deferred cases, are rows of overview §9.
