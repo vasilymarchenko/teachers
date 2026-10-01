@@ -25,7 +25,7 @@ export const isoDateField = (required: string = DATE_REQUIRED) =>
   z.string(required).trim().min(1, required).pipe(z.iso.date(DATE_MALFORMED));
 
 /**
- * A bell time as `<input type="time">` submits it — `HH:MM`, no seconds.
+ * A bell time — 24-hour `HH:MM`, no seconds.
  *
  * `precision: -1` is what drops the seconds: `time_from`/`time_to` are `time`
  * columns with no date and no zone (overview §8.5), and `getBellSchedule()`
@@ -36,6 +36,24 @@ export const clockTimeField = z.iso.time({
   precision: -1,
   error: "Час має бути у форматі ГГ:ХХ",
 });
+
+/**
+ * A bell time as the teacher typed it, spelled the way `clockTimeField` reads
+ * it: `8:30` → `08:30`.
+ *
+ * The bell grid's start is a text input with a numeric keyboard — a native
+ * time input follows the browser's locale and may show AM/PM (T-040) — and a
+ * phone's numeric keyboard often has no colon. So `830`, `0830` and `8.30` are
+ * the same time too. Anything else comes back trimmed and unchanged, for
+ * `clockTimeField` to refuse: this function spells a time, it does not judge
+ * one.
+ */
+export function clockTimeInput(raw: string): string {
+  const typed = raw.trim();
+  const match = /^(\d{1,2})[:.]?(\d{2})$/.exec(typed);
+  if (match === null) return typed;
+  return `${match[1].padStart(2, "0")}:${match[2]}`;
+}
 
 /** Every entity range in the schema is inclusive at both ends (schema §6). */
 export const DATE_RANGE_RULE = {

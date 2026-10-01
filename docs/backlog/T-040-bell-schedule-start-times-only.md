@@ -2,7 +2,7 @@
 id: T-040
 type: ticket
 title: Bell schedule — the teacher enters start times and one lesson length, ends are computed
-status: todo
+status: in-progress
 depends_on: [T-009]
 refs:
   - docs/specs/specification.md §3.3
@@ -36,7 +36,9 @@ without a migration of the rows this ticket writes (overview §9).
       ever shown. The native `<input type="time">` cannot promise this — it
       follows the browser locale, not `lang="uk"` — so the start is a text
       input with a numeric keyboard and the `HH:MM` check `clockTimeField`
-      already makes. A start typed as `8:30` is accepted and shown as `08:30`.
+      already makes. A start typed as `8:30` is accepted and shown as `08:30`;
+      so are `830`, `0830` and `8.30`, because a phone's numeric keyboard
+      often has no colon.
 - [ ] Next to each filled start the section shows the computed end, and the
       ends follow the start and `lessonMinutes` as the teacher types, before
       the form is saved.
@@ -79,3 +81,10 @@ without a migration of the rows this ticket writes (overview §9).
 
 The choice to store the end and keep the length a form field, and the two
 deferred cases, are rows of overview §9.
+
+Accepting a start typed without a colon (`830`, `0830`, `8.30`) was added to the
+second criterion during the run, on the product owner's answer: the criterion
+asks for a numeric keyboard, and Android's has no colon.
+
+The mechanics — field names, what the action computes, which rule is checked
+where — are in `docs/architecture/design/T-009-year-setup.md` §1, §3, §4, §5.

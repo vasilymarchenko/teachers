@@ -20,15 +20,18 @@ This is the first writable screen in the application. Everything before it read;
 
 | File | Exports |
 |---|---|
-| `lib/validation/fields.ts` | `isoDateField()`, `optionalIsoDateField`, `clockTimeField`, `nameField`, `isOrderedRange()`, `DATE_RANGE_RULE` |
+| `lib/validation/fields.ts` | `isoDateField()`, `optionalIsoDateField`, `clockTimeField`, `clockTimeInput()`, `nameField`, `isOrderedRange()`, `DATE_RANGE_RULE` |
 | `lib/validation/enums.ts` | `PARITY_VALUES`, `WEEKDAY_VALUES`, `NON_TEACHING_KIND_VALUES`, `BOUNDARY_KIND_VALUES`, `LESSON_NUMBERS`, `SEMESTER_INDEXES` |
 | `lib/validation/formState.ts` | `FormState`, `EMPTY_FORM_STATE`, `invalidInput()`, `rejected()`, `rejectedField()`, `submittedValues()` |
 | `lib/validation/academicYear.ts` | `academicYearInput`, `ACADEMIC_YEAR_FIELD` |
 | `lib/validation/semester.ts` | `semesterInput`, `SEMESTER_FIELD` |
 | `lib/validation/nonTeachingPeriod.ts` | `nonTeachingPeriodInput`, `NON_TEACHING_PERIOD_FIELD` |
 | `lib/validation/weekdayRule.ts` | `weekdayRuleInput`, `WEEKDAY_RULE_FIELD` |
-| `lib/validation/bellSchedule.ts` | `bellScheduleInput`, `bellField()`, `bellFieldErrors()` |
+| `lib/validation/bellSchedule.ts` | `bellScheduleInput`, `bellField()`, `bellFieldErrors()`, `LESSON_MINUTES_FIELD`, `parseLessonMinutes()`, `MIN_LESSON_MINUTES`, `MAX_LESSON_MINUTES` |
 | `lib/validation/parityAnchor.ts` | `parityAnchorInput`, `PARITY_ANCHOR_FIELD` |
+
+The bell form's one piece of domain logic is `lib/domain/schedule/bells.ts` —
+`lessonEnd()`, `storedLessonMinutes()`, `DEFAULT_LESSON_MINUTES` (T-040).
 
 `enums.ts` transcribes the four `pgEnum`s rather than importing them, so the
 Drizzle schema does not reach the client bundle; `enums.test.ts` asserts each
@@ -106,8 +109,16 @@ is looked up in is `listAcademicYears(userId)`.
 | semester | `index`, `dateFrom`, `dateTo` | `create`/`updateSemesterAction` |
 | period | `kind`, `name`, `dateFrom`, `dateTo` | `create`/`updateNonTeachingPeriodAction` |
 | weekday rule | `weekday`, `boundaryKind`, `lastDay` | `create`/`updateWeekdayRuleAction` |
-| bells | `bell-<0…9>-from`, `bell-<0…9>-to` | `saveBellScheduleAction` |
+| bells | `lessonMinutes`, `bell-<0…9>-from` | `saveBellScheduleAction` |
 | parity reset | `date`, `parity` | `createParityAnchorAction` |
+
+The bells form has no field for the end of a lesson (T-040, overview §9). A
+start is a text input, not `type="time"` — a native time input follows the
+browser's locale and may show AM/PM — and `clockTimeInput()` spells `8:30`,
+`830`, `0830` and `8.30` as `08:30`, in the field on blur and again in the
+schema. `lessonMinutes` is not stored: on load the field shows
+`storedLessonMinutes()` of the rows — the length of the lowest-numbered row, 45
+with no rows — and the section carries a note when the rows do not share it.
 
 Ids are passed by `Function.prototype.bind`, never as hidden inputs, and never
 `userId` — that one comes from `requireUser()` alone (overview §8.4).
@@ -142,10 +153,13 @@ with `valid_from <= date_to` and `boundary_date > date_from`. What the teacher
 saw under this year goes with it; a narrower condition leaves rows nothing can
 reach and the calendar still reads.
 
-**`saveBellScheduleAction`.** Reads all ten numbers whether or not they were
-filled in, deletes the rows for the cleared ones and upserts the rest through
-`bell_schedule_user_number_uq` (`excluded.time_from` / `excluded.time_to`). One
-submission therefore creates, updates and deletes.
+**`saveBellScheduleAction`.** Reads `lessonMinutes` and the start of all ten
+numbers whether or not they were filled in — and no end: a `bell-<n>-to` in the
+request is not read. For each filled start it computes
+`timeTo = lessonEnd(timeFrom, lessonMinutes)`, deletes the rows for the cleared
+numbers and upserts the rest through `bell_schedule_user_number_uq`
+(`excluded.time_from` / `excluded.time_to`). One submission therefore creates,
+updates and deletes, and gives every stored row the one submitted length.
 
 **`createWeekdayRuleAction` / `updateWeekdayRuleAction`.** The one place
 overview §8.1 happens:
@@ -195,7 +209,8 @@ row belongs to the year form — and a date outside the year.
 
 | Rule | Where | Why not elsewhere |
 |---|---|---|
-| shape, required fields, `dateFrom <= dateTo`, `timeFrom < timeTo`, `HH:MM`, `DATE` needs a `lastDay` | the Zod schema | it is the boundary the browser and the action share |
+| shape, required fields, `dateFrom <= dateTo`, `HH:MM`, `DATE` needs a `lastDay` | the Zod schema | it is the boundary the browser and the action share |
+| bells: `lessonMinutes` a whole number 10–90, no lesson ending after 23:59, starts growing with the lesson number, no lesson ending after the next filled one starts | the Zod schema (`bellScheduleInput`), on the later lesson's start | all of them follow from the submitted starts and `lessonMinutes` alone; the cross-row rules are skipped while `lessonMinutes` is invalid, and never compare against a start that is not a time |
 | a child range inside its year | the action | needs the year row; no constraint expresses it |
 | an UPDATE that matched no row (deleted in another tab) | the action, via `.returning()` | Drizzle reports success for an UPDATE that matched nothing. In `updateAcademicYearAction` the empty result **throws** (`YearVanished`) rather than returning: the anchor upsert in the same transaction has no `academic_year_id` to cascade from, so it has to roll back with the year |
 | a year narrowed past a row that hangs off it | the action | needs both the old and the new range |
