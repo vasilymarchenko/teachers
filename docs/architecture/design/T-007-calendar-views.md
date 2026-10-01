@@ -155,7 +155,9 @@ day. The grid cell prints the subject only and has no such link.
 
 The link's accessible name starts with `dayLinkName()` — «понеділок, 19 жовтня»
 — in an `sr-only` span; the visible «19» or «Пн, 19 жовтня» is `aria-hidden`.
-Focus is drawn as an outline, because the ring is how today is shown.
+Focus is drawn as an outline, because the ring is how today is shown. A day of a
+neighbouring month is dimmed on the link itself, so the dimming lifts on hover
+and on focus — otherwise the outline would be dimmed with it.
 
 ## 5. Year-view measurement (overview §9 trigger: ~300 ms)
 

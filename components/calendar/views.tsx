@@ -247,8 +247,10 @@ export function MonthCell({
         "hover:border-ring focus-visible:outline-ring hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2",
         day.isNonTeaching ? "border-border bg-muted/60" : "border-border bg-card",
         // The days spilling in from the neighbouring months are real days, and
-        // clickable, but they must not read as part of this month.
-        !inMonth && "opacity-50",
+        // clickable, but they must not read as part of this month. The dimming
+        // lifts under the pointer and under focus: it is on the link itself,
+        // and a hover border or a focus outline at half strength is not one.
+        !inMonth && "opacity-50 hover:opacity-100 focus-visible:opacity-100",
         day.date === today && "ring-primary ring-2",
       )}
       href={calendarHref("day", day.date, schedule)}
