@@ -9,8 +9,11 @@ export default defineConfig({
     // The suite that matters is `lib/domain` (overview §2); everything under
     // `lib` is picked up so a test never has to be registered by hand. The
     // `components` entry is for convention tests over the source — the menu's
-    // links against the real routes (T-014) — not for rendering React, which
-    // would need a DOM environment this project does not carry.
+    // links against the real routes (T-014) — and for the markup a
+    // server-rendered component produces, read as a string through
+    // `react-dom/server` (T-042). Neither needs a DOM environment, and this
+    // project carries none: a test that needs a click or a layout is not one
+    // this suite can hold.
     // `scripts/**` is here for the gate's own convention tests (T-029): the
     // gate is what runs `npm test`, so the test holding its check list in step
     // with `ci.yml` has to run in the same suite the gate runs.

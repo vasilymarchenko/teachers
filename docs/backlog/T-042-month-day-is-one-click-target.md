@@ -2,7 +2,7 @@
 id: T-042
 type: ticket
 title: Month view — the whole day is one click target, not only its number
-status: todo
+status: in-progress
 depends_on: [T-007]
 refs:
   - docs/specs/specification.md §6.1
@@ -39,3 +39,16 @@ or the empty part of a cell does nothing.
 - [ ] A test pins that a month cell renders exactly one link to the day view.
 
 ## Notes
+
+- The premise of the fourth criterion — «the month view holds none today» —
+  is true of the grid and false of the phone list: `MonthDayRow` renders
+  `DayLessons`, and `LessonRow` prints the Zoom address of a `CLASS` lesson as
+  a link. So the fallback the criterion itself names applies there now: the
+  phone card uses a stretched link and the Zoom link stays clickable above it
+  (decided with the user during the run). The consequence for the third
+  criterion is that a `CLASS` day with Zoom lessons has that link as a further
+  tab stop on a phone; the *day* is still one link.
+- Mechanics: `docs/architecture/design/T-007-calendar-views.md` §4.3.
+- The seventh criterion is met by rendering the two components to a string
+  with `react-dom/server` — `components/calendar/views.test.ts`. The suite
+  still has no DOM environment; `vitest.config.mts` says what that allows.
