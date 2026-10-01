@@ -6,7 +6,7 @@ import { APIError } from "better-auth/api";
 import { z } from "zod";
 import { getAuth } from "@/lib/auth/auth";
 import { requireUser } from "@/lib/auth/session";
-import { isBadCredentials } from "@/lib/auth/signInError";
+import { isBadCredentials, tooManyAttempts } from "@/lib/auth/signInError";
 import { signInInput } from "@/lib/validation/signIn";
 
 /**
@@ -67,6 +67,15 @@ export async function signInAction(
       return {
         email: parsed.data.email,
         error: "Неправильна електронна пошта або пароль",
+      };
+    }
+    const waitSeconds = error instanceof APIError ? tooManyAttempts(error) : null;
+    if (waitSeconds !== null) {
+      // Says nothing about the password or the address: the limit refused the
+      // attempt before either was looked at.
+      return {
+        email: parsed.data.email,
+        error: `Забагато спроб входу. Спробуйте ще раз через ${Math.ceil(waitSeconds / 60)} хв.`,
       };
     }
     // Anything else — an unset BETTER_AUTH_SECRET, an unreachable database, a

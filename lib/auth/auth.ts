@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { getDb } from "@/lib/db/client";
 import { endSessionOfDeactivatedTeacher, refuseDeactivatedTeacher } from "./deactivation";
+import { forgetSignInFailures, refuseRepeatedSignIn } from "./signInLimit";
 
 function createAuth() {
   return betterAuth({
@@ -32,6 +33,14 @@ function createAuth() {
           after: endSessionOfDeactivatedTeacher,
         },
       },
+    },
+    // The limit on repeated failed sign-ins — T-016, ADR-023. As hooks, because
+    // better-auth's own limiter runs in the router and so never sees
+    // `auth.api.signInEmail()`, which is what the form calls; these run for
+    // that call and for the mounted route alike.
+    hooks: {
+      before: refuseRepeatedSignIn,
+      after: forgetSignInFailures,
     },
     // Must stay last in the list: it is an `after` hook that copies the
     // Set-Cookie better-auth produced onto Next's cookie store, which is the

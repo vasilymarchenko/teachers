@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { count, eq, inArray } from "drizzle-orm";
 import { APIError } from "better-auth/api";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { signInAction } from "@/lib/actions/auth";
 import { closeDb } from "@/lib/db/client";
 import { insertFixtureScenario } from "@/lib/db/fixtures/scenarioRows";
@@ -93,6 +93,16 @@ async function newTeacher(password = PASSWORD) {
   return { email, userId: row.id };
 }
 
+// Sign-ins are limited per client address (`signInLimit.ts`), and this file
+// fails more of them than one address is allowed. The limit is not what is
+// under test here, so every test signs in from an address of its own.
+let testNumber = 0;
+let clientIp = "";
+beforeEach(() => {
+  testNumber += 1;
+  clientIp = `198.51.100.${testNumber}`;
+});
+
 afterAll(async () => {
   if (createdEmails.length > 0) {
     await db.delete(user).where(inArray(user.email, createdEmails));
@@ -106,7 +116,11 @@ async function signInOverHttp(email: string, password: string) {
   const response = await getAuth().handler(
     new Request(`${ORIGIN}/api/auth/sign-in/email`, {
       method: "POST",
-      headers: { "content-type": "application/json", origin: ORIGIN },
+      headers: {
+        "content-type": "application/json",
+        origin: ORIGIN,
+        "x-forwarded-for": clientIp,
+      },
       body: JSON.stringify({ email, password }),
     }),
   );
@@ -120,7 +134,10 @@ async function signInOverHttp(email: string, password: string) {
 /** What `auth.api.signInEmail()` throws, reduced to what a caller can see. */
 async function signInApiError(email: string, password: string) {
   try {
-    await getAuth().api.signInEmail({ body: { email, password } });
+    await getAuth().api.signInEmail({
+      body: { email, password },
+      headers: new Headers({ "x-forwarded-for": clientIp }),
+    });
   } catch (error) {
     if (!(error instanceof APIError)) throw error;
     return { status: error.status, statusCode: error.statusCode, body: error.body };
@@ -129,7 +146,7 @@ async function signInApiError(email: string, password: string) {
 }
 
 async function submitSignInForm(email: string, password: string) {
-  request.headers = new Headers();
+  request.headers = new Headers({ "x-forwarded-for": clientIp });
   const form = new FormData();
   form.set("email", email);
   form.set("password", password);
