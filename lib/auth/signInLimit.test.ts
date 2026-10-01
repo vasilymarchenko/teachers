@@ -62,14 +62,30 @@ describe("createSignInLimiter", () => {
     expect(limiter.attempt("198.51.100.20", T0)).toBeNull();
   });
 
-  it("starts from zero again after clear()", () => {
+  it("gives back one attempt on release(), not all of them", () => {
     const limiter = createSignInLimiter();
-    for (let n = 0; n < 4; n++) limiter.attempt("203.0.113.7", T0);
-    limiter.clear("203.0.113.7");
-    for (let n = 0; n < 5; n++) {
-      expect(limiter.attempt("203.0.113.7", T0 + seconds(1))).toBeNull();
-    }
+    for (let n = 0; n < 5; n++) limiter.attempt("203.0.113.7", T0);
+    limiter.release("203.0.113.7");
+    // Four remain taken: one more fits, the one after it does not.
+    expect(limiter.attempt("203.0.113.7", T0 + seconds(1))).toBeNull();
     expect(limiter.attempt("203.0.113.7", T0 + seconds(1))).not.toBeNull();
+  });
+
+  it("keeps the window where it opened when an attempt is released", () => {
+    const limiter = createSignInLimiter();
+    for (let n = 0; n < 5; n++) limiter.attempt("203.0.113.7", T0);
+    limiter.release("203.0.113.7");
+    limiter.attempt("203.0.113.7", T0 + seconds(300));
+    expect(limiter.attempt("203.0.113.7", T0 + seconds(300))).toBe(600);
+  });
+
+  it("ignores a release() for an address it holds nothing for", () => {
+    const limiter = createSignInLimiter();
+    limiter.release("203.0.113.7");
+    for (let n = 0; n < 5; n++) {
+      expect(limiter.attempt("203.0.113.7", T0)).toBeNull();
+    }
+    expect(limiter.attempt("203.0.113.7", T0)).not.toBeNull();
   });
 
   describe("at the ceiling on remembered addresses", () => {

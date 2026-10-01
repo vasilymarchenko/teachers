@@ -46,8 +46,11 @@ against, and where the count is kept.
   but lets anyone who knows the teacher's address lock her out for the length of
   the window, as often as they like — on an app with one user, that is the whole
   application.
-- *The client address.* Nobody can lock out anyone but themselves. Guessing
-  spread over many addresses is limited only per address.
+- *The client address.* Locking the teacher out takes sharing her public
+  address — a school network or a mobile carrier's NAT puts many people behind
+  one — rather than merely knowing her e-mail address. Whoever shares it and
+  fails five times does lock her out for the rest of the window. Guessing spread
+  over many addresses is limited only per address.
 - *Both, with a higher ceiling per e-mail address.* Closes the distributed case
   and reopens the lock-out, at a higher price to the attacker.
 
@@ -67,11 +70,13 @@ The count is kept per client address, as `getIP()` from `better-auth/api`
 resolves it, in a `Map` held on `globalThis`. A request with no resolvable
 address is counted under one key shared by all such requests.
 
-An attempt is taken in the *before* hook, ahead of the password check, and the
-key is cleared in the *after* hook when the sign-in succeeded. Five attempts in
-a window of fifteen minutes that opens with the first of them; the next is
-refused with `429` and the code `TOO_MANY_SIGN_IN_ATTEMPTS` whatever it
-carries. The numbers are the two constants at the top of that file.
+An attempt is taken in the *before* hook, ahead of the password check. The
+*after* hook gives that one attempt back unless the sign-in ended in the
+credential error: a success is not counted, and neither is a request better-auth
+refused before reaching the password. Five attempts in a window of fifteen
+minutes that opens with the first of them; the next is refused with `429` and
+the code `TOO_MANY_SIGN_IN_ATTEMPTS` whatever it carries. The numbers are the
+two constants at the top of that file.
 
 better-auth's own limiter is left at its defaults.
 
@@ -85,19 +90,40 @@ no second process whose counts could disagree. **Revisit** when `web` runs as
 more than one replica, or when something restarts it on a schedule an outsider
 can predict or cause — then the count moves to Postgres.
 
-**Guessing from many addresses is limited only per address.** Accepted over the
-lock-out an e-mail-keyed limit would hand to anyone who knows the teacher's
-address. **Revisit** when the logs show a distributed attempt, or when accounts
-get a second factor or a recovery path that makes a lock-out cheap to undo.
+**Guessing from many addresses is limited only per address, and people behind
+one address share one allowance.** Both accepted over an e-mail-keyed limit,
+which hands the lock-out to anyone on the internet who knows the teacher's
+address; this one hands it only to someone on her own network, for fifteen
+minutes at a time. **Revisit** when the logs show a distributed attempt, when
+the teacher is in fact locked out from a shared network, or when accounts get a
+second factor or a recovery path that makes a lock-out cheap to undo.
+
+**A success gives back its own attempt and no more.** Clearing the address on
+success would let anyone who holds an account sign in to it between guesses at
+another and never reach five. The price is that a teacher who mistypes four
+times and then gets in has one attempt left until the window ends, not five.
+
+**Only a credential failure is kept.** `hooks.before` runs ahead of
+better-auth's origin and CSRF checks, so a cross-site form post from the
+teacher's own browser takes an attempt from her address before it is refused.
+Giving back every attempt that did not end in the credential error is what
+keeps a page on another site from locking her out.
 
 **The limit trusts the proxy.** The address is whatever `X-Forwarded-For` says.
 Behind Caddy that is the peer address; with the `web` port published directly,
 or behind a proxy that passes a client-supplied header through, a client picks
 its own key and the limit stops limiting. `docker-compose.prod.yml` does not
-publish `web`'s port. A second proxy in front of Caddy makes the header a list,
-which `getIP()` refuses without `advanced.ipAddress.trustedProxies` — every
-request then shares one key, which is closed rather than open, and is the sign
-that this needs configuring.
+publish `web`'s port.
+
+**A second proxy in front of Caddy collapses every client into one key.**
+Caddy's peer is then that proxy, so the header Caddy writes is the proxy's
+address — a single, valid value that `getIP()` accepts — and all clients share
+one allowance: closed rather than open, and a lock-out for everyone after five
+failures by anyone. Putting it right takes two settings, not one: Caddy's
+`trusted_proxies`, so that it keeps the client address the outer proxy
+forwarded — which makes the header a list — and better-auth's
+`advanced.ipAddress.trustedProxies`, without which `getIP()` refuses a list and
+every request falls under the shared `unknown` key.
 
 **A refused attempt is refused before its password is looked at**, so a teacher
 who mistypes five times waits out the window even once she remembers. The

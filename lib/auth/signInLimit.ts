@@ -1,5 +1,5 @@
 import { APIError, createAuthMiddleware, getIP, isAPIError } from "better-auth/api";
-import { TOO_MANY_SIGN_IN_ATTEMPTS } from "./signInError";
+import { isBadCredentials, TOO_MANY_SIGN_IN_ATTEMPTS } from "./signInError";
 
 /**
  * The limit on repeated failed sign-ins — T-016, ADR-023. `auth.ts` registers
@@ -41,8 +41,11 @@ export type SignInLimiter = {
    * seconds until the window that is full ends.
    */
   attempt(key: string, now: number): number | null;
-  /** Forgets `key` — what a successful sign-in does. */
-  clear(key: string): void;
+  /**
+   * Gives one attempt back to `key` — for an attempt that turned out not to be
+   * a failed guess. One, not all of them: the others were.
+   */
+  release(key: string): void;
 };
 
 export function createSignInLimiter(
@@ -85,8 +88,11 @@ export function createSignInLimiter(
       window.count += 1;
       return null;
     },
-    clear(key) {
-      windows.delete(key);
+    release(key) {
+      const window = windows.get(key);
+      if (!window) return;
+      window.count -= 1;
+      if (window.count <= 0) windows.delete(key);
     },
   };
 }
@@ -135,13 +141,23 @@ export const refuseRepeatedSignIn = createAuthMiddleware(async (ctx) => {
 });
 
 /**
- * Gives the attempts back once a sign-in succeeds, which is what makes the
- * count one of failures: a teacher who gets in on the third try starts again
- * from zero.
+ * Gives the attempt back unless it was a failed guess, which is what makes the
+ * count one of failures.
+ *
+ * A failed guess is the credential error and nothing else. A sign-in that
+ * succeeded gets its one attempt back — not the whole address forgiven, or
+ * anyone holding an account could wipe the count between guesses at someone
+ * else's. Every other `APIError` gets it back too: a request better-auth turned
+ * away for its origin or its shape never reached the password, and counting it
+ * would let a page on another site spend the attempts of whoever opened it.
+ *
+ * The refusal above never arrives here — better-auth runs no `after` hook for a
+ * request a `before` hook threw on — so nothing is given back for an attempt
+ * that was not taken.
  */
-export const forgetSignInFailures = createAuthMiddleware(async (ctx) => {
+export const returnSignInAttempt = createAuthMiddleware(async (ctx) => {
   if (ctx.path !== SIGN_IN_PATH) return;
   const returned = ctx.context.returned;
-  if (returned === undefined || isAPIError(returned)) return;
-  limiter().clear(clientKey(ctx));
+  if (isAPIError(returned) && isBadCredentials(returned)) return;
+  limiter().release(clientKey(ctx));
 });

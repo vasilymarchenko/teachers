@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { getDb } from "@/lib/db/client";
 import { endSessionOfDeactivatedTeacher, refuseDeactivatedTeacher } from "./deactivation";
-import { forgetSignInFailures, refuseRepeatedSignIn } from "./signInLimit";
+import { refuseRepeatedSignIn, returnSignInAttempt } from "./signInLimit";
 
 function createAuth() {
   return betterAuth({
@@ -40,7 +40,7 @@ function createAuth() {
     // that call and for the mounted route alike.
     hooks: {
       before: refuseRepeatedSignIn,
-      after: forgetSignInFailures,
+      after: returnSignInAttempt,
     },
     // Must stay last in the list: it is an `after` hook that copies the
     // Set-Cookie better-auth produced onto Next's cookie store, which is the

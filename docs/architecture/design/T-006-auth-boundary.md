@@ -16,7 +16,8 @@ accepts and rejects.
 |---|---|
 | `lib/auth/auth.ts` | `getAuth()` — the better-auth instance |
 | `lib/auth/session.ts` | `requireUser()`, `getUser()`, `SessionUser` |
-| `lib/auth/signInError.ts` | `isBadCredentials()` — which `APIError`s from `signInEmail()` mean the credentials were wrong |
+| `lib/auth/signInError.ts` | `isBadCredentials()` — which `APIError`s from `signInEmail()` mean the credentials were wrong; `tooManyAttempts()`, `TOO_MANY_SIGN_IN_ATTEMPTS` — the sign-in limit's refusal and the wait it carries |
+| `lib/auth/signInLimit.ts` | `refuseRepeatedSignIn`, `returnSignInAttempt` — the two better-auth hooks of the sign-in limit (§7); `createSignInLimiter()`, `SignInLimiter`, `SIGN_IN_MAX_FAILURES`, `SIGN_IN_WINDOW_SECONDS` |
 | `lib/auth/queryDiscipline.ts` | `checkSource()`, `SourceKind`, `Violation`, `ACTIONS_WITHOUT_A_SESSION` — test support only; it imports `typescript`, a devDependency, so application code must never import it |
 | `lib/actions/auth.ts` | `signInAction`, `signOutAction`, `SignInState` |
 | `lib/validation/signIn.ts` | `signInInput`, `SignInInput` |
@@ -202,7 +203,7 @@ share the credential error's 401 status.
 why these mechanics — `decisions/ADR-023-sign-in-failures-are-counted-in-process-per-client-address.md`).
 
 - **Where it runs.** `refuseRepeatedSignIn` is `hooks.before` and
-  `forgetSignInFailures` is `hooks.after` in `lib/auth/auth.ts`; both return at
+  `returnSignInAttempt` is `hooks.after` in `lib/auth/auth.ts`; both return at
   once for any path but `/sign-in/email`. Hooks run for
   `auth.api.signInEmail()` and for `auth.handler(request)`, so the form and
   `POST /api/auth/sign-in/email` draw on one counter.
@@ -212,8 +213,12 @@ why these mechanics — `decisions/ADR-023-sign-in-failures-are-counted-in-proce
   address for is counted under the one key `unknown`, shared by all of them.
 - **The count.** The *before* hook takes an attempt ahead of the password
   check. The window opens with the first attempt and is not extended by later
-  ones. The *after* hook clears the key when the sign-in succeeded, and leaves
-  it when `ctx.context.returned` is an `APIError`.
+  ones. The *after* hook gives that one attempt back unless
+  `ctx.context.returned` is an `APIError` that `isBadCredentials()` accepts: a
+  sign-in that succeeded is not counted, and neither is a request better-auth
+  refused before the password — for its origin, or for its shape. The other
+  attempts taken from the address stay taken, whichever account they were
+  aimed at. A refused attempt takes nothing and runs no *after* hook.
 - **The refusal.** With five attempts taken, the next is refused whatever it
   carries: `APIError("TOO_MANY_REQUESTS")`, body
   `{ code: "TOO_MANY_SIGN_IN_ATTEMPTS", message, retryAfter }` with `retryAfter`

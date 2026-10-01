@@ -139,19 +139,36 @@ describe("the sign-in form", () => {
     expect(unknown.error).toBe(WAIT_MESSAGE);
   });
 
-  it("starts counting again after a sign-in that succeeded", async () => {
+  it("does not count a sign-in that succeeded", async () => {
     const { email } = await newTeacher();
     const ip = "203.0.113.4";
 
-    for (let n = 0; n < 4; n++) await submitSignInForm(ip, email, WRONG_PASSWORD);
-    await expect(submitSignInForm(ip, email, PASSWORD)).rejects.toBeInstanceOf(Redirected);
-
+    for (let n = 0; n < 5; n++) {
+      await expect(submitSignInForm(ip, email, PASSWORD)).rejects.toBeInstanceOf(Redirected);
+    }
     for (let n = 0; n < 5; n++) {
       expect((await submitSignInForm(ip, email, WRONG_PASSWORD)).error).toBe(
         WRONG_PASSWORD_MESSAGE,
       );
     }
     expect((await submitSignInForm(ip, email, WRONG_PASSWORD)).error).toBe(WAIT_MESSAGE);
+  });
+
+  it("does not let a sign-in to one account forgive the failures against another", async () => {
+    const victim = await newTeacher();
+    const own = await newTeacher();
+    const ip = "203.0.113.10";
+
+    // Four guesses at someone else's password, then a sign-in to one's own
+    // account — the loop that would never reach five if success cleared the
+    // address.
+    for (let n = 0; n < 4; n++) await submitSignInForm(ip, victim.email, WRONG_PASSWORD);
+    await expect(submitSignInForm(ip, own.email, PASSWORD)).rejects.toBeInstanceOf(Redirected);
+
+    expect((await submitSignInForm(ip, victim.email, WRONG_PASSWORD)).error).toBe(
+      WRONG_PASSWORD_MESSAGE,
+    );
+    expect((await submitSignInForm(ip, victim.email, WRONG_PASSWORD)).error).toBe(WAIT_MESSAGE);
   });
 
   it("leaves another client address alone", async () => {
@@ -183,6 +200,33 @@ describe("POST /api/auth/sign-in/email", () => {
     expect(Number(refused.retryAfter)).toBeLessThanOrEqual(900);
     expect(refused.cookies).toEqual([]);
     expect(await sessionCount(userId)).toBe(0);
+  });
+});
+
+describe("a request better-auth turns away before the password", () => {
+  // The case this exists for is a cross-site form post from the teacher's own
+  // browser, which better-auth refuses for its origin only after `hooks.before`
+  // has taken an attempt from her address. That refusal cannot be produced
+  // here — better-auth skips its origin check when NODE_ENV is "test" — so the
+  // request below is one it refuses in every environment, for its shape. Both
+  // reach the `after` hook the same way: as an `APIError` that is not the
+  // credential error.
+  it("costs the address nothing", async () => {
+    const { email } = await newTeacher();
+    const ip = "203.0.113.11";
+
+    for (let n = 0; n < 6; n++) {
+      const response = await getAuth().handler(
+        new Request(`${ORIGIN}/api/auth/sign-in/email`, {
+          method: "POST",
+          headers: { "content-type": "application/json", origin: ORIGIN, "x-forwarded-for": ip },
+          body: JSON.stringify({ email }),
+        }),
+      );
+      expect(response.status).toBe(400);
+    }
+
+    await expect(submitSignInForm(ip, email, PASSWORD)).rejects.toBeInstanceOf(Redirected);
   });
 });
 
