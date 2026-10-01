@@ -150,8 +150,8 @@ differently, and `components/calendar/views.test.ts` pins both by counting the
 
 The phone list is stretched rather than wrapped because `DayLessons` there can
 hold a link of its own: the Zoom address of a `CLASS` lesson (`LessonRow`). Such
-a day has that link as a second tab stop, and a tap on it opens Zoom, not the
-day. The grid cell prints the subject only and has no such link.
+a day has one more tab stop for each of those links, and a tap on one opens
+Zoom, not the day. The grid cell prints the subject only and has no such link.
 
 The link's accessible name starts with `dayLinkName()` — «понеділок, 19 жовтня»
 — in an `sr-only` span; the visible «19» or «Пн, 19 жовтня» is `aria-hidden`.
