@@ -1,6 +1,6 @@
 import { APIError } from "better-auth/api";
 import { describe, expect, it } from "vitest";
-import { isBadCredentials } from "./signInError";
+import { isBadCredentials, TOO_MANY_SIGN_IN_ATTEMPTS, tooManyAttempts } from "./signInError";
 
 /**
  * The line between "you typed the wrong password" and "this application is
@@ -12,7 +12,10 @@ import { isBadCredentials } from "./signInError";
  * raises — see `BASE_ERROR_CODES` and `api/routes/sign-in`.
  */
 describe("isBadCredentials", () => {
-  const errorWith = (status: "UNAUTHORIZED" | "FORBIDDEN" | "BAD_REQUEST", code: string) =>
+  const errorWith = (
+    status: "UNAUTHORIZED" | "FORBIDDEN" | "BAD_REQUEST" | "TOO_MANY_REQUESTS",
+    code: string,
+  ) =>
     new APIError(status, { message: code, code });
 
   it("accepts the code a wrong password, a wrong address and an unknown account all share", () => {
@@ -38,5 +41,34 @@ describe("isBadCredentials", () => {
 
   it("rejects an error carrying no code at all", () => {
     expect(isBadCredentials(new APIError("INTERNAL_SERVER_ERROR"))).toBe(false);
+  });
+
+  it("rejects the sign-in limit — the password was never looked at", () => {
+    expect(
+      isBadCredentials(errorWith("TOO_MANY_REQUESTS", TOO_MANY_SIGN_IN_ATTEMPTS)),
+    ).toBe(false);
+  });
+});
+
+describe("tooManyAttempts", () => {
+  it("reads the wait out of the sign-in limit's refusal", () => {
+    const refusal = new APIError("TOO_MANY_REQUESTS", {
+      code: TOO_MANY_SIGN_IN_ATTEMPTS,
+      message: "Too many sign-in attempts. Try again later.",
+      retryAfter: 840,
+    });
+    expect(tooManyAttempts(refusal)).toBe(840);
+  });
+
+  it("is null for a wrong password", () => {
+    const wrongPassword = new APIError("UNAUTHORIZED", {
+      code: "INVALID_EMAIL_OR_PASSWORD",
+      message: "Invalid email or password",
+    });
+    expect(tooManyAttempts(wrongPassword)).toBeNull();
+  });
+
+  it("is null for an error carrying no code at all", () => {
+    expect(tooManyAttempts(new APIError("INTERNAL_SERVER_ERROR"))).toBeNull();
   });
 });
