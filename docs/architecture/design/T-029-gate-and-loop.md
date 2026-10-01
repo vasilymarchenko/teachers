@@ -48,6 +48,7 @@ so two runs over one change print the same table.
 | `docker:runner` | `^Dockerfile$`, `^docker-compose*.ya?ml$` | Docker daemon | `images` (anchor `target: runner`) |
 | `docker:migrator` | same | Docker daemon | `images` (anchor `target: migrator`) |
 | `migrator-smoke` | same | — always skipped | `images` (anchor `teachers-migrator:ci`) |
+| `teacher-smoke` | same | — always skipped | `images` (anchor `teachers:ci node teacher.cjs`) |
 
 **The second dimension: the kind of change** (`T-037`, `ADR-016`).
 `changeKind(changedFiles)` is `documentation` when every path ends in `.md` or
@@ -85,6 +86,11 @@ implementation of the file and it is not executed through a driver.
 `migrator-smoke` carries `requires: ["ci-only"]`, so it is selected by an image
 change and always reported `skipped` with its reason. Why it is not run here,
 and what replaces that: `T-030`.
+
+`teacher-smoke` is routed the same way: `ci.yml` runs the account command from
+the built `runner` image against the database the migrator smoke test migrated
+(`ADR-020`), so it shares that test's orchestration and its reason for not
+running here.
 
 Environment probes run on **every** invocation and are never cached:
 `DATABASE_URL` set, `command -v psql`, `docker info` exit code. `index.ts` loads

@@ -5,8 +5,9 @@
  *
  *     npx @better-auth/cli generate --output lib/db/schema/auth.ts
  *
- * against the config in `lib/auth/auth.ts`, with two hand-applied corrections
- * recorded in `docs/backlog/T-004-drizzle-schema-migration.md`:
+ * against the config in `lib/auth/auth.ts`, with hand-applied corrections — the
+ * first two recorded in `docs/backlog/T-004-drizzle-schema-migration.md`, the
+ * third in `docs/backlog/T-039-teacher-management-console.md`:
  *
  *  - `account.issuer` is added. The published CLI (1.4.x) is a release behind
  *    the `better-auth` this project depends on (1.7.x) and does not emit it;
@@ -17,8 +18,14 @@
  *    file. Regenerating means doing the same and re-applying the correction —
  *    diff, do not overwrite blindly.
  *
+ *  - `user.deactivated_at` is added — the one column of this project's own on
+ *    better-auth's tables (§5.2, ADR-019). better-auth does not know it exists:
+ *    it is not declared as an `additionalFields` entry, so it never travels in
+ *    a session's `user`, and only `lib/auth/teachers.ts` and the hooks in
+ *    `lib/auth/deactivation.ts` read or write it.
+ *
  * `user.id` is `text`, which is why `user_id` is `text` on every profile table
- * (§1). Nothing is added to these tables: no profile columns, no settings
+ * (§1). Nothing else is added to these tables: no profile columns, no settings
  * column (§5.2). `requireUser()` and the sign-in flow are T-006.
  */
 import { relations } from "drizzle-orm";
@@ -35,6 +42,7 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  deactivatedAt: timestamp("deactivated_at"),
 });
 
 export const session = pgTable(

@@ -565,8 +565,17 @@ Two consequences T-004 has to act on:
 
 ### 5.2 What we add to it
 
-Nothing. No profile columns, no settings column. Per-teacher settings that exist
-today are the year frame (§4.1–§4.6) and nothing else.
+One column: `user.deactivated_at timestamp`, nullable — the moment from which
+the teacher cannot hold a session, `null` while she can
+(`decisions/ADR-019-teacher-accounts-are-managed-by-functions-not-the-admin-plugin.md`,
+migration `drizzle/0003_user_deactivated_at.sql`). It is declared in
+`lib/db/schema/auth.ts` and **not** as a better-auth `additionalFields` entry,
+so better-auth neither reads nor returns it; `lib/auth/teachers.ts` writes it
+and the two `session.create` hooks in `lib/auth/deactivation.ts` read it. It is one
+more hand-applied correction to re-apply when that file is regenerated (§5.1).
+
+Nothing else. No profile columns, no settings column. Per-teacher settings that
+exist today are the year frame (§4.1–§4.6) and nothing else.
 
 ---
 

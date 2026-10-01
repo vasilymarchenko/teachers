@@ -59,6 +59,7 @@ npm run dev                   # http://localhost:3000
 | `npm run db:generate` | generate a migration from `lib/db/schema` |
 | `npm run db:migrate` | apply migrations — also an explicit deploy step |
 | `npm run db:seed` | reset the demo teacher and re-insert the fixture scenario |
+| `npm run teacher -- <subcommand>` | teacher accounts: `create`, `password`, `deactivate`, `activate`, `list` (see below) |
 | `npm run db:studio` | Drizzle Studio |
 | `npm run cost` | what one session cost, read out of its own transcript |
 
@@ -106,6 +107,26 @@ between them, and eight day overrides. It deletes that user and everything
 cascading from them first, so running it twice leaves the same database, and it
 refuses to run with `NODE_ENV=production` unless `SEED_ALLOW_PRODUCTION=1`.
 
+### Teacher accounts
+
+There is no sign-up screen. An account is made, and managed, from the console:
+
+```sh
+npm run teacher -- create olena@example.com --name "Олена Шевченко"   # asks for a password, twice, without echo
+npm run teacher -- create olena@example.com --generate               # makes one and prints it once
+npm run teacher -- password olena@example.com                        # new password; every session she held ends
+npm run teacher -- deactivate olena@example.com                      # cannot sign in; none of her data is deleted
+npm run teacher -- activate olena@example.com
+npm run teacher -- list                                              # address, name, active or not, created
+```
+
+A password is never an argument and never read from the environment. With no
+terminal attached — a pipe, a CI step — only `--generate` works; the command
+refuses rather than read a password it cannot hide. A new teacher starts on an
+empty year-setup screen; the demo teacher and her data are `npm run db:seed`,
+which this does not replace. The mechanics — the exit codes among them, §4 — are
+in `docs/architecture/design/T-039-teacher-console.md`.
+
 ## Deploying to the VPS
 
 ### What CI does before anything is published
@@ -116,7 +137,9 @@ checks that commit: `npm run lint`, `npm run typecheck`, `npm test`,
 that the run creates and destroys. It also builds both Docker images and runs the
 `migrator` image against a second throwaway database, asserting it exits 0 and
 leaves the schema behind — so the image that migrates production has migrated
-something before a deploy relies on it.
+something before a deploy relies on it. On that same database the built `web`
+image then runs the teacher-account command, so the file a deploy creates the
+first teacher with has run where it ships (ADR-020).
 
 The images are published to GHCR only from `main`, and only after all of that is
 green. A red gate publishes nothing; the reasoning and the alternatives are in
@@ -155,7 +178,24 @@ cp .env.example .env    # set POSTGRES_*, BETTER_AUTH_SECRET, CADDY_DOMAIN, CADD
 docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml run --rm migrate
 docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml exec web node teacher.cjs create olena@example.com --name "Олена Шевченко"
 ```
+
+The last line creates the first teacher — until it has run, nobody can get past
+the sign-in page. It is the account command described under "Teacher accounts"
+above, shipped inside the `web` image as one file (ADR-020): there is no Node,
+`npm` or source tree on the VPS, and it needs none. It runs in the `web`
+container, so it comes after `up -d`, and every other subcommand is run the same
+way:
+
+```sh
+docker compose -f docker-compose.prod.yml exec web node teacher.cjs list
+docker compose -f docker-compose.prod.yml exec web node teacher.cjs password olena@example.com
+docker compose -f docker-compose.prod.yml exec web node teacher.cjs deactivate olena@example.com
+```
+
+`exec` attaches a terminal, so the password prompt works over SSH; from a script
+or a cron entry add `-T` and `--generate`.
 
 `migrate` runs `drizzle-kit migrate` once and exits — it is not one of the
 services `up -d` starts. It is its own published image

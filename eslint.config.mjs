@@ -37,6 +37,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // `npm run build:teacher` — the bundled account command (ADR-020).
+    "dist/**",
   ]),
 ]);
 

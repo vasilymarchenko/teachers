@@ -10,6 +10,10 @@
 # It is a separately published image (ADR-003), not built on the VPS, and
 # always deployed at the same IMAGE_TAG as `web` so the two never drift apart.
 # See README "Deploying to the VPS" for the full procedure and rollback.
+#
+# Teacher accounts — the first one included — are managed from inside `web`
+# (ADR-020):
+#         docker compose -f docker-compose.prod.yml exec web node teacher.cjs list
 
 services:
   web:

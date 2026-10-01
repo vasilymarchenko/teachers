@@ -230,6 +230,20 @@ export const CHECKS: readonly Check[] = [
     skipReason:
       "runs in CI only — ci.yml `images`; T-030 unifies the two into one script",
   },
+  {
+    // The account command run from the built `runner` image (ADR-020). It
+    // shares the migrator smoke test's throwaway database — it needs a migrated
+    // one — so it is routed and skipped here for the same reason, and waits on
+    // the same T-030.
+    name: "teacher-smoke",
+    argv: null,
+    paths: IMAGE_PATHS,
+    requires: ["ci-only"],
+    ciJob: "images",
+    ciAnchor: "teachers:ci node teacher.cjs",
+    skipReason:
+      "runs in CI only — ci.yml `images` runs the account command from the built runner image",
+  },
 ] as const;
 
 /**

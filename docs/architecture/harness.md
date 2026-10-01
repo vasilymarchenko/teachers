@@ -283,7 +283,7 @@ Diff, у якому є хоч один файл з кодом, — це `code`, 
 |---|---|
 | `checks` | `lint`, `typecheck`, `test`, `build` |
 | `integration` | `db:migrate`, `scripts/verify-schema.sql`, `test:integration` проти service-container Postgres |
-| `images` | збірка runner і migrator, smoke-тест migrator |
+| `images` | збірка runner і migrator, smoke-тест migrator, а далі на тій самій тимчасовій базі — команда `teacher.cjs` зі зібраного runner (`ADR-020`); другий крок залежить від бази першого |
 | `publish` | публікація в GHCR, тільки на `main` і тільки після трьох попередніх |
 
 `checks.ci.test.ts` тримає `checks.ts` і три gate-jobs синхронними. Скіли читають результат CI через `gh pr checks`.

@@ -14,7 +14,7 @@ accepts and rejects.
 
 | File | Exports |
 |---|---|
-| `lib/auth/auth.ts` | `getAuth()` — the better-auth instance. Called only by `lib/auth/session.ts` and the mounted route handler. |
+| `lib/auth/auth.ts` | `getAuth()` — the better-auth instance |
 | `lib/auth/session.ts` | `requireUser()`, `getUser()`, `SessionUser` |
 | `lib/auth/signInError.ts` | `isBadCredentials()` — which `APIError`s from `signInEmail()` mean the credentials were wrong |
 | `lib/auth/queryDiscipline.ts` | `checkSource()`, `SourceKind`, `Violation`, `ACTIONS_WITHOUT_A_SESSION` — test support only; it imports `typescript`, a devDependency, so application code must never import it |
@@ -152,14 +152,36 @@ without it `signInAction` succeeds and no session cookie is ever written.
 `disabledPaths: ["/sign-up/email"]`. `toNextJsHandler` serves every endpoint
 better-auth defines under `/api/auth/*`, and `proxy.ts` does not cover `/api`,
 so that route would otherwise let anyone who can reach the host create an
-account and hold a valid session. The teacher comes from `npm run db:seed`;
-there is no sign-up screen, so the route is answered with 404.
+account and hold a valid session. An account comes from the console command —
+`npm run teacher -- create`, `design/T-039-teacher-console.md` — and the demo
+teacher from `npm run db:seed`; there is no sign-up screen, so the route is
+answered with 404.
 
 `disabledPaths` rather than `emailAndPassword.disableSignUp`, which would also
-close `auth.api.signUpEmail()` — the server API the seed uses to create the
+close `auth.api.signUpEmail()` — the server API both of those use to create a
 teacher with a hash better-auth will accept (`design/schema.md` §10). The
 exposure is the mounted route; `disabledPaths` is checked in the router's
 `onRequest` and reaches nothing else.
+
+`databaseHooks.session.create.before` refuses a deactivated teacher
+(`decisions/ADR-019-teacher-accounts-are-managed-by-functions-not-the-admin-plugin.md`).
+It reads `user.deactivated_at` for the `userId` of the session about to be
+created and, when it is set, throws `APIError("UNAUTHORIZED",
+INVALID_EMAIL_OR_PASSWORD)` — the wrong-password error, with the same status,
+code and message. It sits in better-auth's own hook rather than in
+`signInAction` so that `POST /api/auth/sign-in/email` is refused by the same
+check as the form; and because better-auth creates a session only after the
+password has verified, the hook runs only for a correct password, which is why
+it may not answer with anything more specific. `isBadCredentials()` below
+therefore reports it as a wrong password, and the form shows its one message
+instead of the error page. `databaseHooks.session.create.after` looks at the
+column once more when the row exists and deletes a session that was created
+while the teacher was being deactivated (`design/T-039-teacher-console.md` §3).
+A session that already existed is ended by
+`deactivateTeacher()` deleting its row, not by this hook; with session cookie
+caching off, `getSession()` reads the database on every request, so the next
+request carrying that cookie reaches `requireUser()` with no session and is
+redirected to `/sign-in`.
 
 `BETTER_AUTH_SECRET` must be a real value — sign-in fails against the
 `replace-me` placeholder in `.env.example`.

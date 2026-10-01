@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { getDb } from "@/lib/db/client";
+import { endSessionOfDeactivatedTeacher, refuseDeactivatedTeacher } from "./deactivation";
 
 function createAuth() {
   return betterAuth({
@@ -11,14 +12,27 @@ function createAuth() {
     // session. `toNextJsHandler` publishes everything better-auth defines, and
     // `proxy.ts` deliberately does not cover `/api`, so leaving this mounted
     // lets anyone who can reach the host sign themselves up and hold a valid
-    // session on a single-teacher app. There is no sign-up screen; the teacher
-    // comes from `npm run db:seed`.
+    // session on a single-teacher app. There is no sign-up screen; a teacher
+    // comes from `npm run teacher -- create` (`lib/auth/teachers.ts`), and the
+    // demo teacher from `npm run db:seed`.
     //
     // `disabledPaths` and not `emailAndPassword.disableSignUp`: this closes the
-    // route while leaving `auth.api.signUpEmail()` working, which is how the
-    // seed creates the teacher with a hash better-auth will accept. The flag
-    // would close both and push the seed onto better-auth's internals.
+    // route while leaving `auth.api.signUpEmail()` working, which is how both
+    // of those create a teacher with a hash better-auth will accept. The flag
+    // would close both and push them onto better-auth's internals.
     disabledPaths: ["/sign-up/email"],
+    // A deactivated teacher holds no session — ADR-019. In better-auth's own
+    // hooks and not in `signInAction`, so that the mounted
+    // `POST /api/auth/sign-in/email` is refused by the same check as the form.
+    // Two hooks, because the first alone leaves a gap — `deactivation.ts`.
+    databaseHooks: {
+      session: {
+        create: {
+          before: refuseDeactivatedTeacher,
+          after: endSessionOfDeactivatedTeacher,
+        },
+      },
+    },
     // Must stay last in the list: it is an `after` hook that copies the
     // Set-Cookie better-auth produced onto Next's cookie store, which is the
     // only way `auth.api.signInEmail()` called from a Server Action can

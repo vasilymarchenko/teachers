@@ -103,6 +103,12 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgres://teachers:teachers@127.0.0.1:5432/teachers
+      # `lib/auth/teachers.integration.test.ts` signs in through the real
+      # better-auth. Stated here, not left to its development fallback, so the
+      # suite does not depend on better-auth keeping one. Not a secret: the
+      # database it protects dies with the run.
+      BETTER_AUTH_SECRET: ci-integration-suite-not-a-secret-0123456789
+      BETTER_AUTH_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
 
@@ -141,6 +147,8 @@ jobs:
           context: .
           target: runner
           push: false
+          load: true
+          tags: teachers:ci
           cache-from: type=gha,scope=runner
           cache-to: type=gha,mode=max,scope=runner
 
@@ -191,6 +199,37 @@ jobs:
             -e PGPASSWORD=teachers "$POSTGRES_IMAGE" \
             psql -h 127.0.0.1 -p 5433 -U teachers -d teachers \
             -v ON_ERROR_STOP=1 -f /scripts/verify-schema.sql
+
+      # ADR-020 ships the account command as one bundled file inside `runner`,
+      # where there is no `npm`, no `tsx` and no source tree to fall back on.
+      # Passing under `tsx` proves none of that, so the image itself runs it —
+      # against the database the migrator image just migrated, which is the
+      # pair a deploy puts together. No terminal is attached here: `--generate`
+      # is the one way a password is obtained without one.
+      - name: The runner image manages a teacher account
+        env:
+          TEACHER: >-
+            docker run --rm --network host
+            -e DATABASE_URL=postgres://teachers:teachers@127.0.0.1:5433/teachers
+            -e BETTER_AUTH_SECRET=ci-images-smoke-not-a-secret-0123456789
+            -e BETTER_AUTH_URL=http://localhost:3000
+            teachers:ci node teacher.cjs
+        run: |
+          $TEACHER create smoke@example.test --generate > /dev/null
+          $TEACHER list | grep -P '^smoke@example\.test\t.*\tactive\t'
+          $TEACHER deactivate smoke@example.test
+          $TEACHER list | grep -P '^smoke@example\.test\t.*\tdeactivated\t'
+          $TEACHER activate smoke@example.test
+          $TEACHER password smoke@example.test --generate > /dev/null
+          # Refusals exit non-zero from the image too: an address that is
+          # taken, and a password asked for with no terminal to hide it. `if`
+          # and not `!` — `bash -e` does not stop on a negated command.
+          if $TEACHER create smoke@example.test --generate; then
+            echo "create accepted an address that exists." >&2; exit 1
+          fi
+          if $TEACHER password smoke@example.test; then
+            echo "password read a password with no terminal attached." >&2; exit 1
+          fi
 
       - name: Stop the throwaway Postgres
         if: always()
