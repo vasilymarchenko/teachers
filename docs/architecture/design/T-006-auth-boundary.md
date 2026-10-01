@@ -190,9 +190,10 @@ redirected to `/sign-in`.
 password: `INVALID_EMAIL_OR_PASSWORD` and `INVALID_EMAIL` only. better-auth
 answers a bad address, a bad password and an unknown account with the first of
 those, so the single Ukrainian message covers exactly the cases it claims to.
-Every other `APIError` — an unverified email, a session that could not be
-created — is rethrown, so a broken deployment reaches the logs instead of
-telling the teacher to retype a password that was right.
+The sign-in limit's refusal is the one other `APIError` the form answers, with
+a message of its own (below). Every remaining one — an unverified email, a
+session that could not be created — is rethrown, so a broken deployment reaches
+the logs instead of telling the teacher to retype a password that was right.
 `lib/auth/signInError.test.ts` pins the line, including the two failures that
 share the credential error's 401 status.
 
