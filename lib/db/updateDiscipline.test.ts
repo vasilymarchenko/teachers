@@ -1,5 +1,4 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   checkUpdates,
@@ -39,7 +38,10 @@ const T009_UPDATE_ACTIONS = [
 function actionFiles(): string[] {
   return readdirSync(ACTIONS, { recursive: true, encoding: "utf8" })
     .filter((entry) => /\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry))
-    .map((entry) => join(ACTIONS, entry))
+    // Forward slashes on every platform: the paths are compared against the
+    // list above and printed in a failure, and `readdirSync` hands back `\` on
+    // Windows.
+    .map((entry) => `${ACTIONS}/${entry.replaceAll("\\", "/")}`)
     .sort();
 }
 
@@ -228,16 +230,77 @@ describe("the checker itself", () => {
     expect(messagesFor(source)).toEqual([MISSING_RETURNING]);
   });
 
-  it("accepts a first row read where it stands, and a result returned to the caller", () => {
+  it("accepts a first row tested where it stands", () => {
     const source = `
-      async function firstRow(id: string) {
-        return (await getDb().update(thing).set({ title }).returning())[0];
-      }
-      async function allRows(id: string) {
-        return await getDb().update(thing).set({ title }).returning();
+      export async function updateThingAction(id: string) {
+        if (!(await getDb().update(thing).set({ title }).returning())[0]) {
+          return rejected(THING_NOT_FOUND, formData);
+        }
+        return {};
       }
     `;
-    expect(check(source)).toEqual({ updates: 2, violations: [] });
+    expect(messagesFor(source)).toEqual([]);
+  });
+
+  it("rejects a result returned out of a transaction nobody keeps", () => {
+    // The caller a `return` hands the rows to is right here, and throws them
+    // away: a deleted row comes back as a clean save.
+    const source = `
+      export async function updateThingAction(id: string) {
+        await getDb().transaction(async (tx) => {
+          return tx.update(thing).set({ title }).where(eq(thing.id, id)).returning();
+        });
+        return {};
+      }
+    `;
+    expect(messagesFor(source)).toEqual([RESULT_DISCARDED]);
+  });
+
+  it("rejects a result returned from a helper, awaited or not", () => {
+    const source = `
+      async function trim(tx: Tx) {
+        return await tx.update(thing).set({ validTo }).returning();
+      }
+      const trimAll = (tx: Tx) => tx.update(thing).set({ validTo }).returning();
+    `;
+    expect(messagesFor(source)).toEqual([RESULT_DISCARDED, RESULT_DISCARDED]);
+  });
+
+  it("gives a bound result the verdict the unbound one gets", () => {
+    const unbound = `
+      export async function updateThingAction() {
+        logger.info(await getDb().update(thing).set({ title }).returning());
+        return {};
+      }
+    `;
+    const bound = `
+      export async function updateThingAction() {
+        const updated = await getDb().update(thing).set({ title }).returning();
+        logger.info(updated);
+        return {};
+      }
+    `;
+    expect(messagesFor(unbound)).toEqual([RESULT_DISCARDED]);
+    expect(messagesFor(bound)).toEqual([RESULT_NEVER_READ]);
+  });
+
+  it("does not take an assignment or a type member of the same name for a read", () => {
+    const assigned = `
+      export async function updateThingAction() {
+        let updated = await getDb().update(thing).set({ title }).returning();
+        updated = [];
+        return {};
+      }
+    `;
+    const typed = `
+      export async function updateThingAction() {
+        const updated = await getDb().update(thing).set({ title }).returning();
+        type Outcome = { updated: string };
+        return {};
+      }
+    `;
+    expect(messagesFor(assigned)).toEqual([RESULT_NEVER_READ]);
+    expect(messagesFor(typed)).toEqual([RESULT_NEVER_READ]);
   });
 
   it("rejects a result handed somewhere nobody can be seen reading it", () => {
@@ -307,9 +370,9 @@ describe("the checker itself", () => {
     expect(report.violations.map((v) => v.line)).toEqual([8, 11]);
   });
 
-  it("leaves a DELETE alone", () => {
-    // A delete that matched nothing found the row already gone, which is what
-    // the teacher asked for; the rule in §5 is about UPDATE.
+  it("does not check a DELETE", () => {
+    // The rule in §5 is about UPDATE. That is this checker's limit, not a
+    // verdict on deletes — see the header of `updateDiscipline.ts`.
     const source = `
       export async function deleteThingAction(id: string) {
         await getDb().delete(thing).where(eq(thing.id, id));

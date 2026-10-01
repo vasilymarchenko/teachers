@@ -80,17 +80,13 @@ Two things the implementation has to decide, neither settled here:
 `lib/db/updateDiscipline.test.ts`.
 
 - It is the strict version, over the TypeScript AST: a chain passes when its
-  `.returning()` result is bound to a name that is read, read where it stands
-  or returned; a chain without `.returning()` passes only if `count` — the
-  postgres-js driver's row count — is read off its result. A `.returning()`
-  whose result is discarded, or handed somewhere it cannot be seen being read,
-  is reported.
-- `.delete()` is not covered — confirmed, not assumed. `onConflictDoUpdate` is
-  not covered either: an upsert always has a row.
-
-The checker sits in `lib/db`, not `lib/actions`, because
-`lib/auth/queryDiscipline.test.ts` requires every function exported from
-`lib/actions` to reach `requireUser()`.
+  `.returning()` result is read where it stands or bound to a name that is
+  then read; a chain without `.returning()` passes only if `count` is read off
+  its result. A `.returning()` whose result is discarded, or handed somewhere
+  it cannot be seen being read — an argument, a `return` — is reported.
+- `.delete()` and `onConflictDoUpdate` are not checked. The DELETE rule of
+  `docs/architecture/design/T-010-weekly-template-editor.md` §4 is not
+  enforced by this test.
 
 Run over `lib/actions` as it stood on the commit before T-009's review fixes
 (`4835092^`), it reports the same two lines as the sketch above and nothing

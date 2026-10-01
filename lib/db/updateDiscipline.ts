@@ -17,21 +17,26 @@ import ts from "typescript";
  * `.returning()` is necessary, not sufficient — a result that is thrown away
  * tells the action nothing. So what is checked is that the result is *used*:
  *
- * - the chain has `.returning(` and its result is bound to a name that is read
- *   afterwards, read where it stands (`(await …).length`, `(await …)[0]`) or
- *   returned to the caller; or
+ * - the chain has `.returning(` and its result is read where it stands
+ *   (`(await …).length`, `(await …)[0]`), or bound to a name that is then
+ *   read; or
  * - the chain has no `.returning(` and the action reads `count` off the
  *   result — the explicit row-count check. `count` and not `rowCount`:
  *   `lib/db/client.ts` runs on `drizzle-orm/postgres-js`, whose result has no
  *   `rowCount`, so a test of that one would never fire.
  *
- * Any other place a result can end up — an argument, an array element — is
- * reported: the checker cannot follow it there, and no action needs to put it
- * there.
+ * A name is *read* where the code looks into it or tests it: `updated.length`,
+ * `updated[0]`, `row === undefined`, `!row`, `if (row)`. Any other place a
+ * result can end up — an argument, an array element, a `return` — is reported,
+ * bound or not: the checker cannot follow it there, and the caller a `return`
+ * hands it to may be a transaction callback whose value nobody keeps. An
+ * action tests the result in the function that ran the statement.
  *
- * `.delete()` is left alone on purpose: a delete that matched nothing found the
- * row already gone, which is what the teacher asked for. So is
- * `onConflictDoUpdate`, which always has a row to report.
+ * `.delete()` is not checked: the rule quoted above is about UPDATE. That is
+ * a limit of this checker and not a finding about deletes —
+ * `docs/architecture/design/T-010-weekly-template-editor.md` §4 holds a DELETE
+ * that matched no rows to the same standard, and nothing here enforces it.
+ * `onConflictDoUpdate` is not checked either: an upsert always has a row.
  *
  * It lives in `lib/db` rather than next to the actions it checks because
  * `lib/auth/queryDiscipline.test.ts` requires every function exported from
@@ -124,15 +129,40 @@ function violationOf(update: MethodCall): string | undefined {
     return isPropertyRead(consumer, value, ROW_COUNT) ? undefined : MISSING_RETURNING;
   }
 
-  // The places a result is read without a name: `(await …).length`,
-  // `(await …)[0]`, and `return`, which hands the question to the caller.
-  // Everything else — a bare statement, an argument, an array element — is a
-  // result the checker cannot see anyone read.
-  const readWhereItStands =
-    ((ts.isPropertyAccessExpression(consumer) || ts.isElementAccessExpression(consumer)) &&
-      consumer.expression === value) ||
-    ts.isReturnStatement(consumer);
-  return readWhereItStands ? undefined : RESULT_DISCARDED;
+  // Everything that is not a read where it stands — a bare statement, an
+  // argument, an array element, a `return` — is a result the checker cannot
+  // see anyone read.
+  return isReadOf(value) ? undefined : RESULT_DISCARDED;
+}
+
+const TESTS = new Set([
+  ts.SyntaxKind.EqualsEqualsEqualsToken,
+  ts.SyntaxKind.ExclamationEqualsEqualsToken,
+  ts.SyntaxKind.EqualsEqualsToken,
+  ts.SyntaxKind.ExclamationEqualsToken,
+  ts.SyntaxKind.AmpersandAmpersandToken,
+  ts.SyntaxKind.BarBarToken,
+  ts.SyntaxKind.QuestionQuestionToken,
+]);
+
+/**
+ * Whether an expression — the chain itself, or a name bound to its result —
+ * sits where the code looks into it or tests it. One definition for both, so
+ * `log(await …)` and `const updated = await …; log(updated)` get one verdict.
+ */
+function isReadOf(node: ts.Expression): boolean {
+  const parent = node.parent;
+
+  if (ts.isPropertyAccessExpression(parent) || ts.isElementAccessExpression(parent)) {
+    return parent.expression === node;
+  }
+  if (ts.isBinaryExpression(parent)) return TESTS.has(parent.operatorToken.kind);
+  if (ts.isPrefixUnaryExpression(parent)) {
+    return parent.operator === ts.SyntaxKind.ExclamationToken;
+  }
+  if (ts.isIfStatement(parent)) return parent.expression === node;
+  if (ts.isConditionalExpression(parent)) return parent.condition === node;
+  return false;
 }
 
 /**
@@ -184,10 +214,12 @@ function isPropertyRead(node: ts.Node, of: ts.Expression, name: string): boolean
   );
 }
 
-/** Whether any name the declaration binds is referenced again in its scope. */
+/** Whether any name the declaration binds is read — `isReadOf` — in its scope. */
 function isRead(declaration: ts.VariableDeclaration): boolean {
   const names = bindingNames(declaration.name);
-  return references(declaration).some((reference) => names.includes(reference.text));
+  return references(declaration).some(
+    (reference) => names.includes(reference.text) && isReadOf(reference),
+  );
 }
 
 /** `result.count` on the bound name, or a destructured `{ count }` that is read. */
@@ -208,15 +240,16 @@ function readsRowCount(declaration: ts.VariableDeclaration): boolean {
     if (!ts.isIdentifier(property) || property.text !== ROW_COUNT) return false;
     if (!ts.isIdentifier(element.name)) return false;
     const local = element.name.text;
-    return found.some((reference) => reference.text === local);
+    return found.some((reference) => reference.text === local && isReadOf(reference));
   });
 }
 
 /**
- * Every identifier in the declaration's function that is a use of a variable
- * rather than the declaration itself or the `b` of `a.b`. Shadowing is not
- * resolved: this is syntax, and a second `updated` in the same function is not
- * a shape the actions take.
+ * Every identifier in the declaration's function other than the declaration
+ * itself. A property or a type member of the same text is among them and is
+ * told apart by `isReadOf`, which looks at where an identifier stands.
+ * Shadowing is not resolved: this is syntax, and a second `updated` in the same
+ * function is not a shape the actions take.
  */
 function references(declaration: ts.VariableDeclaration): ts.Identifier[] {
   let scope: ts.Node = declaration;
@@ -225,19 +258,11 @@ function references(declaration: ts.VariableDeclaration): ts.Identifier[] {
   const found: ts.Identifier[] = [];
   const visit = (node: ts.Node) => {
     if (node === declaration.name) return;
-    if (ts.isIdentifier(node) && !isPropertyName(node)) found.push(node);
+    if (ts.isIdentifier(node)) found.push(node);
     ts.forEachChild(node, visit);
   };
   visit(scope);
   return found;
-}
-
-function isPropertyName(node: ts.Identifier): boolean {
-  const parent = node.parent;
-  return (
-    (ts.isPropertyAccessExpression(parent) && parent.name === node) ||
-    (ts.isPropertyAssignment(parent) && parent.name === node)
-  );
 }
 
 /** Every identifier a declaration introduces, destructuring included. */
