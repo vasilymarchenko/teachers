@@ -67,8 +67,10 @@ A form reads its errors through `formErrorsOf(state)`
   gives the same output, and the whole mechanism runs in the single server
   pass.
 - `FormMessage` is rendered after the form's controls.
-- No file under `app/` or `components/`, outside `components/forms/`, reads
-  `.fieldErrors`. `components/forms/field-errors.test.ts` enforces it.
+- No file under `app/` or `components/`, outside `components/forms/`, names
+  `fieldErrors` at all — member access, destructuring or a string key.
+  `components/forms/field-errors.test.ts` enforces it. `lib/` is outside the
+  check: actions write the record and tests assert on it; neither renders it.
 
 An action names the field its message is about and makes no decision about
 where it is shown. `boundaryRefusal()` no longer inspects the submission.

@@ -129,7 +129,11 @@ describe("the forms", () => {
     const direct = [...sources("app"), ...sources("components")]
       // The shared layer itself is the one place allowed to.
       .filter((path) => relative(SHARED, path).startsWith(".."))
-      .filter((path) => /\.fieldErrors\b/.test(readFileSync(join(ROOT, path), "utf8")));
+      // The bare name, not `.fieldErrors`: a destructured
+      // `const { fieldErrors } = state` or a `state["fieldErrors"]` is the same
+      // direct read, and nothing outside the shared layer has a reason to spell
+      // the word at all.
+      .filter((path) => /\bfieldErrors\b/.test(readFileSync(join(ROOT, path), "utf8")));
 
     expect(direct).toStrictEqual([]);
   });
