@@ -122,12 +122,10 @@ npm run teacher -- list                                              # address, 
 
 A password is never an argument and never read from the environment. With no
 terminal attached — a pipe, a CI step — only `--generate` works; the command
-refuses rather than read a password it cannot hide. It exits 0 when done, 1 when
-it refused and wrote nothing (no such address, an address already taken, a
-password outside 8–128 characters), 2 when the command line was wrong. A new
-teacher starts on an empty year-setup screen; the demo teacher and her data are
-`npm run db:seed`, which this does not replace. The mechanics are in
-`docs/architecture/design/T-039-teacher-console.md`.
+refuses rather than read a password it cannot hide. A new teacher starts on an
+empty year-setup screen; the demo teacher and her data are `npm run db:seed`,
+which this does not replace. The mechanics — the exit codes among them, §4 — are
+in `docs/architecture/design/T-039-teacher-console.md`.
 
 ## Deploying to the VPS
 
@@ -139,7 +137,9 @@ checks that commit: `npm run lint`, `npm run typecheck`, `npm test`,
 that the run creates and destroys. It also builds both Docker images and runs the
 `migrator` image against a second throwaway database, asserting it exits 0 and
 leaves the schema behind — so the image that migrates production has migrated
-something before a deploy relies on it.
+something before a deploy relies on it. On that same database the built `web`
+image then runs the teacher-account command, so the file a deploy creates the
+first teacher with has run where it ships (ADR-020).
 
 The images are published to GHCR only from `main`, and only after all of that is
 green. A red gate publishes nothing; the reasoning and the alternatives are in

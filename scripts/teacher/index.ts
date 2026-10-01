@@ -9,7 +9,7 @@
  * On the VPS the same file runs as a single bundle inside the `web` container
  * — `node teacher.cjs …` — built by `npm run build:teacher` (ADR-020).
  */
-import { config } from "dotenv";
+import { existsSync } from "node:fs";
 import {
   activateTeacher,
   createTeacher,
@@ -22,8 +22,10 @@ import { run } from "./cli";
 import { generatePassword, isTerminal, readHidden } from "./password";
 
 // For a developer's machine. In the container there is no `.env` — Compose sets
-// the environment — and a missing file is not an error.
-config({ path: ".env", quiet: true });
+// the environment — and a missing file is not an error. Node's own loader, not
+// `dotenv`: that is a devDependency, and whatever this file imports is inlined
+// into the bundle that ships in the production image (ADR-020).
+if (existsSync(".env")) process.loadEnvFile(".env");
 
 run(
   process.argv.slice(2),

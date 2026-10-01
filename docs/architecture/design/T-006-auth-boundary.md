@@ -14,7 +14,7 @@ accepts and rejects.
 
 | File | Exports |
 |---|---|
-| `lib/auth/auth.ts` | `getAuth()` — the better-auth instance. Called only by `lib/auth/session.ts`, `lib/auth/teachers.ts` (`design/T-039-teacher-console.md`) and the mounted route handler. |
+| `lib/auth/auth.ts` | `getAuth()` — the better-auth instance |
 | `lib/auth/session.ts` | `requireUser()`, `getUser()`, `SessionUser` |
 | `lib/auth/signInError.ts` | `isBadCredentials()` — which `APIError`s from `signInEmail()` mean the credentials were wrong |
 | `lib/auth/queryDiscipline.ts` | `checkSource()`, `SourceKind`, `Violation`, `ACTIONS_WITHOUT_A_SESSION` — test support only; it imports `typescript`, a devDependency, so application code must never import it |

@@ -22,8 +22,8 @@ image.
 | `lib/auth/deactivation.ts` | `refuseDeactivatedTeacher()`, `endSessionOfDeactivatedTeacher()` — the two hooks |
 | `lib/db/schema/auth.ts` | `user.deactivatedAt` — `deactivated_at timestamp`, nullable (`drizzle/0003_user_deactivated_at.sql`) |
 | `scripts/teacher/cli.ts` | `run(argv, io, operations)`, `Io`, `Operations`, `EXIT_OK`, `EXIT_REFUSED`, `EXIT_USAGE`, `USAGE` |
-| `scripts/teacher/password.ts` | `readHidden()`, `isTerminal()`, `generatePassword()` |
-| `scripts/teacher/index.ts` | the entry point: loads `.env` if there is one, wires the real terminal and the real operations into `run()`, closes the database, exits with the code |
+| `scripts/teacher/password.ts` | `readHidden()`, `typeKeys()`, `Typed`, `isTerminal()`, `generatePassword()` |
+| `scripts/teacher/index.ts` | the entry point: loads `.env` if there is one (`process.loadEnvFile()`, not `dotenv`), wires the real terminal and the real operations into `run()`, closes the database, exits with the code |
 
 ## 2. The operations
 
@@ -99,7 +99,9 @@ teacher list
 | the VPS | `docker compose -f docker-compose.prod.yml exec web node teacher.cjs <subcommand> …` |
 
 **Password.** Without `--generate`: read twice by `readHidden()` (raw mode, no
-echo, prompt on stderr); the two entries must match. With no terminal on stdin
+echo, prompt on stderr); the two entries must match. A control character other
+than Enter, Ctrl-D, Backspace and Ctrl-C — an arrow key, Delete, Tab — is a
+fault, not part of the password: `typeKeys()`. With no terminal on stdin
 the command refuses before calling anything. With `--generate`: 18 random bytes
 as 24 base64url characters, printed once on stdout after the operation
 succeeded, and not at all when it was refused. No argument and no environment
@@ -146,6 +148,7 @@ routes it as `teacher-smoke`, always skipped here
 | Suite | Holds |
 |---|---|
 | `scripts/teacher/cli.test.ts` | where a password may come from; what is refused before any operation is called; the exit code of every outcome; the `list` line |
+| `scripts/teacher/password.test.ts` | what a key typed at the hidden prompt does: the characters kept, Backspace, Enter, Ctrl-C, and an escape sequence or other control character refused rather than stored |
 | `lib/auth/teachers.integration.test.ts` | every operation against Postgres and the real better-auth: a real sign-in after `create` and after `password`; the old password and the old sessions gone; `deactivated_at` set with the fixture scenario's rows untouched; a deactivated teacher answered exactly as a wrong password on `auth.api.signInEmail()`, on `POST /api/auth/sign-in/email` and by `signInAction`; a session inserted after the sweep ended by the second hook; `activate` restoring sign-in; the not-found and taken-address refusals writing nothing |
 
 The two points `ADR-019` records as inferred are the tests "reaches the caller

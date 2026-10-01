@@ -77,7 +77,10 @@ down for two things: it would put a devDependency and a config file the running
 application never uses into the production image, and it would put the ability
 to migrate next to the process that must never migrate its own database.
 Neither holds here. Nothing in the bundle is a devDependency at run time —
-`esbuild` builds it and stays in `builder`. And account management is not a
+`esbuild` builds it and stays in `builder`, and the entry point reads a
+developer's `.env` with Node's own `process.loadEnvFile()` rather than with
+`dotenv`, which is a devDependency the bundle would otherwise inline. And
+account management is not a
 capability the web process is forbidden: `ADR-019` expects a Server Action to
 become the second caller of the same functions. `ADR-003` stands unchanged.
 
