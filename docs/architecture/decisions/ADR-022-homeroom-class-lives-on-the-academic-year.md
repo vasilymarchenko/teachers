@@ -12,8 +12,9 @@ Specification §3.5 and §6.2: the teacher names their own class (the one they
 are homeroom teacher of), and in «Мої уроки» their lessons in that class are
 highlighted. The class moves up a grade every September — 8-Б becomes 9-Б —
 so a name that is right this year is wrong for the last one. `className` on an
-`OWN` slot is free text (overview §4), and there is no class entity until the
-class list of specification §9.
+`OWN` slot is free text (overview §4), and there is no class entity. None is
+planned: overview §7 makes the class list of specification §9 a `Student`
+table unrelated to the schedule.
 
 ## Options
 
@@ -26,10 +27,9 @@ the highlight silently vanishes from history.
 its year the way it finds its semester. Costs: the teacher enters it once per
 year, and a calendar range that spans two years has to look up two values.
 
-**A class entity** (`SchoolClass`) referenced by slots. Exact matching, no
-spelling issue. Costs: a table, a screen, a migration of every stored
-`className` into references — the dictionary overview §4 decided against, and
-which specification §9 will bring for its own reasons.
+**A class entity** referenced by slots. Exact matching, no spelling issue.
+Costs: a table, a screen, and a migration of every stored `className` into
+references — the dictionary overview §4 decided against.
 
 ## Decision
 
@@ -46,5 +46,6 @@ No relation between a slot and the class exists in the database, so renaming
 the homeroom class changes the highlight everywhere in that year at once, and
 a misspelt `className` simply is not highlighted.
 
-Revisit when specification §9 introduces the class as an entity: then the
-column becomes a reference to it, and the text match goes.
+Revisit if a class ever becomes an entity that schedule slots reference —
+for instance when the overview §9 trigger for real dictionaries fires: then
+the column becomes a reference to it, and the text match goes.

@@ -61,6 +61,8 @@ both weeks is two sets of rows.
       checkbox and the two-parity write.
 - [ ] ADR-021 is set to `accepted` and ADR-006 to `superseded by ADR-021`;
       neither ADR's body is edited.
+- [ ] Overview §3.2 states the save unit as one weekday of one or both
+      parity weeks, and links ADR-021 alongside ADR-006.
 - [ ] Tests: the equality function; the action's slot plan for a both-weeks
       save (both parities replaced, other weekdays untouched, one version);
       and the row mark for a differing, an equal and a one-sided row.
