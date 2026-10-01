@@ -900,9 +900,10 @@ consequence worth knowing: editing a bell time changes the rendered times of
 lessons in the past too, because `ResolvedLesson` takes its times from the
 current row (overview §5). That is a rewrite of displayed history, which
 specification §5.2 forbids for the schedule — the schedule itself is safe,
-only the clock times move. Left as is: a second academic year is the trigger, and
-the fix is an `academic_year_id` column plus a copy at year rollover, on a table
-with at most ten rows per year. Recorded so T-009 does not have to rediscover it.
+only the clock times move. Left as is. The trigger and the fix are overview §9
+("`BellSchedule` без дати початку дії"): a dated set of rows, not an
+`academic_year_id` column — the bells stay the teacher's, not the year's, which
+overview §8.6 relies on. Recorded so T-009 does not have to rediscover it.
 
 **F-3 — a `lesson_number` with no `bell_schedule` row has no times.**
 Nothing constrains `template_slot.lesson_number` or
