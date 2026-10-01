@@ -11,6 +11,7 @@ for reading. Order is priority; the ID number is not.
 | ID | Title | Status | Depends on |
 |---|---|---|---|
 | [T-038](T-038-first-run-year-setup-gate.md) | A teacher whose year setup is incomplete is sent to year setup, and nowhere else | done | T-009, T-014 |
+| [T-039](T-039-teacher-management-console.md) | Manage teacher accounts from the console — create, set password, deactivate, list | todo | T-006, T-015 |
 | [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | done | — |
 | [T-037](T-037-cost-a-change-what-it-is-worth.md) | A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all | done | T-033 |
 | [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | done | T-017 |
@@ -127,7 +128,9 @@ the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency th
 carried is satisfied. T-011 and T-021, which hang off T-007 alone, are done
 too; T-013 is what remains of the calendar work. T-038 hangs off T-009 and T-014 and
 is not drawn: it puts a gate in front of the screens those two built, for the
-teacher whose year setup is incomplete, and nothing in the diagram waits on it.
+teacher whose year setup is incomplete, and nothing in the diagram waits on it. T-039 hangs
+off T-006, whose sign-in it adds a refusal to, and off T-015, whose images its
+command has to run from; it is not drawn, and nothing in the diagram waits on it.
 
 ## Coverage
 
@@ -139,4 +142,6 @@ the documents that tooling reads. T-024 is not product scope either, and is not 
 is the deployment path checking itself, which is why it hangs off T-015 rather
 than off a ticket a review found something in. Second- and third-phase work (class list and birthdays §9,
 import §10, AI) has no tickets by design; `architect-overview.md` §7 records the
-extension points those will use.
+extension points those will use. T-039 is outside the specification too: it is
+what the person running the deployment uses to give a teacher an account, not a
+screen a teacher sees.
