@@ -71,9 +71,11 @@ resolves it, in a `Map` held on `globalThis`. A request with no resolvable
 address is counted under one key shared by all such requests.
 
 An attempt is taken in the *before* hook, ahead of the password check. The
-*after* hook gives that one attempt back unless the sign-in ended in the
-credential error: a success is not counted, and neither is a request better-auth
-refused before reaching the password. Five attempts in a window of fifteen
+*after* hook gives that one attempt back unless the sign-in ended in
+`INVALID_EMAIL_OR_PASSWORD`: a success is not counted, and neither is a request
+better-auth refused before reaching the password. An attempt whose sign-in threw
+something other than an `APIError` is not given back, because no *after* hook
+runs for it. Five attempts in a window of fifteen
 minutes that opens with the first of them; the next is refused with `429` and
 the code `TOO_MANY_SIGN_IN_ATTEMPTS` whatever it carries. The numbers are the
 two constants at the top of that file.
@@ -103,11 +105,23 @@ success would let anyone who holds an account sign in to it between guesses at
 another and never reach five. The price is that a teacher who mistypes four
 times and then gets in has one attempt left until the window ends, not five.
 
-**Only a credential failure is kept.** `hooks.before` runs ahead of
-better-auth's origin and CSRF checks, so a cross-site form post from the
-teacher's own browser takes an attempt from her address before it is refused.
-Giving back every attempt that did not end in the credential error is what
-keeps a page on another site from locking her out.
+**Of the answers better-auth gives, only `INVALID_EMAIL_OR_PASSWORD` is kept.**
+`hooks.before` runs ahead of the sign-in endpoint's CSRF check, so a cross-site
+form post from the teacher's own browser takes an attempt from her address
+before it is refused. Giving back every attempt that ended in any other
+`APIError` — that refusal, a malformed body, a malformed address — is what keeps
+a page on another site from locking her out.
+
+**A fault that is not an `APIError` keeps its attempt.** better-auth catches
+only `APIError`s from an endpoint; anything else — an unreachable Postgres — is
+re-raised before the *after* hooks run, so the hook that would give the attempt
+back never does. A teacher who submits the form five times during a database
+outage is refused for the rest of the window once the database is back, though
+no password of hers was wrong. Accepted because a hook cannot see that throw,
+and catching it would mean moving the count out of better-auth's hooks and into
+each caller, which is the option rejected above. **Revisit** if an outage
+actually locks the teacher out: the remedy is a restart of `web`, which empties
+the store.
 
 **The limit trusts the proxy.** The address is whatever `X-Forwarded-For` says.
 Behind Caddy that is the peer address; with the `web` port published directly,

@@ -1,5 +1,5 @@
 import { APIError, createAuthMiddleware, getIP, isAPIError } from "better-auth/api";
-import { isBadCredentials, TOO_MANY_SIGN_IN_ATTEMPTS } from "./signInError";
+import { TOO_MANY_SIGN_IN_ATTEMPTS } from "./signInError";
 
 /**
  * The limit on repeated failed sign-ins — T-016, ADR-023. `auth.ts` registers
@@ -21,6 +21,14 @@ export const SIGN_IN_WINDOW_SECONDS = 15 * 60;
  * it needs a ceiling; past it the oldest windows are forgotten first.
  */
 const MAX_TRACKED_KEYS = 10_000;
+
+/**
+ * The one answer that is a failed guess: better-auth gives it for a wrong
+ * password and for an unknown account alike. Narrower than
+ * `isBadCredentials()`, which also takes `INVALID_EMAIL` — a malformed address,
+ * refused before any account is looked up.
+ */
+const FAILED_GUESS = "INVALID_EMAIL_OR_PASSWORD";
 
 /** The path the limit applies to, as better-auth names it. */
 const SIGN_IN_PATH = "/sign-in/email";
@@ -144,12 +152,16 @@ export const refuseRepeatedSignIn = createAuthMiddleware(async (ctx) => {
  * Gives the attempt back unless it was a failed guess, which is what makes the
  * count one of failures.
  *
- * A failed guess is the credential error and nothing else. A sign-in that
+ * A failed guess is `FAILED_GUESS` and nothing else. A sign-in that
  * succeeded gets its one attempt back — not the whole address forgiven, or
  * anyone holding an account could wipe the count between guesses at someone
  * else's. Every other `APIError` gets it back too: a request better-auth turned
  * away for its origin or its shape never reached the password, and counting it
  * would let a page on another site spend the attempts of whoever opened it.
+ *
+ * What this cannot give back is an attempt whose sign-in threw something that
+ * is not an `APIError` — an unreachable database. better-auth re-raises that
+ * without running any `after` hook, so the attempt stays taken (ADR-023).
  *
  * The refusal above never arrives here — better-auth runs no `after` hook for a
  * request a `before` hook threw on — so nothing is given back for an attempt
@@ -158,6 +170,6 @@ export const refuseRepeatedSignIn = createAuthMiddleware(async (ctx) => {
 export const returnSignInAttempt = createAuthMiddleware(async (ctx) => {
   if (ctx.path !== SIGN_IN_PATH) return;
   const returned = ctx.context.returned;
-  if (isAPIError(returned) && isBadCredentials(returned)) return;
+  if (isAPIError(returned) && returned.body?.code === FAILED_GUESS) return;
   limiter().release(clientKey(ctx));
 });

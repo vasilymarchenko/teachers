@@ -205,8 +205,8 @@ describe("POST /api/auth/sign-in/email", () => {
 
 describe("a request better-auth turns away before the password", () => {
   // The case this exists for is a cross-site form post from the teacher's own
-  // browser, which better-auth refuses for its origin only after `hooks.before`
-  // has taken an attempt from her address. That refusal cannot be produced
+  // browser, which the sign-in endpoint's CSRF check refuses only after
+  // `hooks.before` has taken an attempt from her address. That refusal cannot be produced
   // here — better-auth skips its origin check when NODE_ENV is "test" — so the
   // request below is one it refuses in every environment, for its shape. Both
   // reach the `after` hook the same way: as an `APIError` that is not the
@@ -224,6 +224,21 @@ describe("a request better-auth turns away before the password", () => {
         }),
       );
       expect(response.status).toBe(400);
+    }
+
+    await expect(submitSignInForm(ip, email, PASSWORD)).rejects.toBeInstanceOf(Redirected);
+  });
+});
+
+describe("a malformed address", () => {
+  it("costs the address nothing either: it is refused before any account is looked up", async () => {
+    const { email } = await newTeacher();
+    const ip = "203.0.113.12";
+
+    for (let n = 0; n < 6; n++) {
+      const malformed = await signInOverHttp(ip, "not-an-address", WRONG_PASSWORD);
+      expect(malformed.status).toBe(400);
+      expect(malformed.body.code).toBe("INVALID_EMAIL");
     }
 
     await expect(submitSignInForm(ip, email, PASSWORD)).rejects.toBeInstanceOf(Redirected);

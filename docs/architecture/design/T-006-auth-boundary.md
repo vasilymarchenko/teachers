@@ -214,11 +214,15 @@ why these mechanics — `decisions/ADR-023-sign-in-failures-are-counted-in-proce
 - **The count.** The *before* hook takes an attempt ahead of the password
   check. The window opens with the first attempt and is not extended by later
   ones. The *after* hook gives that one attempt back unless
-  `ctx.context.returned` is an `APIError` that `isBadCredentials()` accepts: a
-  sign-in that succeeded is not counted, and neither is a request better-auth
-  refused before the password — for its origin, or for its shape. The other
-  attempts taken from the address stay taken, whichever account they were
-  aimed at. A refused attempt takes nothing and runs no *after* hook.
+  `ctx.context.returned` is an `APIError` with the code
+  `INVALID_EMAIL_OR_PASSWORD`: a sign-in that succeeded is not counted, and
+  neither is a request better-auth answered with any other `APIError` — the
+  endpoint's CSRF refusal, a malformed body, a malformed address
+  (`INVALID_EMAIL`). The other attempts taken from the address stay taken,
+  whichever account they were aimed at. Two cases run no *after* hook: a
+  refused attempt, which took nothing; and a sign-in that threw something other
+  than an `APIError` — an unreachable database — whose attempt therefore stays
+  taken.
 - **The refusal.** With five attempts taken, the next is refused whatever it
   carries: `APIError("TOO_MANY_REQUESTS")`, body
   `{ code: "TOO_MANY_SIGN_IN_ATTEMPTS", message, retryAfter }` with `retryAfter`

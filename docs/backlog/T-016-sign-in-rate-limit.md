@@ -44,10 +44,11 @@ memory, attempts are counted per client address and not per e-mail address, and
 the limit is 5 failed attempts in 15 minutes. The mechanics are in
 `design/T-006-auth-boundary.md` §7.
 
-Evidence for the criteria, in order: `lib/auth/signInLimit.ts:122`
+Evidence for the criteria, in order: `lib/auth/signInLimit.ts:136`
 (`refuseRepeatedSignIn`) with `lib/auth/signInLimit.integration.test.ts` — the
 form, the route and the two "share one counter" cases; `lib/actions/auth.ts:78`
 with the tests "refuses the sixth attempt though its password is right" and
 "refuses an address nobody has with the same words as one that exists" in that
 suite; the paragraph above and `ADR-023` §Consequences; and
-`design/T-006-auth-boundary.md:200`.
+`design/T-006-auth-boundary.md:201`. The line numbers are those of the
+ticket's last commit on its branch.
