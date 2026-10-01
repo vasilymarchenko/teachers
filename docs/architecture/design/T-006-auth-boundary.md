@@ -16,7 +16,8 @@ accepts and rejects.
 |---|---|
 | `lib/auth/auth.ts` | `getAuth()` — the better-auth instance |
 | `lib/auth/session.ts` | `requireUser()`, `getUser()`, `SessionUser` |
-| `lib/auth/signInError.ts` | `isBadCredentials()` — which `APIError`s from `signInEmail()` mean the credentials were wrong |
+| `lib/auth/signInError.ts` | `isBadCredentials()` — which `APIError`s from `signInEmail()` mean the credentials were wrong; `tooManyAttempts()`, `TOO_MANY_SIGN_IN_ATTEMPTS` — the sign-in limit's refusal and the wait it carries |
+| `lib/auth/signInLimit.ts` | `refuseRepeatedSignIn`, `returnSignInAttempt` — the two better-auth hooks of the sign-in limit (§7); `createSignInLimiter()`, `SignInLimiter`, `SIGN_IN_MAX_FAILURES`, `SIGN_IN_WINDOW_SECONDS` |
 | `lib/auth/queryDiscipline.ts` | `checkSource()`, `SourceKind`, `Violation`, `ACTIONS_WITHOUT_A_SESSION` — test support only; it imports `typescript`, a devDependency, so application code must never import it |
 | `lib/actions/auth.ts` | `signInAction`, `signOutAction`, `SignInState` |
 | `lib/validation/signIn.ts` | `signInInput`, `SignInInput` |
@@ -190,14 +191,51 @@ redirected to `/sign-in`.
 password: `INVALID_EMAIL_OR_PASSWORD` and `INVALID_EMAIL` only. better-auth
 answers a bad address, a bad password and an unknown account with the first of
 those, so the single Ukrainian message covers exactly the cases it claims to.
-Every other `APIError` — an unverified email, a session that could not be
-created — is rethrown, so a broken deployment reaches the logs instead of
-telling the teacher to retype a password that was right.
+The sign-in limit's refusal is the one other `APIError` the form answers, with
+a message of its own (below). Every remaining one — an unverified email, a
+session that could not be created — is rethrown, so a broken deployment reaches
+the logs instead of telling the teacher to retype a password that was right.
 `lib/auth/signInError.test.ts` pins the line, including the two failures that
 share the credential error's 401 status.
 
-**Rate limiting does not apply to this flow.** better-auth's limiter (3 requests
-per 10 s on `/sign-in*`, on by default in production) runs in the router's
-`onRequest`, so it covers `auth.handler(request)` — the mounted route — and not
-`auth.api.signInEmail()`, which is what `signInAction` calls. `T-016` owns
-closing that, before T-015 puts the app on a public host.
+**Failed sign-ins are limited to 5 per client address in 15 minutes**
+(`SIGN_IN_MAX_FAILURES`, `SIGN_IN_WINDOW_SECONDS` in `lib/auth/signInLimit.ts`;
+why these mechanics — `decisions/ADR-023-sign-in-failures-are-counted-in-process-per-client-address.md`).
+
+- **Where it runs.** `refuseRepeatedSignIn` is `hooks.before` and
+  `returnSignInAttempt` is `hooks.after` in `lib/auth/auth.ts`; both return at
+  once for any path but `/sign-in/email`. Hooks run for
+  `auth.api.signInEmail()` and for `auth.handler(request)`, so the form and
+  `POST /api/auth/sign-in/email` draw on one counter.
+- **The key** is the client address: `getIP()` from `better-auth/api` over the
+  request, or over the headers `signInAction` passes — `x-forwarded-for`, a
+  single valid address, IPv6 reduced to its /64. A request it cannot resolve an
+  address for is counted under the one key `unknown`, shared by all of them.
+- **The count.** The *before* hook takes an attempt ahead of the password
+  check. The window opens with the first attempt and is not extended by later
+  ones. The *after* hook gives that one attempt back unless
+  `ctx.context.returned` is an `APIError` with the code
+  `INVALID_EMAIL_OR_PASSWORD`: a sign-in that succeeded is not counted, and
+  neither is a request better-auth answered with any other `APIError` — the
+  endpoint's CSRF refusal, a malformed body, a malformed address
+  (`INVALID_EMAIL`). The other attempts taken from the address stay taken,
+  whichever account they were aimed at. Two cases run no *after* hook: a
+  refused attempt, which took nothing; and a sign-in that threw something other
+  than an `APIError` — an unreachable database — whose attempt therefore stays
+  taken.
+- **The refusal.** With five attempts taken, the next is refused whatever it
+  carries: `APIError("TOO_MANY_REQUESTS")`, body
+  `{ code: "TOO_MANY_SIGN_IN_ATTEMPTS", message, retryAfter }` with `retryAfter`
+  in seconds to the end of the window, and the same number in a `Retry-After`
+  header. `tooManyAttempts()` in `signInError.ts` reads the seconds back, and
+  `signInAction` answers with «Забагато спроб входу. Спробуйте ще раз через N
+  хв.» — N being those seconds in minutes, rounded up. The route's `message` is
+  English; nothing renders it.
+- **The store** is a `Map` in the web process, held on `globalThis` under
+  `Symbol.for("teachers.signInLimiter")`, at most 10 000 keys — expired windows
+  are dropped first, then the oldest. A restart of the container empties it.
+
+better-auth's own limiter is unchanged: 3 requests per 10 s on `/sign-in*`, on
+in production, in the router's `onRequest` — so it applies to the mounted route
+only, counts requests rather than failures, and answers with a 429 that has no
+code.

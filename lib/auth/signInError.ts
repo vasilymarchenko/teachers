@@ -24,3 +24,22 @@ const CREDENTIAL_ERROR_CODES = ["INVALID_EMAIL_OR_PASSWORD", "INVALID_EMAIL"];
 export function isBadCredentials(error: APIError): boolean {
   return CREDENTIAL_ERROR_CODES.includes(error.body?.code ?? "");
 }
+
+/**
+ * The code `refuseRepeatedSignIn` raises once a client address has used up its
+ * attempts — `signInLimit.ts`. Ours, not better-auth's: its own limiter answers
+ * with a bare 429 response and no code.
+ */
+export const TOO_MANY_SIGN_IN_ATTEMPTS = "TOO_MANY_SIGN_IN_ATTEMPTS";
+
+/**
+ * The seconds a refused client has to wait, or `null` when the error is not
+ * that refusal.
+ *
+ * Kept apart from `isBadCredentials()` because the form must not answer it with
+ * the wrong-password message: the password was never looked at.
+ */
+export function tooManyAttempts(error: APIError): number | null {
+  if (error.body?.code !== TOO_MANY_SIGN_IN_ATTEMPTS) return null;
+  return Number(error.body.retryAfter);
+}
