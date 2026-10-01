@@ -27,7 +27,7 @@ This is the first writable screen in the application. Everything before it read;
 | `lib/validation/semester.ts` | `semesterInput`, `SEMESTER_FIELD` |
 | `lib/validation/nonTeachingPeriod.ts` | `nonTeachingPeriodInput`, `NON_TEACHING_PERIOD_FIELD` |
 | `lib/validation/weekdayRule.ts` | `weekdayRuleInput`, `WEEKDAY_RULE_FIELD` |
-| `lib/validation/bellSchedule.ts` | `bellScheduleInput`, `bellField()`, `bellFieldErrors()`, `LESSON_MINUTES_FIELD`, `parseLessonMinutes()`, `MIN_LESSON_MINUTES`, `MAX_LESSON_MINUTES` |
+| `lib/validation/bellSchedule.ts` | `bellScheduleInput`, `bellField()`, `bellFieldErrors()`, `BELL_SCHEDULE_FIELD`, `parseLessonMinutes()`, `MIN_LESSON_MINUTES`, `MAX_LESSON_MINUTES` |
 | `lib/validation/parityAnchor.ts` | `parityAnchorInput`, `PARITY_ANCHOR_FIELD` |
 
 The bell form's one piece of domain logic is `lib/domain/schedule/bells.ts` —
@@ -39,7 +39,8 @@ tuple equals its `pgEnum`, order included.
 
 Each `*_FIELD` map is declared `as const satisfies Record<keyof <Input>, string>`:
 the form writes `name={X_FIELD.dateFrom}`, so renaming a schema key without
-renaming it in the form fails the type check.
+renaming it in the form fails the type check. `BELL_SCHEDULE_FIELD` lists
+`lessonMinutes` alone: the grid's names are computed by `bellField()`.
 
 ### Reads (read-only, `userId` first — overview §8.4)
 

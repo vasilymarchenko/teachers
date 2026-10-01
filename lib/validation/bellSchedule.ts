@@ -18,10 +18,12 @@ import { clockTimeField, clockTimeInput } from "./fields";
  * past midnight, running into the next lesson — but hands back only starts and
  * the length; the action computes the ends it stores.
  *
- * Unlike the other forms in this directory the field names are computed
+ * Unlike the other forms in this directory the grid's field names are computed
  * (`bellField()`) rather than listed, so there is no `satisfies` pair to keep
  * them honest; `bellFieldErrors()` is the other half of the same mapping and
- * `bellSchedule.test.ts` pins both.
+ * `bellSchedule.test.ts` pins both. The one field that is not part of the grid,
+ * `lessonMinutes`, is listed like any other form's — `BELL_SCHEDULE_FIELD`
+ * (overview §8.2).
  */
 
 export const MIN_LESSON_MINUTES = 10;
@@ -32,9 +34,6 @@ const PAST_MIDNIGHT = "Урок має закінчуватися не пізн�
 const STARTS_GROW = "Урок має починатися пізніше за попередній";
 const overlapsPrevious = (previousEnd: string) =>
   `Попередній урок закінчується о ${previousEnd} — цей не може початися раніше`;
-
-/** The `name=` of the lesson-length input. */
-export const LESSON_MINUTES_FIELD = "lessonMinutes";
 
 /**
  * `lessonMinutes` as typed — a whole number of minutes within the allowed
@@ -71,13 +70,36 @@ const bellGrid = z.object({
     .length(LESSON_NUMBERS.length, "Розклад дзвінків має містити уроки 0–9"),
 });
 
+/**
+ * The `name=` of every input that is not a cell of the grid. `bells` is left
+ * out because its names are computed — `bellField()`.
+ *
+ * `satisfies` is what ties it to the schema: renaming the key in `bellGrid`
+ * without renaming it here fails the type check, and the action, the form and
+ * `bellFieldErrors()` all read the name from this map (overview §8.2).
+ */
+export const BELL_SCHEDULE_FIELD = {
+  lessonMinutes: "lessonMinutes",
+} as const satisfies Record<
+  Exclude<keyof z.input<typeof bellGrid>, "bells">,
+  string
+>;
+
+type ListedKey = keyof typeof BELL_SCHEDULE_FIELD;
+
+const isListedKey = (key: PropertyKey | undefined): key is ListedKey =>
+  typeof key === "string" && key in BELL_SCHEDULE_FIELD;
+
+/** The schema key an issue about the lesson length is filed under. */
+const LESSON_MINUTES_KEY = "lessonMinutes" satisfies ListedKey;
+
 export const bellScheduleInput = bellGrid
   .superRefine((grid, ctx) => {
     const lessonMinutes = parseLessonMinutes(grid.lessonMinutes);
     if (lessonMinutes === undefined) {
       ctx.addIssue({
         code: "custom",
-        path: ["lessonMinutes"],
+        path: [LESSON_MINUTES_KEY],
         message: LESSON_MINUTES_RULE,
       });
     }
@@ -135,7 +157,7 @@ export const bellScheduleInput = bellGrid
       // is a number without an assertion.
       ctx.issues.push({
         code: "custom",
-        path: ["lessonMinutes"],
+        path: [LESSON_MINUTES_KEY],
         message: LESSON_MINUTES_RULE,
         input: grid.lessonMinutes,
       });
@@ -176,8 +198,8 @@ export function bellFieldErrors(error: ZodError): Record<string, string> {
   for (const issue of error.issues) {
     const [root, lessonNumber, key] = issue.path;
 
-    if (root === "lessonMinutes") {
-      errors[LESSON_MINUTES_FIELD] ??= issue.message;
+    if (isListedKey(root)) {
+      errors[BELL_SCHEDULE_FIELD[root]] ??= issue.message;
       continue;
     }
 

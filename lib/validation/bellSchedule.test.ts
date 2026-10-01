@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  BELL_SCHEDULE_FIELD,
   bellField,
   bellFieldErrors,
   bellScheduleInput,
-  LESSON_MINUTES_FIELD,
   parseLessonMinutes,
 } from "./bellSchedule";
 import { LESSON_NUMBERS } from "./enums";
@@ -127,7 +127,7 @@ describe("bellScheduleInput", () => {
   it("rejects a lesson length outside 10–90, on the length's own field", () => {
     for (const lessonMinutes of ["9", "91", "0", "600"]) {
       expect(errorsFor({ 1: "08:30" }, lessonMinutes), lessonMinutes).toStrictEqual({
-        [LESSON_MINUTES_FIELD]: LESSON_MINUTES_RULE,
+        [BELL_SCHEDULE_FIELD.lessonMinutes]: LESSON_MINUTES_RULE,
       });
     }
   });
@@ -135,14 +135,14 @@ describe("bellScheduleInput", () => {
   it("rejects a lesson length that is not a whole number", () => {
     for (const lessonMinutes of ["", "45.5", "45,5", "-45", "сорок п’ять", "4e1"]) {
       expect(errorsFor({ 1: "08:30" }, lessonMinutes), lessonMinutes).toStrictEqual({
-        [LESSON_MINUTES_FIELD]: LESSON_MINUTES_RULE,
+        [BELL_SCHEDULE_FIELD.lessonMinutes]: LESSON_MINUTES_RULE,
       });
     }
   });
 
   it("requires a lesson length even when no start is filled in", () => {
     expect(errorsFor({}, "")).toStrictEqual({
-      [LESSON_MINUTES_FIELD]: LESSON_MINUTES_RULE,
+      [BELL_SCHEDULE_FIELD.lessonMinutes]: LESSON_MINUTES_RULE,
     });
   });
 
@@ -199,7 +199,7 @@ describe("bellScheduleInput", () => {
   it("reports only the length while the length is wrong, plus starts that are not times", () => {
     // No end can be computed, so no rule about ends is reported.
     expect(errorsFor({ 1: "09:25", 2: "08:30", 3: "bad" }, "5")).toStrictEqual({
-      [LESSON_MINUTES_FIELD]: LESSON_MINUTES_RULE,
+      [BELL_SCHEDULE_FIELD.lessonMinutes]: LESSON_MINUTES_RULE,
       [bellField(3)]: NOT_A_TIME,
     });
   });

@@ -11,7 +11,7 @@ import {
   bellField,
   bellFieldErrors,
   bellScheduleInput,
-  LESSON_MINUTES_FIELD,
+  BELL_SCHEDULE_FIELD,
 } from "@/lib/validation/bellSchedule";
 import { LESSON_NUMBERS } from "@/lib/validation/enums";
 import {
@@ -59,7 +59,9 @@ export async function saveBellScheduleAction(
   }));
 
   const parsed = bellScheduleInput.safeParse({
-    lessonMinutes: String(formData.get(LESSON_MINUTES_FIELD) ?? ""),
+    lessonMinutes: String(
+      formData.get(BELL_SCHEDULE_FIELD.lessonMinutes) ?? "",
+    ),
     bells,
   });
   if (!parsed.success) {

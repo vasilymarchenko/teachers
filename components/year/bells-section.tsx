@@ -10,8 +10,8 @@ import { saveBellScheduleAction } from "@/lib/actions/bellSchedule";
 import { lessonEnd, storedLessonMinutes } from "@/lib/domain/schedule/bells";
 import type { BellInput } from "@/lib/domain/schedule/types";
 import {
+  BELL_SCHEDULE_FIELD,
   bellField,
-  LESSON_MINUTES_FIELD,
   parseLessonMinutes,
 } from "@/lib/validation/bellSchedule";
 import { LESSON_NUMBERS } from "@/lib/validation/enums";
@@ -78,7 +78,7 @@ function BellsForm({
   // submitted, or what is stored — the same rule `fieldValue()` gives every
   // other form, and what a page rendered with JavaScript off shows.
   const [lessonMinutes, setLessonMinutes] = useState(() =>
-    fieldValue(state, LESSON_MINUTES_FIELD, stored.lessonMinutes),
+    fieldValue(state, BELL_SCHEDULE_FIELD.lessonMinutes, stored.lessonMinutes),
   );
   const [starts, setStarts] = useState<Record<number, string>>(() =>
     Object.fromEntries(
@@ -117,10 +117,10 @@ function BellsForm({
     >
       <FormField
         className="sm:max-w-xs"
-        error={state.fieldErrors?.[LESSON_MINUTES_FIELD]}
+        error={state.fieldErrors?.[BELL_SCHEDULE_FIELD.lessonMinutes]}
         hint={BELLS_SECTION.lessonMinutesHint}
         label={BELLS_SECTION.lessonMinutes}
-        name={LESSON_MINUTES_FIELD}
+        name={BELL_SCHEDULE_FIELD.lessonMinutes}
       >
         {(props) => (
           <Input
