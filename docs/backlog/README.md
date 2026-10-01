@@ -12,7 +12,7 @@ for reading. Order is priority; the ID number is not.
 |---|---|---|---|
 | [T-038](T-038-first-run-year-setup-gate.md) | A teacher whose year setup is incomplete is sent to year setup, and nowhere else | done | T-009, T-014 |
 | [T-039](T-039-teacher-management-console.md) | Manage teacher accounts from the console — create, set password, deactivate, list | done | T-006, T-015 |
-| [T-040](T-040-bell-schedule-start-times-only.md) | Bell schedule — the teacher enters start times and one lesson length, ends are computed | todo | T-009 |
+| [T-040](T-040-bell-schedule-start-times-only.md) | Bell schedule — the teacher enters start times and one lesson length, ends are computed | done | T-009 |
 | [T-041](T-041-year-setup-shows-the-way-out.md) | Year setup shows the teacher the next step, and says when the rest of the app is open | todo | T-038 |
 | [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | done | — |
 | [T-037](T-037-cost-a-change-what-it-is-worth.md) | A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all | done | T-033 |

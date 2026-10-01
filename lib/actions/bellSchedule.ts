@@ -6,10 +6,12 @@ import { requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { constraintMessage } from "@/lib/db/constraintViolation";
 import { bellSchedule } from "@/lib/db/schema";
+import { lessonEnd } from "@/lib/domain/schedule/bells";
 import {
   bellField,
   bellFieldErrors,
   bellScheduleInput,
+  BELL_SCHEDULE_FIELD,
 } from "@/lib/validation/bellSchedule";
 import { LESSON_NUMBERS } from "@/lib/validation/enums";
 import {
@@ -26,6 +28,11 @@ import { SAVE_REFUSED, YEAR_SETUP_PATH } from "./yearSetup";
  * and deletes: a row the teacher cleared is a row that must go, because «не всі
  * номери використовуються» and a lesson number with no row is what makes
  * `expand()` leave the times off (fixtures §3.4).
+ *
+ * The request carries the start of each lesson and one `lessonMinutes`; the end
+ * is never read from it. `timeTo` is `lessonEnd()` of the two, computed here and
+ * stored, so a row is a complete pair of times and `lessonMinutes` itself is
+ * stored nowhere (overview §9).
  *
  * It is not scoped to the academic year — `bell_schedule` is keyed by
  * `(user_id, lesson_number)` and by nothing else, which is overview §4 read
@@ -48,11 +55,15 @@ export async function saveBellScheduleAction(
   // `bellFieldErrors()` reads a lesson number off the array index.
   const bells = LESSON_NUMBERS.map((lessonNumber) => ({
     lessonNumber,
-    timeFrom: String(formData.get(bellField(lessonNumber, "from")) ?? ""),
-    timeTo: String(formData.get(bellField(lessonNumber, "to")) ?? ""),
+    timeFrom: String(formData.get(bellField(lessonNumber)) ?? ""),
   }));
 
-  const parsed = bellScheduleInput.safeParse({ bells });
+  const parsed = bellScheduleInput.safeParse({
+    lessonMinutes: String(
+      formData.get(BELL_SCHEDULE_FIELD.lessonMinutes) ?? "",
+    ),
+    bells,
+  });
   if (!parsed.success) {
     return {
       fieldErrors: bellFieldErrors(parsed.error),
@@ -60,7 +71,20 @@ export async function saveBellScheduleAction(
     };
   }
 
-  const filled = parsed.data.bells.filter((bell) => bell.timeFrom !== "");
+  const { lessonMinutes } = parsed.data;
+
+  const filled: { lessonNumber: number; timeFrom: string; timeTo: string }[] = [];
+  for (const bell of parsed.data.bells) {
+    if (bell.timeFrom === "") continue;
+
+    const timeTo = lessonEnd(bell.timeFrom, lessonMinutes);
+    // The schema has already refused a lesson with no end on the same day;
+    // this keeps a row without one from being written if the two ever part.
+    if (timeTo === undefined) return rejected(SAVE_REFUSED, formData);
+
+    filled.push({ lessonNumber: bell.lessonNumber, timeFrom: bell.timeFrom, timeTo });
+  }
+
   const cleared = parsed.data.bells
     .filter((bell) => bell.timeFrom === "")
     .map((bell) => bell.lessonNumber);

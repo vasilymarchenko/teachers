@@ -185,13 +185,24 @@ export const RULES_SECTION = {
 export const BELLS_SECTION = {
   title: "Розклад дзвінків",
   description:
-    "Уроки нумеруються від 0 до 9. Заповніть лише ті номери, які справді є в розкладі; порожній рядок означає, що такого уроку немає.",
+    "Уроки нумеруються від 0 до 9. Вкажіть, о котрій починається кожен урок і скільки хвилин він триває, — кінець програма порахує сама. Заповніть лише ті номери, які справді є в розкладі; порожній рядок означає, що такого уроку немає.",
+  lessonMinutes: "Тривалість уроку, хвилин",
+  lessonMinutesHint: "Одна для всіх уроків.",
   /**
    * Each input names its own lesson: ten rows of «Початок» would leave a
    * screen reader saying the same word ten times.
    */
   timeFrom: (lessonNumber: number) => `Урок ${lessonNumber}, початок`,
-  timeTo: (lessonNumber: number) => `Урок ${lessonNumber}, кінець`,
+  /** The shape of a start, in the letters the format message uses. */
+  timePlaceholder: "ГГ:ХХ",
+  /** The computed end, shown under the start it follows from. */
+  end: (time: string) => `Кінець о ${time}`,
+  /**
+   * Stored rows that do not share one length — the lesson-length field then
+   * shows the first lesson's, and saving applies it to all of them.
+   */
+  mixedLengths:
+    "Зараз уроки в розкладі мають різну тривалість. Після збереження всі уроки триватимуть стільки хвилин, скільки вказано в полі «Тривалість уроку».",
   shared: "Розклад дзвінків спільний для всіх навчальних років.",
 };
 
