@@ -28,7 +28,12 @@ const names = (files: string[]) =>
 /** `hygiene` is the gate's own, with no counterpart in `ci.yml`. */
 const ALWAYS = ["lint", "typecheck", "test", "build", "hygiene"];
 const DATABASE = ["db:migrate", "verify-schema", "test:integration"];
-const IMAGES = ["docker:runner", "docker:migrator", "migrator-smoke"];
+const IMAGES = [
+  "docker:runner",
+  "docker:migrator",
+  "migrator-smoke",
+  "teacher-smoke",
+];
 
 describe("selectChecks", () => {
   it("runs the always-on checks for a change that touches nothing else", () => {
@@ -124,6 +129,15 @@ describe("what a check needs from the machine", () => {
     const smoke = CHECKS.find((check) => check.name === "migrator-smoke")!;
     expect(smoke.requires).toContain("ci-only");
     expect(smoke.skipReason).toMatch(/CI only/);
+  });
+
+  it("keeps the account command's image run out of this machine too", () => {
+    // It runs against the database the migrator smoke test migrated, so it is
+    // skipped here on the same terms (ADR-020).
+    const smoke = CHECKS.find((check) => check.name === "teacher-smoke")!;
+    expect(smoke.requires).toContain("ci-only");
+    expect(smoke.skipReason).toMatch(/CI only/);
+    expect(smoke.inProcess).toBeUndefined();
   });
 });
 

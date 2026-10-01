@@ -2,7 +2,7 @@
 id: T-039
 type: ticket
 title: Manage teacher accounts from the console — create, set password, deactivate, list
-status: todo
+status: in-progress
 depends_on: [T-006, T-015]
 refs:
   - docs/architecture/decisions/ADR-019-teacher-accounts-are-managed-by-functions-not-the-admin-plugin.md
@@ -87,3 +87,16 @@ The ADR this ticket writes says whether a bundled account command is the case
 
 The command name on the VPS depends on how it ships; the README states it once
 the ADR is written.
+
+How it ships is `ADR-020`: one bundled file in the `runner` image, run with
+`docker compose exec web node teacher.cjs`. It says why that is not the case
+`ADR-003` option 2 rejected, and `ADR-003` is unchanged. The mechanics — the
+functions' results, the command's syntax and exit codes, the build — are
+`docs/architecture/design/T-039-teacher-console.md`.
+
+`esbuild` became a direct devDependency for the bundle. The gate gained a
+routed, CI-only `teacher-smoke` check for the image run
+(`design/T-029-gate-and-loop.md` §2).
+
+Remaining: the review loop and the acceptance boxes, which phase 7 ticks against
+evidence.

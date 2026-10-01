@@ -17,7 +17,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
-    "create-teacher": "tsx scripts/create-teacher.ts",
+    "teacher": "tsx scripts/teacher/index.ts",
+    "build:teacher": "esbuild scripts/teacher/index.ts --bundle --platform=node --target=node22 --format=cjs --external:next --outfile=dist/teacher.cjs",
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "gate": "tsx scripts/gate/index.ts",
     "cost": "tsx scripts/cost/transcript-cost.ts"
@@ -44,6 +45,7 @@
     "@types/react-dom": "^19",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
     "tailwindcss": "^4",
