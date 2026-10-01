@@ -125,7 +125,9 @@ No item waits on an open question any more: Q-002, the one that did, is answered
 (`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency they
 carried is satisfied. T-011 and T-021, which hang off T-007 alone, are done
-too; T-013 is what remains of the calendar work.
+too; T-013 is what remains of the calendar work. T-038 hangs off T-009 and T-014 and
+is not drawn: it puts a gate in front of the screens those two built, for the
+teacher whose year setup is incomplete, and nothing in the diagram waits on it.
 
 ## Coverage
 

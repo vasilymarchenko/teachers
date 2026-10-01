@@ -22,23 +22,17 @@ calls `parityOn()` for every date, and `parityOn()` throws on an empty
 anything before the year frame exists, so the fix is a gate in front of all of
 them rather than an empty state on each.
 
-Setup is **complete** when all four hold for the teacher:
-
-1. an `AcademicYear` exists;
-2. it has its initial `ParityAnchor` — the anchor on the year's first day;
-3. it has both of its `Semester` rows;
-4. the `BellSchedule` has at least one lesson number.
-
-The first three are attributes of a year. The fourth is not: `bell_schedule` is
-keyed by user and lesson number and is shared by every year the teacher has, so
-it is required once, not once per year.
-
 ## Acceptance criteria
 
+- [ ] Setup is complete when all four hold for the teacher: an `AcademicYear`
+      exists; it has its initial `ParityAnchor`, the one on the year's first
+      day; it has both of its `Semester` rows; and the `BellSchedule` has at
+      least one lesson number. The `BellSchedule` belongs to the teacher, not
+      to a year, so it is required once and not once per year.
 - [ ] One function answers "is this teacher's setup complete", takes `userId`
-      first and is the only place the four conditions above are spelled. Which
-      year conditions 1–3 are evaluated against when the teacher has several is
-      decided in the plan and stated in the architecture document.
+      first and is the only place those four conditions are spelled. Which year
+      the three year conditions are evaluated against when the teacher has
+      several is decided in the plan and stated in the architecture document.
 - [ ] A signed-in teacher whose setup is incomplete who opens any page of the
       `(app)` group other than `/year` — `/`, `/calendar` and every
       `/calendar/[view]/[date]` including the lesson screen, `/schedule`,
@@ -71,8 +65,8 @@ it is required once, not once per year.
       that the page could not be loaded — a server fault no longer replaces the
       whole app with the framework's English screen.
 - [ ] `architect-overview.md` states the rule — no screen but year setup until
-      setup is complete, and what complete means — in the section the gate
-      belongs to, and `CLAUDE.md` "Project status" mentions it.
+      setup is complete, what complete means and why those four — in the
+      section the gate belongs to, and `CLAUDE.md` "Project status" mentions it.
 
 ## Notes
 
@@ -84,8 +78,3 @@ a year and its anchor.
 `getYearFrame() === null` as a normal state and renders `YEAR_NOT_SET_UP`; with
 the gate in place that branch is reachable only for a date outside every year
 the teacher has, which stays as it is.
-
-The four conditions were chosen over the minimum that stops the crash (year and
-initial parity): without semesters `END_OF_SEMESTER` has nothing to resolve
-against, and without a `BellSchedule` «додати урок» has no lesson numbers, so a
-teacher let through on the minimum meets the next dead end on `/schedule`.
