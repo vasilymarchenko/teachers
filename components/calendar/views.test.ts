@@ -61,7 +61,8 @@ const deadline = {
 /** Every opening `<a …>` tag of the markup, in order. */
 const anchors = (html: string) => html.match(/<a\b[^>]*>/g) ?? [];
 
-const hrefOf = (anchor: string) => /href="([^"]*)"/.exec(anchor)?.[1];
+const hrefOf = (anchor: string | undefined) =>
+  anchor === undefined ? undefined : /href="([^"]*)"/.exec(anchor)?.[1];
 
 /** A full day: a lesson, a cancelled lesson and an overdue deadline. */
 const busyDay = day({
