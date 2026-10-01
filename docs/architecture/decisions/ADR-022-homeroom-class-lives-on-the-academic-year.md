@@ -12,9 +12,10 @@ Specification §3.5 and §6.2: the teacher names their own class (the one they
 are homeroom teacher of), and in «Мої уроки» their lessons in that class are
 highlighted. The class moves up a grade every September — 8-Б becomes 9-Б —
 so a name that is right this year is wrong for the last one. `className` on an
-`OWN` slot is free text (overview §4), and there is no class entity. None is
-planned: overview §7 makes the class list of specification §9 a `Student`
-table unrelated to the schedule.
+`OWN` slot is free text (overview §4), and there is no class entity today.
+Overview §7 sketches the class list of specification §9 as a `Student` table
+unrelated to the schedule, and the overview §9 row on free-text dictionaries
+names that same phase as one where a class may become an entity.
 
 ## Options
 
