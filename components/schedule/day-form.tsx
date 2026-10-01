@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -60,6 +61,7 @@ export function DayForm({
     saveTemplateDayAction.bind(null, view, parity, weekday, lessonNumbers),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   const stored = new Map(slots.map((slot) => [slot.lessonNumber, slot.payload]));
   const fields = TEMPLATE_SLOT_FIELDS[view];
@@ -83,11 +85,9 @@ export function DayForm({
               </p>
               {fields.map((field) => (
                 <SlotInput
-                  error={
-                    state.fieldErrors?.[
-                      templateSlotField(row.lessonNumber, field)
-                    ]
-                  }
+                  error={errors.for(
+                    templateSlotField(row.lessonNumber, field),
+                  )}
                   field={field}
                   key={field}
                   lessonNumber={row.lessonNumber}
@@ -100,7 +100,7 @@ export function DayForm({
         </div>
       )}
 
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
 
       {rows.length > 0 ? (
         <div className="mt-auto pt-2">

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { DateField } from "@/components/forms/date-field";
 import { DeleteButton } from "@/components/forms/delete-button";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -111,6 +112,7 @@ function AddResetForm({ academicYearId }: { academicYearId: string }) {
     createParityAnchorAction.bind(null, academicYearId),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   return (
     <Row>
@@ -119,7 +121,7 @@ function AddResetForm({ academicYearId }: { academicYearId: string }) {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <DateField
-            error={state.fieldErrors?.[PARITY_ANCHOR_FIELD.date]}
+            errors={errors}
             label={PARITY_SECTION.date}
             name={PARITY_ANCHOR_FIELD.date}
             state={state}
@@ -128,7 +130,7 @@ function AddResetForm({ academicYearId }: { academicYearId: string }) {
           <FormField
             name={PARITY_ANCHOR_FIELD.parity}
             label={PARITY_SECTION.parity}
-            error={state.fieldErrors?.[PARITY_ANCHOR_FIELD.parity]}
+            error={errors.for(PARITY_ANCHOR_FIELD.parity)}
           >
             {(props) => (
               <Select
@@ -150,7 +152,7 @@ function AddResetForm({ academicYearId }: { academicYearId: string }) {
           </FormField>
         </div>
 
-        <FormMessage>{state.error}</FormMessage>
+        <FormMessage errors={errors} />
 
         <SubmitButton pendingLabel={ACTION_LABELS.saving}>
           {ACTION_LABELS.add}

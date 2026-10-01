@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -71,6 +72,7 @@ function BellsForm({
   state: FormState;
   formAction: (formData: FormData) => void;
 }) {
+  const errors = formErrorsOf(state);
   const stored = storedLessonMinutes(bells);
 
   // Controlled, unlike the other forms of this screen: the ends are computed
@@ -117,7 +119,7 @@ function BellsForm({
     >
       <FormField
         className="sm:max-w-xs"
-        error={state.fieldErrors?.[BELL_SCHEDULE_FIELD.lessonMinutes]}
+        error={errors.for(BELL_SCHEDULE_FIELD.lessonMinutes)}
         hint={BELLS_SECTION.lessonMinutesHint}
         label={BELLS_SECTION.lessonMinutes}
         name={BELL_SCHEDULE_FIELD.lessonMinutes}
@@ -151,7 +153,7 @@ function BellsForm({
 
           return (
             <FormField
-              error={state.fieldErrors?.[name]}
+              error={errors.for(name)}
               hint={end === undefined ? undefined : BELLS_SECTION.end(end)}
               key={lessonNumber}
               label={BELLS_SECTION.timeFrom(lessonNumber)}
@@ -183,7 +185,7 @@ function BellsForm({
 
       <p className="text-muted-foreground text-sm">{BELLS_SECTION.shared}</p>
 
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
 
       <SubmitButton pendingLabel={ACTION_LABELS.saving}>
         {ACTION_LABELS.save}

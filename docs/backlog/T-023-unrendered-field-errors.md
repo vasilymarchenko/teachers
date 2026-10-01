@@ -2,7 +2,7 @@
 id: T-023
 type: ticket
 title: A field error whose field is not on the screen must still be shown
-status: todo
+status: in-progress
 depends_on: [T-009, T-010]
 refs:
   - docs/architecture/architect-overview.md §8.2
@@ -50,3 +50,8 @@ form is submitting, and should not have to.
 A static check was considered and rejected: whether a form renders a given field
 name is not decidable from the syntax of `lib/actions`, which is where the
 message is written. Hence a runtime fallback plus a test, not a lint rule.
+
+The mechanism, and why it sits at render rather than in the action helpers:
+`docs/architecture/decisions/ADR-023-a-form-shows-every-field-error.md`. With it
+`boundaryRefusal()` in `lib/actions/scheduleTemplate.ts` no longer inspects the
+submission; it always names the field.

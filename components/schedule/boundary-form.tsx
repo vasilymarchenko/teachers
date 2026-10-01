@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { DateField } from "@/components/forms/date-field";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -45,12 +46,13 @@ export function BoundaryForm({
     setTemplateBoundaryAction.bind(null, view),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   return (
     <form action={formAction} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
-          error={state.fieldErrors?.[TEMPLATE_BOUNDARY_FIELD.boundaryKind]}
+          error={errors.for(TEMPLATE_BOUNDARY_FIELD.boundaryKind)}
           label={BOUNDARY_SECTION.boundaryKind}
           name={TEMPLATE_BOUNDARY_FIELD.boundaryKind}
         >
@@ -74,7 +76,7 @@ export function BoundaryForm({
         </FormField>
 
         <DateField
-          error={state.fieldErrors?.[TEMPLATE_BOUNDARY_FIELD.lastDay]}
+          errors={errors}
           hint={BOUNDARY_SECTION.lastDayHint}
           label={BOUNDARY_SECTION.lastDay}
           name={TEMPLATE_BOUNDARY_FIELD.lastDay}
@@ -91,7 +93,7 @@ export function BoundaryForm({
         />
       </div>
 
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
 
       <SubmitButton pendingLabel={ACTION_LABELS.saving}>
         {BOUNDARY_SECTION.save}

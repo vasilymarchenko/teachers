@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
-import { FormMessage } from "@/components/forms/form-message";
+import { FieldMessage, FormMessage } from "@/components/forms/form-message";
 import { SLOT_FIELD_LABELS } from "@/components/forms/slot-labels";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { fieldValue } from "@/components/forms/values";
@@ -62,6 +63,7 @@ export function OverrideForm({
     saveDayOverrideAction.bind(null, { date, view, lessonNumber }),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   const fallback = stored ?? planned;
   // A tombstone has no payload of its own, and «правка» is what the teacher is
@@ -96,7 +98,7 @@ export function OverrideForm({
             </span>
           </label>
         ))}
-        <FormMessage>{state.fieldErrors?.[DAY_OVERRIDE_FIELD.kind]}</FormMessage>
+        <FieldMessage>{errors.for(DAY_OVERRIDE_FIELD.kind)}</FieldMessage>
         {/* Overview §3.4: `replacedOriginal` is computed from the version in
             force on the date and is not stored, so a later template change
             changes it. The screen says so rather than letting the teacher
@@ -109,7 +111,7 @@ export function OverrideForm({
       <div className="space-y-3">
         {SLOT_FIELDS[view].map((field) => (
           <PayloadInput
-            error={state.fieldErrors?.[field]}
+            error={errors.for(field)}
             field={field}
             key={field}
             state={state}
@@ -118,7 +120,7 @@ export function OverrideForm({
         ))}
       </div>
 
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
 
       <SubmitButton pendingLabel={OVERRIDE_LABELS.saving}>
         {OVERRIDE_LABELS.save}

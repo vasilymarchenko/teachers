@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormMessage } from "@/components/forms/form-message";
 import { Button } from "@/components/ui/button";
 import { copyParityAction } from "@/lib/actions/scheduleTemplate";
@@ -37,11 +38,12 @@ export function CopyParityForm({
     copyParityAction.bind(null, view, from, to),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   return (
     <form action={formAction} className="space-y-2">
       <CopyButton label={COPY_LABELS[from]} />
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
     </form>
   );
 }

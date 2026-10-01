@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { DeleteButton } from "@/components/forms/delete-button";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -47,6 +48,7 @@ export function YearForm({
       : updateAcademicYearAction.bind(null, year.id),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   return (
     <Row>
@@ -55,7 +57,7 @@ export function YearForm({
           <FormField
             name={ACADEMIC_YEAR_FIELD.dateFrom}
             label={YEAR_SECTION.dateFrom}
-            error={state.fieldErrors?.[ACADEMIC_YEAR_FIELD.dateFrom]}
+            error={errors.for(ACADEMIC_YEAR_FIELD.dateFrom)}
           >
             {(props) => (
               <Input
@@ -74,7 +76,7 @@ export function YearForm({
           <FormField
             name={ACADEMIC_YEAR_FIELD.dateTo}
             label={YEAR_SECTION.dateTo}
-            error={state.fieldErrors?.[ACADEMIC_YEAR_FIELD.dateTo]}
+            error={errors.for(ACADEMIC_YEAR_FIELD.dateTo)}
           >
             {(props) => (
               <Input
@@ -93,7 +95,7 @@ export function YearForm({
           <FormField
             name={ACADEMIC_YEAR_FIELD.initialParity}
             label={YEAR_SECTION.initialParity}
-            error={state.fieldErrors?.[ACADEMIC_YEAR_FIELD.initialParity]}
+            error={errors.for(ACADEMIC_YEAR_FIELD.initialParity)}
           >
             {(props) => (
               <Select
@@ -115,7 +117,7 @@ export function YearForm({
           </FormField>
         </div>
 
-        <FormMessage>{state.error}</FormMessage>
+        <FormMessage errors={errors} />
 
         <div className="flex flex-wrap gap-2">
           <SubmitButton pendingLabel={ACTION_LABELS.saving}>

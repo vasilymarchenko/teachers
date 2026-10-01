@@ -16,7 +16,14 @@ import type { ZodError } from "zod";
 export type FormState = {
   /** A message about the submission as a whole — a constraint, a missing row. */
   error?: string;
-  /** One message per field name, as the form spells it in `name=`. */
+  /**
+   * One message per field name, as the form spells it in `name=`.
+   *
+   * An action names the field the message is about and does not have to know
+   * whether the submitting form renders it: a form reads these through
+   * `formErrorsOf()` (`components/forms/field-errors.ts`), which shows a
+   * message no control asked for as a form-level one (overview §8.2).
+   */
   fieldErrors?: Record<string, string>;
   /**
    * What was submitted, echoed back so the form can restore it.
