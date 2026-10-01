@@ -207,11 +207,75 @@ describe("the checker itself", () => {
     const source = `
       export async function updateThingAction(id: string) {
         const result = await getDb().update(thing).set({ title }).where(eq(thing.id, id));
-        if (result.rowCount === 0) return rejected(THING_NOT_FOUND, formData);
+        if (result.count === 0) return rejected(THING_NOT_FOUND, formData);
         return {};
       }
     `;
     expect(messagesFor(source)).toEqual([]);
+  });
+
+  it("rejects a check of rowCount, which the postgres-js result does not have", () => {
+    // `lib/db/client.ts` runs on drizzle-orm/postgres-js: the number of rows is
+    // `count`. `rowCount` is node-postgres's name, is `undefined` here, and
+    // `undefined === 0` never fires.
+    const source = `
+      export async function updateThingAction(id: string) {
+        const result = await getDb().update(thing).set({ title }).where(eq(thing.id, id));
+        if (result.rowCount === 0) return rejected(THING_NOT_FOUND, formData);
+        return {};
+      }
+    `;
+    expect(messagesFor(source)).toEqual([MISSING_RETURNING]);
+  });
+
+  it("accepts a first row read where it stands, and a result returned to the caller", () => {
+    const source = `
+      async function firstRow(id: string) {
+        return (await getDb().update(thing).set({ title }).returning())[0];
+      }
+      async function allRows(id: string) {
+        return await getDb().update(thing).set({ title }).returning();
+      }
+    `;
+    expect(check(source)).toEqual({ updates: 2, violations: [] });
+  });
+
+  it("rejects a result handed somewhere nobody can be seen reading it", () => {
+    const source = `
+      export async function updateThingsAction() {
+        await Promise.all([
+          getDb().update(thing).set({ title }).returning(),
+        ]);
+      }
+    `;
+    expect(messagesFor(source)).toEqual([RESULT_DISCARDED]);
+  });
+
+  it("rejects a discarded result behind satisfies", () => {
+    const source = `
+      export async function updateThingAction() {
+        (await getDb().update(thing).set({ title }).returning()) satisfies Row[];
+      }
+    `;
+    expect(messagesFor(source)).toEqual([RESULT_DISCARDED]);
+  });
+
+  it("follows a result out of a conditional into the name it is bound to", () => {
+    const unread = `
+      export async function updateThingAction() {
+        const updated = dirty ? await getDb().update(thing).set({ title }).returning() : [];
+        return {};
+      }
+    `;
+    const read = `
+      export async function updateThingAction() {
+        const updated = dirty ? await getDb().update(thing).set({ title }).returning() : [];
+        if (dirty && updated.length === 0) return rejected(THING_NOT_FOUND, formData);
+        return {};
+      }
+    `;
+    expect(messagesFor(unread)).toEqual([RESULT_NEVER_READ]);
+    expect(messagesFor(read)).toEqual([]);
   });
 
   it("rejects a result bound without .returning() whose row count is not read", () => {

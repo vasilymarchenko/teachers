@@ -80,9 +80,11 @@ Two things the implementation has to decide, neither settled here:
 `lib/db/updateDiscipline.test.ts`.
 
 - It is the strict version, over the TypeScript AST: a chain passes when its
-  `.returning()` result is bound to a name that is read, or consumed where it
-  stands; a chain without `.returning()` passes only if `rowCount` is read off
-  its result. A `.returning()` whose result is discarded is reported.
+  `.returning()` result is bound to a name that is read, read where it stands
+  or returned; a chain without `.returning()` passes only if `count` — the
+  postgres-js driver's row count — is read off its result. A `.returning()`
+  whose result is discarded, or handed somewhere it cannot be seen being read,
+  is reported.
 - `.delete()` is not covered — confirmed, not assumed. `onConflictDoUpdate` is
   not covered either: an upsert always has a row.
 

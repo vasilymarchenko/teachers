@@ -18,9 +18,16 @@ import ts from "typescript";
  * tells the action nothing. So what is checked is that the result is *used*:
  *
  * - the chain has `.returning(` and its result is bound to a name that is read
- *   afterwards, or consumed by an expression directly; or
- * - the chain has no `.returning(` and the action reads `rowCount` off the
- *   result — the explicit row-count check.
+ *   afterwards, read where it stands (`(await …).length`, `(await …)[0]`) or
+ *   returned to the caller; or
+ * - the chain has no `.returning(` and the action reads `count` off the
+ *   result — the explicit row-count check. `count` and not `rowCount`:
+ *   `lib/db/client.ts` runs on `drizzle-orm/postgres-js`, whose result has no
+ *   `rowCount`, so a test of that one would never fire.
+ *
+ * Any other place a result can end up — an argument, an array element — is
+ * reported: the checker cannot follow it there, and no action needs to put it
+ * there.
  *
  * `.delete()` is left alone on purpose: a delete that matched nothing found the
  * row already gone, which is what the teacher asked for. So is
@@ -53,8 +60,11 @@ export type UpdateReport = {
 const WHY = "Drizzle reports success for an UPDATE that matched no row";
 
 export const MISSING_RETURNING = `MISSING .returning() — ${WHY}, and nothing reads its row count`;
-export const RESULT_DISCARDED = `the result of .returning() is discarded — ${WHY}`;
+export const RESULT_DISCARDED = `the result of .returning() is not read — ${WHY}`;
 export const RESULT_NEVER_READ = `the result of .returning() is bound and never read — ${WHY}`;
+
+/** What the postgres-js driver calls the number of rows a statement touched. */
+const ROW_COUNT = "count";
 
 /** Reports every `.update(` chain in one file whose result nothing reads. */
 export function checkUpdates(file: string, source: string): UpdateReport {
@@ -103,10 +113,6 @@ function violationOf(update: MethodCall): string | undefined {
   const value = unwrapped(top);
   const consumer = value.parent;
 
-  if (ts.isExpressionStatement(consumer) || ts.isVoidExpression(consumer)) {
-    return hasReturning ? RESULT_DISCARDED : MISSING_RETURNING;
-  }
-
   if (ts.isVariableDeclaration(consumer) && consumer.initializer === value) {
     if (hasReturning) {
       return isRead(consumer) ? undefined : RESULT_NEVER_READ;
@@ -114,9 +120,19 @@ function violationOf(update: MethodCall): string | undefined {
     return readsRowCount(consumer) ? undefined : MISSING_RETURNING;
   }
 
-  // Consumed where it stands: returned, passed on, or read as `(await …).length`.
-  if (hasReturning) return undefined;
-  return isPropertyRead(consumer, value, "rowCount") ? undefined : MISSING_RETURNING;
+  if (!hasReturning) {
+    return isPropertyRead(consumer, value, ROW_COUNT) ? undefined : MISSING_RETURNING;
+  }
+
+  // The places a result is read without a name: `(await …).length`,
+  // `(await …)[0]`, and `return`, which hands the question to the caller.
+  // Everything else — a bare statement, an argument, an array element — is a
+  // result the checker cannot see anyone read.
+  const readWhereItStands =
+    ((ts.isPropertyAccessExpression(consumer) || ts.isElementAccessExpression(consumer)) &&
+      consumer.expression === value) ||
+    ts.isReturnStatement(consumer);
+  return readWhereItStands ? undefined : RESULT_DISCARDED;
 }
 
 /**
@@ -139,7 +155,10 @@ function chainFrom(update: MethodCall): { top: ts.Expression; hasReturning: bool
   return { top, hasReturning };
 }
 
-/** The chain as the surrounding code sees it — past `await`, `(…)`, `as`, `!`. */
+/**
+ * The chain as the surrounding code sees it — past `await`, `(…)`, `as`,
+ * `satisfies`, `!`, and out of a branch of `a ? b : c`.
+ */
 function unwrapped(node: ts.Expression): ts.Expression {
   let current = node;
   for (;;) {
@@ -148,7 +167,9 @@ function unwrapped(node: ts.Expression): ts.Expression {
       ts.isAwaitExpression(parent) ||
       ts.isParenthesizedExpression(parent) ||
       ts.isAsExpression(parent) ||
-      ts.isNonNullExpression(parent)
+      ts.isSatisfiesExpression(parent) ||
+      ts.isNonNullExpression(parent) ||
+      (ts.isConditionalExpression(parent) && parent.condition !== current)
     ) {
       current = parent;
       continue;
@@ -169,7 +190,7 @@ function isRead(declaration: ts.VariableDeclaration): boolean {
   return references(declaration).some((reference) => names.includes(reference.text));
 }
 
-/** `result.rowCount` on the bound name, or a destructured `{ rowCount }` that is read. */
+/** `result.count` on the bound name, or a destructured `{ count }` that is read. */
 function readsRowCount(declaration: ts.VariableDeclaration): boolean {
   const name = declaration.name;
   const found = references(declaration);
@@ -177,14 +198,14 @@ function readsRowCount(declaration: ts.VariableDeclaration): boolean {
   if (ts.isIdentifier(name)) {
     return found.some(
       (reference) =>
-        reference.text === name.text && isPropertyRead(reference.parent, reference, "rowCount"),
+        reference.text === name.text && isPropertyRead(reference.parent, reference, ROW_COUNT),
     );
   }
 
   if (!ts.isObjectBindingPattern(name)) return false;
   return name.elements.some((element) => {
     const property = element.propertyName ?? element.name;
-    if (!ts.isIdentifier(property) || property.text !== "rowCount") return false;
+    if (!ts.isIdentifier(property) || property.text !== ROW_COUNT) return false;
     if (!ts.isIdentifier(element.name)) return false;
     const local = element.name.text;
     return found.some((reference) => reference.text === local);
