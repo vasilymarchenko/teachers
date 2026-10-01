@@ -50,3 +50,5 @@ docs/specs/input/
 
 # Personal permission overrides for this checkout (not team-wide settings).
 .claude/settings.local.json
+
+.playwright-mcp
