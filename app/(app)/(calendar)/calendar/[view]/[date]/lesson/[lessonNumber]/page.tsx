@@ -21,7 +21,7 @@ import {
 } from "@/components/calendar/override-actions";
 import { OverrideForm } from "@/components/calendar/override-form";
 import { Section } from "@/components/year/section";
-import { requireUser } from "@/lib/auth/session";
+import { requireCompleteSetup } from "@/lib/auth/setupGate";
 import { cn } from "@/lib/utils";
 import { getNonTeachingPeriods } from "@/lib/db/queries/calendarRules";
 import { getDayOverride } from "@/lib/db/queries/overrides";
@@ -68,8 +68,9 @@ export default async function Page({
   params: Promise<{ view: string; date: string; lessonNumber: string }>;
   searchParams: Promise<{ schedule?: SearchParamValue }>;
 }) {
-  // The boundary first, before anything reads or answers (overview §8.3).
-  const { id: userId } = await requireUser();
+  // The boundary first, before anything reads or answers (overview §8.3), and the
+  // year-setup gate with it (§8.6).
+  const { id: userId } = await requireCompleteSetup();
 
   const { view, date, lessonNumber: lessonSegment } = await params;
   const { schedule: scheduleParam } = await searchParams;

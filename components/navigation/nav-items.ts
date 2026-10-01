@@ -5,6 +5,7 @@ import {
   Table2,
   type LucideIcon,
 } from "lucide-react";
+import { YEAR_SETUP_PATH } from "@/lib/actions/yearSetup";
 
 export type NavItem = {
   /** The menu label, as the teacher reads it. */
@@ -31,8 +32,22 @@ export const navItems: readonly NavItem[] = [
   { label: "Календар", href: "/calendar", icon: CalendarDays },
   { label: "Розклад", href: "/schedule", icon: Table2 },
   { label: "Події", href: "/events", icon: ListChecks },
-  { label: "Навчальний рік", href: "/year", icon: CalendarRange },
+  { label: "Навчальний рік", href: YEAR_SETUP_PATH, icon: CalendarRange },
 ];
+
+/**
+ * The menu a teacher is offered — overview §8.6.
+ *
+ * While the year setup is incomplete every screen but year setup redirects to
+ * it, so the menu carries that one item: a link that only bounces back is not
+ * a link worth showing. Sign-out is not a menu item and stays in the panel's
+ * footer either way.
+ */
+export function navItemsFor(setupComplete: boolean): readonly NavItem[] {
+  return setupComplete
+    ? navItems
+    : navItems.filter((item) => item.href === YEAR_SETUP_PATH);
+}
 
 /** Menu items of the mockups that the first release does not carry (§8). */
 export const excludedNavLabels: readonly string[] = [

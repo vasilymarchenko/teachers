@@ -10,7 +10,15 @@ import { NavLinks } from "./nav-links";
  * `NavLinks` and this footer, so the menu is still defined once
  * (`nav-items.ts`).
  */
-export function AppNav({ teacherName }: { teacherName: string }) {
+export function AppNav({
+  teacherName,
+  setupComplete,
+}: {
+  teacherName: string;
+  /** Passed down as a flag: the items carry icons, which cannot cross to a
+      client component as props. */
+  setupComplete: boolean;
+}) {
   const footer = (
     <div className="border-sidebar-border flex flex-col gap-3 border-t pt-4">
       {/* No punctuation after the name: a teacher's name is normally written
@@ -29,12 +37,12 @@ export function AppNav({ teacherName }: { teacherName: string }) {
       <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border hidden w-64 shrink-0 flex-col gap-6 border-r p-4 md:flex">
         <p className="px-3 pt-2 text-xl font-semibold">Щоденник учителя</p>
         <nav aria-label="Головне меню" className="flex-1">
-          <NavLinks />
+          <NavLinks setupComplete={setupComplete} />
         </nav>
         {footer}
       </aside>
 
-      <MobileNav footer={footer} />
+      <MobileNav footer={footer} setupComplete={setupComplete} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { EventsList } from "@/components/events/events-list";
 import { PAGE_LABELS } from "@/components/events/labels";
-import { requireUser } from "@/lib/auth/session";
+import { requireCompleteSetup } from "@/lib/auth/setupGate";
 import { listEvents } from "@/lib/db/queries/events";
 
 // The teacher's own data, read per request; nothing may be frozen into the
@@ -17,8 +17,9 @@ export const dynamic = "force-dynamic";
  * stored per occurrence.
  */
 export default async function Page() {
-  // The boundary first, before anything reads (overview §8.3).
-  const { id: userId } = await requireUser();
+  // The boundary first, before anything reads (overview §8.3), and the
+  // year-setup gate with it (§8.6).
+  const { id: userId } = await requireCompleteSetup();
   const events = await listEvents(userId);
 
   return (

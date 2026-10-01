@@ -16,7 +16,7 @@ import {
   WeekView,
   YearView,
 } from "@/components/calendar/views";
-import { requireUser } from "@/lib/auth/session";
+import { requireCompleteSetup } from "@/lib/auth/setupGate";
 import { getNonTeachingPeriods } from "@/lib/db/queries/calendarRules";
 import { getEventsInRange } from "@/lib/db/queries/events";
 import { getScheduleInput } from "@/lib/db/queries/scheduleInput";
@@ -60,8 +60,9 @@ export default async function Page({
   params: Promise<{ view: string; date: string }>;
   searchParams: Promise<{ schedule?: SearchParamValue }>;
 }) {
-  // The boundary first, before anything reads or answers (overview §8.3).
-  const { id: userId } = await requireUser();
+  // The boundary first, before anything reads or answers (overview §8.3), and the
+  // year-setup gate with it (§8.6).
+  const { id: userId } = await requireCompleteSetup();
 
   const { view, date } = await params;
   const { schedule: scheduleParam } = await searchParams;

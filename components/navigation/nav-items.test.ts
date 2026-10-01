@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
-import { excludedNavLabels, navItems } from "./nav-items";
+import { excludedNavLabels, navItems, navItemsFor } from "./nav-items";
 
 const APP_DIR = join(process.cwd(), "app");
 
@@ -67,5 +67,15 @@ describe("navigation menu", () => {
     for (const pageDir of printPages) {
       expect(groupsOf(pageDir)).not.toContain("(app)");
     }
+  });
+
+  it("offers only year setup while the year setup is incomplete", () => {
+    // Overview §8.6: every other screen redirects to year setup in that state,
+    // so a link to one would only bounce back.
+    expect(navItemsFor(false).map((item) => item.href)).toStrictEqual(["/year"]);
+  });
+
+  it("offers the whole menu once the year setup is complete", () => {
+    expect(navItemsFor(true)).toStrictEqual(navItems);
   });
 });

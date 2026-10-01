@@ -92,6 +92,30 @@ export const PAGE_LABELS = {
   toCalendar: "Перейти до календаря",
 };
 
+/**
+ * What the screen says while the year setup is incomplete and every other
+ * screen is closed — overview §8.6. The four items are the four things the
+ * teacher has to enter; each is worded as what she fills in, not as the name
+ * of what is stored.
+ */
+export const SETUP_GATE = {
+  title: "Спершу налаштуйте навчальний рік",
+  intro:
+    "Календар, розклад і події відкриються, щойно будуть заповнені чотири пункти нижче. Усе це вводиться на цій сторінці.",
+  items: {
+    academicYear: "Перший і останній день навчального року",
+    initialParity: "З чого починається рік — із чисельника чи зі знаменника",
+    semesters: "Обидва семестри",
+    bellSchedule: "Розклад дзвінків — хоча б для одного уроку",
+  },
+  done: "є",
+  missing: "ще бракує",
+  optionalNote:
+    "Канікули, свята й дні тижня без уроків можна додати пізніше — без них програма теж відкриється.",
+  /** The mark beside the heading of a section the gate does not require. */
+  optional: "необов’язково",
+};
+
 /** The buttons every section shares. */
 export const ACTION_LABELS = {
   add: "Додати",

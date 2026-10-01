@@ -2,7 +2,7 @@
 id: T-038
 type: ticket
 title: A teacher whose year setup is incomplete is sent to year setup, and nowhere else
-status: todo
+status: in-progress
 depends_on: [T-009, T-014]
 refs:
   - docs/specs/specification.md §3
@@ -78,3 +78,11 @@ a year and its anchor.
 `getYearFrame() === null` as a normal state and renders `YEAR_NOT_SET_UP`; with
 the gate in place that branch is reachable only for a date outside every year
 the teacher has, which stays as it is.
+
+Which year the three year conditions are read against, and why the check is
+called by each page rather than by the `(app)` layout:
+`docs/architecture/decisions/ADR-018-year-setup-gate-lives-in-the-page.md`;
+the rule itself is `architect-overview.md` §8.6.
+
+Remaining: the acceptance criteria are ticked once the review loop and CI have
+run on the pull request.
