@@ -14,6 +14,10 @@ for reading. Order is priority; the ID number is not.
 | [T-039](T-039-teacher-management-console.md) | Manage teacher accounts from the console — create, set password, deactivate, list | done | T-006, T-015 |
 | [T-040](T-040-bell-schedule-start-times-only.md) | Bell schedule — the teacher enters start times and one lesson length, ends are computed | done | T-009 |
 | [T-041](T-041-year-setup-shows-the-way-out.md) | Year setup shows the teacher the next step, and says when the rest of the app is open | todo | T-038 |
+| [T-042](T-042-month-day-is-one-click-target.md) | Month view — the whole day is one click target, not only its number | todo | T-007 |
+| [T-043](T-043-template-day-for-both-parity-weeks.md) | Template editor — fill a day for both parity weeks at once, and show where the weeks differ | todo | T-010 |
+| [T-044](T-044-suggest-entered-values.md) | Lesson fields suggest the subjects, classes and teachers already entered | todo | T-010, T-011 |
+| [T-045](T-045-my-class-highlight.md) | My class — the teacher names it per year, and my lessons in it are highlighted | todo | T-007, T-009, T-044 |
 | [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | done | — |
 | [T-037](T-037-cost-a-change-what-it-is-worth.md) | A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all | done | T-033 |
 | [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | done | T-017 |
@@ -137,6 +141,12 @@ T-040 hangs off T-009 and is not drawn: it changes how one section of the year
 setup screen is entered, and nothing in the diagram waits on it. T-041 hangs
 off T-038 and is not drawn: it changes how the gated year setup screen leads
 the teacher to the open app, and nothing in the diagram waits on it.
+T-042 hangs off T-007 and is not drawn: it widens the click target of the month
+view that ticket built. T-043 hangs off T-010 and T-044 off T-010 and T-011:
+both change how the forms those tickets built are filled, and neither is drawn.
+T-045 hangs off T-009 for the year form it adds a field to, off T-007 for the
+views it highlights lessons in, and off T-044 for the class-name suggestions its
+field offers; it is not drawn, and nothing in the diagram waits on any of the four.
 
 ## Coverage
 
