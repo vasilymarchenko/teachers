@@ -2,7 +2,7 @@
 id: T-023
 type: ticket
 title: A field error whose field is not on the screen must still be shown
-status: in-progress
+status: done
 depends_on: [T-009, T-010]
 refs:
   - docs/architecture/architect-overview.md §8.2
@@ -19,14 +19,14 @@ move.
 
 ## Acceptance criteria
 
-- [ ] A form that renders a `FormState` shows every `fieldErrors` entry: one
+- [x] A form that renders a `FormState` shows every `fieldErrors` entry: one
       whose key it rendered goes on that control, as now; one whose key it did
       not goes where `FormMessage` puts a form-level message.
-- [ ] The mechanism is in the shared form layer, not repeated per screen — a
+- [x] The mechanism is in the shared form layer, not repeated per screen — a
       new form gets the behaviour without opting in.
-- [ ] A unit test covers the case: a `FormState` with a `fieldErrors` key no
+- [x] A unit test covers the case: a `FormState` with a `fieldErrors` key no
       control on the form claims, and the message still reaches the output.
-- [ ] `architect-overview.md` §8.2 states the rule, since it is the contract
+- [x] `architect-overview.md` §8.2 states the rule, since it is the contract
       between an action and the form it answers.
 
 ## Notes
