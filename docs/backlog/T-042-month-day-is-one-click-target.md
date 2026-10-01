@@ -14,9 +14,8 @@ refs:
 
 In the month view a click anywhere on a day opens that day in the day view.
 Today only the day number in `MonthCell` and the heading of `MonthDayRow` are
-links (`components/calendar/views.tsx`), so a click on the lessons, the
-events or the empty part of a cell does nothing, and the target on a tablet
-is a two-character number.
+links (`components/calendar/views.tsx`); a click on the lessons, the events
+or the empty part of a cell does nothing.
 
 ## Acceptance criteria
 
@@ -32,8 +31,9 @@ is a two-character number.
       none today (`DayLessons` is rendered without `editing`); if one is ever
       added, the cell switches to a stretched link rather than nesting.
 - [ ] The cell keeps everything it shows today: today's ring, the shading of a
-      non-teaching day, the reduced opacity of the neighbouring months, and the
-      struck-through cancelled lessons and overdue events.
+      non-teaching day, the reduced opacity of the neighbouring months, the
+      struck-through cancelled lessons and done events, and the red overdue
+      events.
 - [ ] The year view is unchanged: each of its day squares is already a whole
       link.
 - [ ] A test pins that a month cell renders exactly one link to the day view.

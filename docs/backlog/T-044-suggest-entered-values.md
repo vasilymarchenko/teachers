@@ -45,8 +45,9 @@ and no screen to manage them; the values stay free text.
 - [ ] `design/T-010-weekly-template-editor.md` §1 and
       `design/T-011-day-overrides.md` §1 name the query and the forms that use
       it.
-- [ ] Not in this ticket: tables for subjects or classes, a screen to edit or
-      merge the suggestions, or suggestions entered ahead of time. The
-      trigger for real dictionaries stays the row of overview §9.
+
+Out of scope: tables for subjects or classes, a screen to edit or merge the
+suggestions, and suggestions entered ahead of time. The trigger for real
+dictionaries stays the row of overview §9.
 
 ## Notes

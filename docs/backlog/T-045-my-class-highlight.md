@@ -16,6 +16,7 @@ refs:
   - docs/architecture/design/T-009-year-setup.md §3
   - docs/architecture/design/T-009-year-setup.md §4
   - docs/architecture/design/T-007-calendar-views.md §4
+  - docs/architecture/decisions/ADR-022-homeroom-class-lives-on-the-academic-year.md
 ---
 
 ## Goal
@@ -35,8 +36,9 @@ and its `isTaughtByMe` are unchanged.
 - [ ] The year form on `/year` has a field «Мій клас», optional, that offers
       the class names of T-044 as suggestions. It is saved by the actions
       that create and update an academic year; an empty value stores `null`.
-      The value is trimmed and at most 20 characters, with a Ukrainian
-      message on the field.
+      The value is validated by the same rule as `className` in
+      `lib/validation/slotFields.ts`, so every suggested class name is
+      accepted.
 - [ ] `SetupStatus` and `requireCompleteSetup()` do not look at the field: a
       year without a class is a complete year (overview §8.6).
 - [ ] Whether a class name matches the homeroom class is decided by one pure
@@ -61,11 +63,14 @@ and its `isTaughtByMe` are unchanged.
 - [ ] `design/T-009-year-setup.md` §3 and §4 list the new field and what the
       year actions do with it, and `design/T-007-calendar-views.md` §4
       describes the flag and where the calendar computes it.
+- [ ] Overview §5 lists the flag on the render type that carries it
+      (`ResolvedLesson` or `CalendarDay`), as it lists `isTaughtByMe`.
 - [ ] Tests: the matching function; the flag over a range that crosses two
       years and over each kind of resolved lesson; and the year actions
       saving and clearing the field.
-- [ ] Not in this ticket: using the homeroom class to decide `isTaughtByMe`
-      (Q-006 stays open), a class list (specification §9), or a highlight in
-      the «Уроки класу» schedule beyond the existing one.
+
+Out of scope: using the homeroom class to decide `isTaughtByMe` (Q-006 stays
+open), a class list (specification §9), and a highlight in the «Уроки класу»
+schedule beyond the existing one.
 
 ## Notes
