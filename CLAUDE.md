@@ -11,6 +11,7 @@ The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), 
 - `docs/architecture/architect-overview.md` — application architecture: data model, layers, trade-offs (§9) and open questions (§10)
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
 - `docs/architecture/decisions/` — ADRs: one file per significant decision, English, dated and immutable. An ADR records *why* a decision was taken, which alternatives were rejected and at what cost; `architect-overview.md` states what is true **now** and links to the ADR instead of re-arguing it. Write one when a decision changes the data model or a contract other tickets are written against, chooses between real alternatives with a lasting cost, or would otherwise have to be reverse-engineered from the code — not for every ticket. Conventions and the template: `docs/architecture/decisions/README.md`
+- `docs/architecture/harness.md` — map of the development harness: the skills, agents, hook, gate, CI and `.gate/` state, who calls whom and which file owns which fact
 - `docs/backlog/` — the work tracker: one file per ticket (`T-NNN`) and per open question (`Q-NNN`), index in `docs/backlog/README.md`, conventions in `docs/backlog/CLAUDE.md`. There is no external tracker; a ticket states what to do and when it is done, and references the architecture document rather than restating it
 
 ## Commands
