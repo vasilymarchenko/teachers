@@ -179,11 +179,11 @@ first days, not an illegal row.
 
 That refusal reaches a day save and a parity copy too — case 3 above is the
 default `END_OF_SEMESTER`, and a year with no semesters resolves to nothing.
-Those forms carry no boundary inputs, so the message goes on the **form** there
-(`rejected()`) and on the field only when the submission came from the boundary
-form (`rejectedField()`, as `weekdayRules.ts` does it). On a field the form does
-not render it would appear nowhere, and the teacher would press «Зберегти» and
-watch nothing happen.
+Those forms carry no boundary inputs. The action does not decide for them: it
+always names the field (`rejectedField()`, as `weekdayRules.ts` does it), the
+boundary form shows the message on that control, and a form that does not render
+the field shows it through `FormMessage` — `formErrorsOf()`, overview §8.2
+(T-023).
 
 There is no "inside the year" check, unlike `non_teaching_weekday_rule`: a
 `schedule_template` row is found by date overlap alone and belongs to no year,

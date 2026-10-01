@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormMessage } from "@/components/forms/form-message";
 import { setEventDoneAction } from "@/lib/actions/events";
 import { EMPTY_FORM_STATE } from "@/lib/validation/formState";
@@ -34,6 +35,7 @@ export function EventDoneToggle({
     setEventDoneAction.bind(null, eventId, !done),
     EMPTY_FORM_STATE,
   );
+  const errors = formErrorsOf(state);
 
   return (
     <form action={formAction}>
@@ -43,7 +45,7 @@ export function EventDoneToggle({
       >
         {done ? DONE_LABELS.markNotDone : DONE_LABELS.markDone}
       </button>
-      <FormMessage>{state.error}</FormMessage>
+      <FormMessage errors={errors} />
     </form>
   );
 }

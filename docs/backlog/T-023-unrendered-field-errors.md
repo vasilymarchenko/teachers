@@ -2,7 +2,7 @@
 id: T-023
 type: ticket
 title: A field error whose field is not on the screen must still be shown
-status: todo
+status: done
 depends_on: [T-009, T-010]
 refs:
   - docs/architecture/architect-overview.md §8.2
@@ -19,14 +19,14 @@ move.
 
 ## Acceptance criteria
 
-- [ ] A form that renders a `FormState` shows every `fieldErrors` entry: one
+- [x] A form that renders a `FormState` shows every `fieldErrors` entry: one
       whose key it rendered goes on that control, as now; one whose key it did
       not goes where `FormMessage` puts a form-level message.
-- [ ] The mechanism is in the shared form layer, not repeated per screen — a
+- [x] The mechanism is in the shared form layer, not repeated per screen — a
       new form gets the behaviour without opting in.
-- [ ] A unit test covers the case: a `FormState` with a `fieldErrors` key no
+- [x] A unit test covers the case: a `FormState` with a `fieldErrors` key no
       control on the form claims, and the message still reaches the output.
-- [ ] `architect-overview.md` §8.2 states the rule, since it is the contract
+- [x] `architect-overview.md` §8.2 states the rule, since it is the contract
       between an action and the form it answers.
 
 ## Notes
@@ -50,3 +50,8 @@ form is submitting, and should not have to.
 A static check was considered and rejected: whether a form renders a given field
 name is not decidable from the syntax of `lib/actions`, which is where the
 message is written. Hence a runtime fallback plus a test, not a lint rule.
+
+The mechanism, and why it sits at render rather than in the action helpers:
+`docs/architecture/decisions/ADR-024-a-form-shows-every-field-error.md`. With it
+`boundaryRefusal()` in `lib/actions/scheduleTemplate.ts` no longer inspects the
+submission; it always names the field.
