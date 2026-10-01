@@ -571,7 +571,7 @@ the teacher cannot hold a session, `null` while she can
 migration `drizzle/0003_user_deactivated_at.sql`). It is declared in
 `lib/db/schema/auth.ts` and **not** as a better-auth `additionalFields` entry,
 so better-auth neither reads nor returns it; `lib/auth/teachers.ts` writes it
-and the `session.create.before` hook in `lib/auth/auth.ts` reads it. It is one
+and the two `session.create` hooks in `lib/auth/deactivation.ts` read it. It is one
 more hand-applied correction to re-apply when that file is regenerated (§5.1).
 
 Nothing else. No profile columns, no settings column. Per-teacher settings that

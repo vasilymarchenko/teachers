@@ -18,7 +18,8 @@ image.
 | File | Exports |
 |---|---|
 | `lib/auth/teachers.ts` | `createTeacher()`, `setTeacherPassword()`, `deactivateTeacher()`, `activateTeacher()`, `listTeachers()`, `Teacher`, `TeacherResult`, `TeacherRefusal` |
-| `lib/auth/auth.ts` | `getAuth()` gains `databaseHooks.session.create.before` |
+| `lib/auth/auth.ts` | `getAuth()` gains `databaseHooks.session.create.before` and `.after` |
+| `lib/auth/deactivation.ts` | `refuseDeactivatedTeacher()`, `endSessionOfDeactivatedTeacher()` — the two hooks |
 | `lib/db/schema/auth.ts` | `user.deactivatedAt` — `deactivated_at timestamp`, nullable (`drizzle/0003_user_deactivated_at.sql`) |
 | `scripts/teacher/cli.ts` | `run(argv, io, operations)`, `Io`, `Operations`, `EXIT_OK`, `EXIT_REFUSED`, `EXIT_USAGE`, `USAGE` |
 | `scripts/teacher/password.ts` | `readHidden()`, `isTerminal()`, `generatePassword()` |
@@ -59,8 +60,8 @@ neither.
 
 ## 3. The refusal at sign-in
 
-`databaseHooks.session.create.before` reads `user.deactivated_at` for the
-session's `userId` and, when it is set, throws
+`databaseHooks.session.create.before` — `refuseDeactivatedTeacher()` — reads
+`user.deactivated_at` for the session's `userId` and, when it is set, throws
 
 ```ts
 APIError.from("UNAUTHORIZED", {
@@ -72,6 +73,15 @@ APIError.from("UNAUTHORIZED", {
 — the status, code and message better-auth's own `signInEmail()` produces for a
 wrong password. `isBadCredentials()` therefore needs no change, and
 `signInAction` returns its one Ukrainian message.
+
+`databaseHooks.session.create.after` — `endSessionOfDeactivatedTeacher()` —
+reads the column again once the session row exists and deletes that row when it
+is set. It covers a sign-in that passed the first check while
+`deactivateTeacher()` was running: either this second read sees the column and
+deletes the row, or the column was written after the read, in which case
+`deactivateTeacher()`'s sweep — which runs after its write — deletes it. That is
+why `deactivateTeacher()` writes the column first and sweeps second. The sign-in
+that lost the race holds a cookie for a session that no longer exists.
 
 ## 4. The command
 
@@ -136,7 +146,7 @@ routes it as `teacher-smoke`, always skipped here
 | Suite | Holds |
 |---|---|
 | `scripts/teacher/cli.test.ts` | where a password may come from; what is refused before any operation is called; the exit code of every outcome; the `list` line |
-| `lib/auth/teachers.integration.test.ts` | every operation against Postgres and the real better-auth: a real sign-in after `create` and after `password`; the old password and the old sessions gone; `deactivated_at` set with the fixture scenario's rows untouched; a deactivated teacher answered exactly as a wrong password on `auth.api.signInEmail()`, on `POST /api/auth/sign-in/email` and by `signInAction`; `activate` restoring sign-in; the not-found and taken-address refusals writing nothing |
+| `lib/auth/teachers.integration.test.ts` | every operation against Postgres and the real better-auth: a real sign-in after `create` and after `password`; the old password and the old sessions gone; `deactivated_at` set with the fixture scenario's rows untouched; a deactivated teacher answered exactly as a wrong password on `auth.api.signInEmail()`, on `POST /api/auth/sign-in/email` and by `signInAction`; a session inserted after the sweep ended by the second hook; `activate` restoring sign-in; the not-found and taken-address refusals writing nothing |
 
 The two points `ADR-019` records as inferred are the tests "reaches the caller
 of signInEmail() as an APIError, the wrong-password one" and "sends a session

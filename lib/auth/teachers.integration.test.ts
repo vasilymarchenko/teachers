@@ -17,6 +17,7 @@ import {
 } from "@/lib/db/schema";
 import { createTestDatabase } from "@/lib/db/testDatabase";
 import { getAuth } from "./auth";
+import { endSessionOfDeactivatedTeacher } from "./deactivation";
 import { requireUser } from "./session";
 import {
   activateTeacher,
@@ -335,6 +336,34 @@ describe("deactivateTeacher", () => {
     // rethrow it and the teacher would see the error page.
     expect(await submitSignInForm(email, PASSWORD)).toEqual(wrongPassword);
     expect(await submitSignInForm(email, "not-the-password")).toEqual(wrongPassword);
+  });
+
+  it("ends a session that was inserted after the sweep, by a sign-in that had already been let through", async () => {
+    // The interleaving cannot be produced through sign-in on demand, so it is
+    // laid out by hand: the teacher is deactivated and her sessions swept, and
+    // only then does the session of a sign-in that passed the first check
+    // arrive. The second hook is what better-auth calls at that point.
+    const { email, userId } = await newTeacher();
+    const other = await newTeacher();
+    await deactivateTeacher(email);
+
+    const late = { id: `late-${randomUUID()}`, userId };
+    const kept = { id: `kept-${randomUUID()}`, userId: other.userId };
+    for (const row of [late, kept]) {
+      await db.insert(sessionTable).values({
+        ...row,
+        token: `token-${row.id}`,
+        expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-10-01T00:00:00.000Z"),
+      });
+    }
+
+    await endSessionOfDeactivatedTeacher(late);
+    await endSessionOfDeactivatedTeacher(kept);
+
+    expect(await sessionCount(userId)).toBe(0);
+    // An active teacher's session is left alone.
+    expect(await sessionCount(other.userId)).toBe(1);
   });
 
   it("keeps the moment of the first deactivation when repeated", async () => {

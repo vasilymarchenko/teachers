@@ -21,8 +21,8 @@
  *  - `user.deactivated_at` is added — the one column of this project's own on
  *    better-auth's tables (§5.2, ADR-019). better-auth does not know it exists:
  *    it is not declared as an `additionalFields` entry, so it never travels in
- *    a session's `user`, and only `lib/auth/teachers.ts` and the hook in
- *    `lib/auth/auth.ts` read or write it.
+ *    a session's `user`, and only `lib/auth/teachers.ts` and the hooks in
+ *    `lib/auth/deactivation.ts` read or write it.
  *
  * `user.id` is `text`, which is why `user_id` is `text` on every profile table
  * (§1). Nothing else is added to these tables: no profile columns, no settings

@@ -1,10 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
-import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
-import { user } from "@/lib/db/schema";
+import { endSessionOfDeactivatedTeacher, refuseDeactivatedTeacher } from "./deactivation";
 
 function createAuth() {
   return betterAuth({
@@ -23,31 +21,15 @@ function createAuth() {
     // of those create a teacher with a hash better-auth will accept. The flag
     // would close both and push them onto better-auth's internals.
     disabledPaths: ["/sign-up/email"],
+    // A deactivated teacher holds no session — ADR-019. In better-auth's own
+    // hooks and not in `signInAction`, so that the mounted
+    // `POST /api/auth/sign-in/email` is refused by the same check as the form.
+    // Two hooks, because the first alone leaves a gap — `deactivation.ts`.
     databaseHooks: {
       session: {
         create: {
-          // A deactivated teacher holds no session — ADR-019. Here and not in
-          // `signInAction`, so that the mounted `POST /api/auth/sign-in/email`
-          // is refused by the same check as the form.
-          //
-          // The error is the wrong-password one, to the letter. better-auth
-          // verifies the password before it creates a session, so this runs
-          // only when the password was right; any code of its own would tell
-          // the caller that the account exists and the guess was correct.
-          // `lib/auth/teachers.integration.test.ts` holds the two answers
-          // equal.
-          before: async (session) => {
-            const [row] = await getDb()
-              .select({ deactivatedAt: user.deactivatedAt })
-              .from(user)
-              .where(eq(user.id, session.userId));
-            if (row?.deactivatedAt) {
-              throw APIError.from("UNAUTHORIZED", {
-                code: "INVALID_EMAIL_OR_PASSWORD",
-                message: "Invalid email or password",
-              });
-            }
-          },
+          before: refuseDeactivatedTeacher,
+          after: endSessionOfDeactivatedTeacher,
         },
       },
     },

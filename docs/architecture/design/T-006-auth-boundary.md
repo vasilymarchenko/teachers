@@ -174,7 +174,10 @@ check as the form; and because better-auth creates a session only after the
 password has verified, the hook runs only for a correct password, which is why
 it may not answer with anything more specific. `isBadCredentials()` below
 therefore reports it as a wrong password, and the form shows its one message
-instead of the error page. A session that already existed is ended by
+instead of the error page. `databaseHooks.session.create.after` looks at the
+column once more when the row exists and deletes a session that was created
+while the teacher was being deactivated (`design/T-039-teacher-console.md` §3).
+A session that already existed is ended by
 `deactivateTeacher()` deleting its row, not by this hook; with session cookie
 caching off, `getSession()` reads the database on every request, so the next
 request carrying that cookie reaches `requireUser()` with no session and is

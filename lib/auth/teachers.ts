@@ -143,8 +143,11 @@ export async function setTeacherPassword(email: string, password: string): Promi
 /**
  * Stops a teacher signing in and ends her sessions. Every row she owns stays.
  *
- * The column first, the sessions second: once `deactivated_at` is set no new
- * session can be created (`auth.ts`), so nothing can slip in between the two.
+ * The column first, the sessions second, and the order is load-bearing. A
+ * sign-in that checked the column just before it was set can still insert its
+ * session after the sweep below; `endSessionOfDeactivatedTeacher()` in
+ * `deactivation.ts` looks again once that row exists, and its argument for why
+ * no session survives relies on the sweep running after the write.
  * Session cookie caching is off, so a deleted session row takes effect on the
  * next request (ADR-019).
  *
