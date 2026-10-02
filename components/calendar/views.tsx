@@ -10,6 +10,7 @@ import { DayLessons, type DayEditing } from "./day-lessons";
 import {
   capitalise,
   dayAndMonth,
+  dayLinkName,
   dayNumber,
   dayTooltip,
   LESSON_LABELS,
@@ -172,7 +173,17 @@ export function YearView({ days, schedule, today }: ViewProps) {
   );
 }
 
-function MonthDayRow({
+/**
+ * One day of the phone's month list. The whole card opens the day (T-042), and
+ * it does so with a **stretched** link, not a wrapping one: `DayLessons` can
+ * carry a link of its own — the Zoom address of a `CLASS` lesson — and a link
+ * may not sit inside a link. So the heading's link is the day's one link, its
+ * `::after` covers the card, and the lessons lie above it letting every click
+ * through except the ones on their own links.
+ *
+ * Exported for `views.test.ts`, which pins the one link per day.
+ */
+export function MonthDayRow({
   day,
   schedule,
   today,
@@ -184,25 +195,41 @@ function MonthDayRow({
   return (
     <div
       className={cn(
-        "rounded-lg border p-3",
+        "hover:border-ring relative rounded-lg border p-3 hover:shadow-sm",
         day.isNonTeaching ? "border-border bg-muted/60" : "border-border bg-card",
         day.date === today && "ring-primary ring-2",
       )}
     >
       <h3 className="mb-1 text-sm font-semibold">
         <Link
-          className="hover:underline"
+          className="focus-visible:after:outline-ring outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:outline-2 focus-visible:after:outline-offset-2"
           href={calendarHref("day", day.date, schedule)}
         >
-          {capitalise(shortWeekdayName(day.date))}, {dayAndMonth(day.date)}
+          <span aria-hidden>
+            {capitalise(shortWeekdayName(day.date))}, {dayAndMonth(day.date)}
+          </span>
+          <span className="sr-only">{dayLinkName(day.date)}</span>
         </Link>
       </h3>
-      <DayLessons day={day} />
+      <div className="pointer-events-none relative z-10 [&_a]:pointer-events-auto">
+        <DayLessons day={day} />
+      </div>
     </div>
   );
 }
 
-function MonthCell({
+/**
+ * One day of the month grid — the cell **is** the link to the day (T-042), so
+ * a click on a lesson, an event or the empty part of it lands where a click on
+ * the number does. Nothing interactive is rendered inside it; the day that
+ * ever needs something interactive here switches to the stretched link of
+ * `MonthDayRow` rather than nesting.
+ *
+ * The focus mark is an outline and not a ring: the ring is how today is shown.
+ *
+ * Exported for `views.test.ts`, which pins the one link per day.
+ */
+export function MonthCell({
   day,
   inMonth,
   schedule,
@@ -214,24 +241,31 @@ function MonthCell({
   today: IsoDate;
 }) {
   return (
-    <div
+    <Link
       className={cn(
-        "min-h-24 rounded border p-1 text-xs",
+        "block min-h-24 rounded border p-1 text-xs",
+        "hover:border-ring focus-visible:outline-ring hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2",
         day.isNonTeaching ? "border-border bg-muted/60" : "border-border bg-card",
         // The days spilling in from the neighbouring months are real days, and
-        // clickable, but they must not read as part of this month.
-        !inMonth && "opacity-50",
+        // clickable, but they must not read as part of this month. The dimming
+        // lifts under the pointer and under focus: it is on the link itself,
+        // and a hover border or a focus outline at half strength is not one.
+        !inMonth && "opacity-50 hover:opacity-100 focus-visible:opacity-100",
         day.date === today && "ring-primary ring-2",
       )}
+      href={calendarHref("day", day.date, schedule)}
     >
-      <Link
-        className="font-semibold hover:underline"
-        href={calendarHref("day", day.date, schedule)}
-      >
+      {/* The link is named by its date, not by a bare «19»: the name a screen
+          reader announces starts with «понеділок, 19 жовтня» and goes on to
+          what the day holds. */}
+      <span aria-hidden className="font-semibold">
         {dayNumber(day.date)}
-      </Link>
+      </span>
+      <span className="sr-only">{dayLinkName(day.date)}</span>
       {day.isNonTeaching && day.nonTeachingName !== undefined && (
-        <p className="text-muted-foreground truncate">{day.nonTeachingName}</p>
+        <span className="text-muted-foreground block truncate">
+          {day.nonTeachingName}
+        </span>
       )}
       <ul className="mt-1 space-y-0.5">
         {day.lessons.map((lesson) => (
@@ -262,7 +296,7 @@ function MonthCell({
           </li>
         ))}
       </ul>
-    </div>
+    </Link>
   );
 }
 

@@ -3,6 +3,7 @@ import type { CalendarDay } from "@/lib/domain/calendar/days";
 import { dayOverrideKindEnum } from "@/lib/db/schema/enums";
 import { EDITABLE_OVERRIDE_KINDS } from "@/lib/validation/dayOverride";
 import {
+  dayLinkName,
   dayTooltip,
   OVERRIDE_KIND_OPTIONS,
   OVERRIDE_LABELS,
@@ -59,6 +60,13 @@ describe("dayTooltip", () => {
         day({ isNonTeaching: true, nonTeachingName: "Осінні канікули" }),
       ),
     ).toBe("19 жовтня — Осінні канікули");
+  });
+});
+
+describe("dayLinkName", () => {
+  it("names the weekday, the day and the month", () => {
+    // 19 October 2026 is a Monday (fixtures §5, 10-19).
+    expect(dayLinkName("2026-10-19")).toBe("понеділок, 19 жовтня");
   });
 });
 

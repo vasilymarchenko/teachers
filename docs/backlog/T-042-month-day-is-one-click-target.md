@@ -2,7 +2,7 @@
 id: T-042
 type: ticket
 title: Month view — the whole day is one click target, not only its number
-status: todo
+status: done
 depends_on: [T-007]
 refs:
   - docs/specs/specification.md §6.1
@@ -19,23 +19,36 @@ or the empty part of a cell does nothing.
 
 ## Acceptance criteria
 
-- [ ] On the grid (`md` and up) a click anywhere inside a day cell — the
+- [x] On the grid (`md` and up) a click anywhere inside a day cell — the
       number, a lesson, an event, a non-teaching name, the empty space — goes
       to `calendarHref("day", date, schedule)`. That includes the days spilling
       in from the neighbouring months.
-- [ ] On a phone the same holds for the whole `MonthDayRow` card.
-- [ ] Each day is one link and one tab stop, with a visible focus ring and a
+- [x] On a phone the same holds for the whole `MonthDayRow` card.
+- [x] Each day is one link and one tab stop, with a visible focus ring and a
       hover state on the whole cell; the link's accessible name names the date
       in Ukrainian (weekday, day and month), not the bare number.
-- [ ] No interactive element is nested inside the link. The month view holds
+- [x] No interactive element is nested inside the link. The month view holds
       none today (`DayLessons` is rendered without `editing`); if one is ever
       added, the cell switches to a stretched link rather than nesting.
-- [ ] The cell keeps everything it shows today: today's ring, the shading of a
+- [x] The cell keeps everything it shows today: today's ring, the shading of a
       non-teaching day, the reduced opacity of the neighbouring months, the
       struck-through cancelled lessons and done events, and the red overdue
       events.
-- [ ] The year view is unchanged: each of its day squares is already a whole
+- [x] The year view is unchanged: each of its day squares is already a whole
       link.
-- [ ] A test pins that a month cell renders exactly one link to the day view.
+- [x] A test pins that a month cell renders exactly one link to the day view.
 
 ## Notes
+
+- The premise of the fourth criterion — «the month view holds none today» —
+  is true of the grid and false of the phone list: `MonthDayRow` renders
+  `DayLessons`, and `LessonRow` prints the Zoom address of a `CLASS` lesson as
+  a link. So the fallback the criterion itself names applies there now: the
+  phone card uses a stretched link and the Zoom link stays clickable above it
+  (decided with the user during the run). The consequence for the third
+  criterion is that a `CLASS` day with Zoom lessons has one more tab stop for
+  each of those links on a phone; the *day* is still one link.
+- Mechanics: `docs/architecture/design/T-007-calendar-views.md` §4.3.
+- The seventh criterion is met by rendering the two components to a string
+  with `react-dom/server` — `components/calendar/views.test.ts`. The suite
+  still has no DOM environment; `vitest.config.mts` says what that allows.

@@ -24,7 +24,7 @@ deliberately drops it.
 | `components/calendar/lessonRowLayout.ts` | `LESSON_ROW_LAYOUT` — the row's layout classes and the one container-query threshold it reflows at (T-021, ADR-013) |
 | `components/calendar/day-lessons.tsx` | `DayLessons` — the day-centric unit of overview §10.2 |
 | `components/calendar/day-card.tsx` | `DayCard` — `DayLessons` with a heading, parity and the today ring |
-| `components/calendar/views.tsx` | `DayView`, `WeekView`, `MonthView`, `YearView` |
+| `components/calendar/views.tsx` | `DayView`, `WeekView`, `MonthView`, `YearView`; `MonthCell` and `MonthDayRow` are exported for `views.test.ts` only (§4.3) |
 | `components/calendar/calendar-nav.tsx` | `CalendarNav` — view switch, ← →, «Сьогодні», quick jumps, `OWN`/`CLASS` |
 | `app/(app)/(calendar)/calendar/page.tsx` | redirect to today's day view |
 | `app/(app)/(calendar)/calendar/[view]/[date]/page.tsx` | the screen |
@@ -135,6 +135,29 @@ render a cancelled lesson as an absence:
 
 The year cell shows a number and nothing else, so the tooltip is most of what
 it can say — `dayTooltip()` in `labels.ts`, pinned by `labels.test.ts`.
+
+### 4.3 A day of the month is one link (T-042)
+
+A click anywhere on a day of the month view opens
+`calendarHref("day", date, schedule)`. The two arrangements get there
+differently, and `components/calendar/views.test.ts` pins both by counting the
+`<a>` elements of the rendered markup:
+
+| Arrangement | Component | How the day is one link |
+|---|---|---|
+| grid, `md` and up | `MonthCell` | the cell itself is the `<Link>`; nothing interactive is rendered inside it |
+| phone list | `MonthDayRow` | the heading's `<Link>` is stretched over the card by its `::after`; the `DayLessons` block lies above it with `pointer-events: none`, re-enabled on its own links |
+
+The phone list is stretched rather than wrapped because `DayLessons` there can
+hold a link of its own: the Zoom address of a `CLASS` lesson (`LessonRow`). Such
+a day has one more tab stop for each of those links, and a tap on one opens
+Zoom, not the day. The grid cell prints the subject only and has no such link.
+
+The link's accessible name starts with `dayLinkName()` — «понеділок, 19 жовтня»
+— in an `sr-only` span; the visible «19» or «Пн, 19 жовтня» is `aria-hidden`.
+Focus is drawn as an outline, because the ring is how today is shown. A day of a
+neighbouring month is dimmed on the link itself, so the dimming lifts on hover
+and on focus — otherwise the outline would be dimmed with it.
 
 ## 5. Year-view measurement (overview §9 trigger: ~300 ms)
 

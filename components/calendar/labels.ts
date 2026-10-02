@@ -46,6 +46,15 @@ export function dayNumber(date: IsoDate): string {
   return format(on(date), "d", { locale: uk });
 }
 
+/**
+ * «понеділок, 19 жовтня» — what the link to a day is called where the eye sees
+ * only «19» or «Пн» (the month view, T-042): a screen reader announces the
+ * link by this, and a bare number names no date.
+ */
+export function dayLinkName(date: IsoDate): string {
+  return `${weekdayName(date)}, ${dayAndMonth(date)}`;
+}
+
 /** «жовтень 2026» */
 export function monthAndYear(date: IsoDate): string {
   return format(on(date), "LLLL yyyy", { locale: uk });
