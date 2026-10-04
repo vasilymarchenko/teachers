@@ -2,7 +2,7 @@
 
 **Ticket:** `docs/backlog/T-041-year-setup-shows-the-way-out.md`
 **Status:** authoritative for T-041 and matches what was built (PR #50); the
-expected screens in §4 are what `T-046`'s browser test asserts.
+expected screens in §4 are what `T-048`'s browser test asserts.
 
 Rationale lives in `docs/architecture/architect-overview.md` §8.6. This document
 adds no reasoning: it states the item → section mapping, the states of the bar
@@ -96,4 +96,4 @@ deletion, completed again; completed, then opened again on the same route),
 the server-rendered bar in its "next" and ordinary states, `CompletionNotice`'s
 two links in order, and the checklist's links. The unit suite has no DOM, so the
 transition from "next" to "complete" across a real save is not exercised there;
-that walk is `T-046`.
+that walk is `T-048`.

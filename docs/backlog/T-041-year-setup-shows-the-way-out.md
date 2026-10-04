@@ -64,7 +64,7 @@ the production build, with Playwright. The gate works as T-038 specified:
   very bottom. On a narrow screen the new menu items are behind the collapsed
   menu.
 
-Two criteria were moved to `T-046` before implementation (2026-10-04, the
+Two criteria were moved to `T-048` before implementation (2026-10-04, the
 user's decision in the ticket run), where they are stated in full: a
 browser-level test that walks a teacher with no rows through the three saves,
 and that test run by `npm run gate` and `ci.yml` with its dependency recorded in
@@ -74,7 +74,7 @@ dependency and a new `e2e` job in `ci.yml` — a gate-contract change of its own
 Implemented as `architect-overview.md` §8.6 («Як `/year` веде до відкритого
 застосунку») states it: the completing save offers the weekly template
 (`/schedule`) as the action. Mechanics, including the expected screen after
-each save that `T-046` asserts: `docs/architecture/design/T-041-year-setup-way-out.md`.
+each save that `T-048` asserts: `docs/architecture/design/T-041-year-setup-way-out.md`.
 
 Evidence, criterion by criterion (PR #50, CI green on `7d2c2fd`):
 
@@ -99,4 +99,4 @@ Evidence, criterion by criterion (PR #50, CI green on `7d2c2fd`):
    `lib/auth/setupGate.integration.test.ts` green in CI's integration job.
 
 Not measured in a browser here — the local database was not reachable from
-the session; that walk is `T-046`.
+the session; that walk is `T-048`.
