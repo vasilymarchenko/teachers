@@ -15,6 +15,7 @@ import {
 import { getEventsInRange } from "./events";
 import { getDayOverrides } from "./overrides";
 import { getParityAnchors } from "./parityAnchors";
+import { getLessonSuggestions } from "./suggestions";
 import { getTemplateVersions } from "./templates";
 import { getYearFrame } from "./yearFrame";
 
@@ -174,6 +175,7 @@ const READS: [name: string, run: () => Promise<unknown>][] = [
   ["getDayOverrides", () => getDayOverrides(userId, RANGE)],
   ["getEventsInRange", () => getEventsInRange(userId, RANGE)],
   ["getYearFrame", () => getYearFrame(userId, RANGE.from)],
+  ["getLessonSuggestions", () => getLessonSuggestions(userId)],
 ];
 
 /** The ten profile tables of `design/schema.md` §8. */

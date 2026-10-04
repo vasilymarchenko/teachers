@@ -2,7 +2,7 @@
 id: T-044
 type: ticket
 title: Lesson fields suggest the subjects, classes and teachers already entered
-status: todo
+status: in-progress
 depends_on: [T-010, T-011]
 refs:
   - docs/specs/specification.md §5.1
@@ -51,3 +51,10 @@ suggestions, and suggestions entered ahead of time. The trigger for real
 dictionaries stays the row of overview §9.
 
 ## Notes
+
+The query is `lib/db/queries/suggestions.ts`, the lists' order and trimming
+`lib/domain/schedule/suggestions.ts`, the datalists
+`components/forms/suggestions.tsx`. The sort is `Intl.Collator("uk",
+{ numeric: true })`, so «8-А» comes before «10-А»; it runs in the application
+rather than as a Postgres ICU collation, so it does not depend on the
+collations the database image ships. Remaining: the review round and CI.
