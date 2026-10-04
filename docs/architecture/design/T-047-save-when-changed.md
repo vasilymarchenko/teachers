@@ -1,7 +1,7 @@
 # Save is available only with changes
 
 **Ticket:** `docs/backlog/T-047-save-enabled-only-when-changed.md`
-**Status:** authoritative for T-047.
+**Status:** authoritative for T-047 and matches what was built (PR #52).
 
 Rationale lives in `docs/architecture/architect-overview.md` §8.2 (the
 convention) and §8.1 (a stale symbolic boundary), and in
