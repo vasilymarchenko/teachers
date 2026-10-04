@@ -21,7 +21,7 @@ import {
  * one thing only a mounted component knows — which render completed setup — is
  * `rememberRender()` and `progressNotice()`, folded over a sequence of renders
  * as the page would produce them. The walk through the three saves in a
- * browser is T-046.
+ * browser is T-048.
  */
 
 describe("progressNotice", () => {

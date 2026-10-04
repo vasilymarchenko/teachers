@@ -1,5 +1,5 @@
 ---
-id: T-046
+id: T-048
 type: ticket
 title: Browser test for the first year setup, run in a new e2e job of ci.yml
 status: todo
@@ -45,3 +45,7 @@ seeded database it renders from, and the check that runs it locally and in CI.
 Split out of T-041 before that ticket was implemented (2026-10-04): the two
 criteria above that name a browser test and its gate were T-041's last two, and
 the choice of a separate `e2e` job was made then.
+
+Filed as T-046 in #50, an id already held by `T-046-template-row-clear-icon.md`;
+renumbered to T-048 in #51. Where #50 and its commits name T-046 for the
+browser test, they mean this ticket.
