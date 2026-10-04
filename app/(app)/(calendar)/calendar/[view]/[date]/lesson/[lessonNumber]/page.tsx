@@ -20,12 +20,14 @@ import {
   RemoveOverrideForm,
 } from "@/components/calendar/override-actions";
 import { OverrideForm } from "@/components/calendar/override-form";
+import { SuggestionLists } from "@/components/forms/suggestions";
 import { Section } from "@/components/year/section";
 import { requireCompleteSetup } from "@/lib/auth/setupGate";
 import { cn } from "@/lib/utils";
 import { getNonTeachingPeriods } from "@/lib/db/queries/calendarRules";
 import { getDayOverride } from "@/lib/db/queries/overrides";
 import { getScheduleInput } from "@/lib/db/queries/scheduleInput";
+import { getLessonSuggestions } from "@/lib/db/queries/suggestions";
 import {
   buildCalendarDays,
   buildPlannedDays,
@@ -86,10 +88,11 @@ export default async function Page({
   const range = { from: date, to: date };
   const request = { ...range, view: schedule };
 
-  const [input, periods, override] = await Promise.all([
+  const [input, periods, override, suggestions] = await Promise.all([
     getScheduleInput(userId, range),
     getNonTeachingPeriods(userId, range),
     getDayOverride(userId, date, schedule, lessonNumber),
+    getLessonSuggestions(userId),
   ]);
 
   const [day] = buildCalendarDays(input, request, periods);
@@ -173,6 +176,7 @@ export default async function Page({
         title={OVERRIDE_LABELS.formTitle}
         description={OVERRIDE_LABELS.formDescription}
       >
+        <SuggestionLists suggestions={suggestions} />
         <OverrideForm
           date={date}
           kind={override?.kind}

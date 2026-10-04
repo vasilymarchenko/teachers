@@ -6,6 +6,7 @@ import { FormField } from "@/components/forms/form-field";
 import { FieldMessage, FormMessage } from "@/components/forms/form-message";
 import { SLOT_FIELD_LABELS } from "@/components/forms/slot-labels";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { suggestionListFor } from "@/components/forms/suggestions";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { saveDayOverrideAction } from "@/lib/actions/dayOverride";
@@ -147,6 +148,7 @@ function PayloadInput({
         <Input
           {...props}
           defaultValue={fieldValue(state, field, storedValue(stored, field))}
+          list={suggestionListFor(field)}
           type={field === "zoomLink" ? "url" : "text"}
         />
       )}

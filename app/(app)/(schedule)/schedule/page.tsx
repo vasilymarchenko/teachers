@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SuggestionLists } from "@/components/forms/suggestions";
 import { BoundaryForm } from "@/components/schedule/boundary-form";
 import { CopyParityForm } from "@/components/schedule/copy-parity-form";
 import {
@@ -16,6 +17,7 @@ import { WeekGrid } from "@/components/schedule/week-grid";
 import { Section } from "@/components/year/section";
 import { requireCompleteSetup } from "@/lib/auth/setupGate";
 import { getBellSchedule } from "@/lib/db/queries/bells";
+import { getLessonSuggestions } from "@/lib/db/queries/suggestions";
 import {
   getTemplateVersionInForce,
   listTemplateVersions,
@@ -59,10 +61,11 @@ export default async function Page({
   const cutAt = today();
   const selection = pickTemplateSelection(params, weekdayOf(cutAt));
 
-  const [bells, current, versions] = await Promise.all([
+  const [bells, current, versions, suggestions] = await Promise.all([
     getBellSchedule(userId),
     getTemplateVersionInForce(userId, selection.view, cutAt),
     listTemplateVersions(userId, selection.view),
+    getLessonSuggestions(userId),
   ]);
 
   const slots = current?.slots ?? [];
@@ -89,6 +92,10 @@ export default async function Page({
         </Section>
       ) : (
         <>
+          {/* Once for the screen: every cell of the seven forms points at
+              these three lists (T-044). */}
+          <SuggestionLists suggestions={suggestions} />
+
           {/*
             `key` remounts the seven forms when the switches move. The switchers
             navigate softly, so React would otherwise reconcile them in place:

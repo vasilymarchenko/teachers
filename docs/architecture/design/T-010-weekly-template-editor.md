@@ -65,6 +65,16 @@ Separate from T-008's `getTemplateVersions()`: that one feeds `expand()` and
 carries no `id` and no `boundary_kind`, which an editing screen needs and the
 domain must not see.
 
+`lib/db/queries/suggestions.ts` (T-044) holds `getLessonSuggestions(userId)` —
+the distinct trimmed `subject`, `className` (`OWN`) and `teacherName` (`CLASS`)
+of every `template_slot` and `day_override` payload, every version and every
+date, sorted by `collectSuggestions()` in `lib/domain/schedule/suggestions.ts`
+(`Intl.Collator("uk", { numeric: true })`, so «8-А» sorts before «10-А»). The
+sort runs in the application, not as `ORDER BY … COLLATE` in the query: a
+Postgres ICU collation exists only if the `postgres` image ships it, and the
+order would then depend on the image rather than on the code. The page reads
+it once.
+
 `lib/db/queries/yearFrame.ts` gains `getUpcomingYearFrame(userId, date)` — the
 earliest year beginning after `date`, same shape as `getYearFrame()`. §3 below
 is the only caller and says why.
@@ -88,9 +98,13 @@ holds the constants and carries no `"use server"` directive, for the reason
 | `labels.ts` | every Ukrainian word of this screen; re-exports the ones the calendar and the year setup already own. The words for a lesson's own fields moved to `components/forms/slot-labels.ts` in T-011, shared with the override editor |
 | `selection.ts` | `pickTemplateSelection()`, `templateHref()` — the `?view=&parity=&day=` switches |
 | `lessonRows.ts` | `lessonRows()` — which lesson numbers are rows |
-| `day-form.tsx` | one day: the unit of saving |
+| `day-form.tsx` | one day: the unit of saving. Its `subject`, `className` and `teacherName` inputs carry `list={suggestionListFor(field)}` (T-044) |
 | `week-grid.tsx` | seven `DayForm`s |
 | `switchers.tsx`, `boundary-form.tsx`, `copy-parity-form.tsx`, `version-notice.tsx` | the controls around the grid |
+
+`components/forms/suggestions.tsx` (T-044): `SuggestionLists`, the three
+native `<datalist>`s the page renders once beside the seven forms, and
+`suggestionListFor()`, which gives `zoomLink` and `note` no list.
 
 `FormField` gained a `labelHidden` prop for the grid's cells: the label is kept
 for a screen reader and taken off the screen.
