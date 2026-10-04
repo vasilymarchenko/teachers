@@ -20,6 +20,7 @@ import { EMPTY_FORM_STATE } from "@/lib/validation/formState";
 import { SEMESTER_FIELD } from "@/lib/validation/semester";
 import { ACTION_LABELS, SEMESTERS_SECTION } from "./labels";
 import { Empty, Row, Section } from "./section";
+import { SETUP_ANCHORS } from "./setup-steps";
 
 /**
  * The two semesters of the selected year — specification §3.2.
@@ -37,6 +38,7 @@ export function SemestersSection({
 }) {
   return (
     <Section
+      id={SETUP_ANCHORS.semesters}
       title={SEMESTERS_SECTION.title}
       description={SEMESTERS_SECTION.description}
     >

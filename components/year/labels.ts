@@ -116,6 +116,22 @@ export const SETUP_GATE = {
   optional: "необов’язково",
 };
 
+/**
+ * The bar at the bottom of the year-setup screen — overview §8.6, T-041.
+ *
+ * While setup is incomplete it names the next missing item; when a save on
+ * this screen completes it, it says the rest of the application is open and
+ * offers the weekly template as the next thing to fill in.
+ */
+export const SETUP_PROGRESS = {
+  next: "Наступний крок:",
+  goTo: "Перейти",
+  completeTitle: "Навчальний рік налаштовано",
+  completeText:
+    "Календар, розклад і події тепер відкриті. Далі заповніть тижневий розклад уроків — з нього календар дізнається, які уроки у вас щодня.",
+  toSchedule: "Заповнити розклад",
+};
+
 /** The buttons every section shares. */
 export const ACTION_LABELS = {
   add: "Додати",
