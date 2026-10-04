@@ -22,10 +22,8 @@ On `/schedule` every lesson row of the day form carries a toggle «в обох
 the same version, writes into the other parity week exactly the rows whose
 toggle is on — the same lesson, or its removal if the row was emptied — and
 leaves every other row of the other week as it was. The toggle opens on for a
-row equal in both weeks, so a new day is filled once and a shared lesson is
-changed once, and a lesson added to one week is carried into the other
-without touching the lessons that already differ. Every row that differs
-from the other week shows what the other week has there. «Скопіювати з
+row equal in both weeks. Every row that differs from the other week shows
+what the other week has there. «Скопіювати з
 чисельника» stays as it is. The data model does not change (ADR-025).
 
 ## Acceptance criteria
@@ -89,7 +87,5 @@ day-level checkbox, and any change to `expand()` (ADR-025, ADR-021).
 
 ## Notes
 
-Rewritten on 2026-10-04 before any work started: the day-level checkbox this
-ticket first asked for could not carry one lesson into the other week without
-overwriting that week's differences. The decision and the scenario that broke
-it are ADR-025, which supersedes ADR-021.
+Rewritten on 2026-10-04, before any work started, from a day-level checkbox
+to a per-row toggle: ADR-025, which supersedes ADR-021.

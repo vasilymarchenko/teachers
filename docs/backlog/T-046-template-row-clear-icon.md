@@ -18,8 +18,8 @@ click on an icon in that lesson's row header, instead of erasing every input
 of the row by hand. The icon only empties the row's inputs in the browser;
 the lesson is removed by the day's «Зберегти», exactly as an emptied row is
 removed today (`design/T-010-weekly-template-editor.md` §1). Until the save,
-the same place offers an icon that brings the row's stored values back. The
-action, the validation and the save unit do not change.
+the same place offers an icon that puts back the values the row was rendered
+with. The action, the validation and the save unit do not change.
 
 ## Acceptance criteria
 
@@ -38,7 +38,7 @@ action, the validation and the save unit do not change.
       existing `saveTemplateDayAction()`; the action, `readTemplateDay()` and
       the slot validation are unchanged.
 - [ ] Both icons have an accessible name that names the lesson
-      («Прибрати урок 3», «Повернути урок 3») and the same text as a hover
+      («Очистити урок 3», «Відновити урок 3») and the same text as a hover
       hint; the hit area is at least 24×24 CSS px. Icons come from
       `lucide-react`.
 - [ ] With JavaScript off the form renders and saves as it does today; the

@@ -62,13 +62,20 @@ the whole-week action.
 
 ## Consequences
 
-No migration, no change to `expand()` or to any reader of slots; ADR-006's
-copy-on-write rules hold unchanged, so one save is still at most one version
-per view per day of editing.
+No migration, no change to `expand()` or to any reader of slots. This record
+replaces only the first part of ADR-006's decision, the save unit; the rest
+of it holds unchanged and is restated here so that it survives ADR-006 being
+superseded: every write goes through `planTemplateEdit()`, with
+`applyTemplateEdit()` as the single write path; the boundary («доки діє цей
+розклад») is copy-on-write too, never an in-place `UPDATE` of `valid_to`,
+which would be the one write able to move a version's end backwards over
+days already taught; and a new version stops where a later one starts
+(`capToNextVersion()`). One save is still at most one version per view per
+day of editing.
 
 The day form gains one input per row, read as a boolean per lesson number,
-and loses the day-level checkbox ADR-021 would have added. The toggle shares
-the row header with the row's other actions.
+and loses the day-level checkbox ADR-021 would have added. The toggle sits in
+the row's header line.
 
 Revisit if teachers report one-week edits leaking into the other week — that
 is the cost this default accepts, and the evidence would argue for the
