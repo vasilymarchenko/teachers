@@ -167,8 +167,9 @@ export function InfoEventForm({
             {(props) => (
               // Uncontrolled, with the choice mirrored into state: a controlled
               // `<select>` mounted on the client renders no default for
-              // `TrackedForm` to record (T-047), and the form reset after an
-              // action puts `chosen` back exactly as the re-seed above does.
+              // `TrackedForm` to record (T-047). `Select` remounts when
+              // `chosen` changes, so after an action it shows `chosen`, exactly
+              // as the re-seed above sets the state.
               <Select
                 {...props}
                 defaultValue={chosen}

@@ -20,6 +20,7 @@ opt-in and where each form's "opens as changed" comes from.
 | `components/year/section.tsx` | gains `RestatedBoundary` — the sentence beside a stale boundary |
 | `lib/domain/schedule/boundaries.ts` | gains `restatedBoundary()` |
 | `components/events/event-form.tsx` | the repetition select becomes `defaultValue` + `onChange` (see `TrackedForm` below) |
+| `components/ui/select.tsx` | an uncontrolled `Select` is keyed by its `defaultValue`: React applies a select's `defaultValue` only at mount and never updates `defaultSelected`, so without the remount the reset after an action would show the pre-save option and the record would hold it |
 | `lib/db/queries/boundaryFrame.ts` | **new**: `getBoundaryFrame(userId, date, { orUpcoming })` → `{ yearStart, breaks, semesters }` or `null`. `boundaryFor()` in `lib/actions/scheduleTemplate.ts` (`orUpcoming: true`) and `resolveFor()` in `lib/actions/events.ts` read it instead of assembling the frame themselves |
 
 ### `createChangeTracker({ target, read, readDefaults, untracked, onChange })`
