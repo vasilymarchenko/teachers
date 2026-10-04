@@ -7,6 +7,7 @@ import { SetupChecklist } from "./setup-checklist";
 import {
   CompletionNotice,
   progressNotice,
+  seenIncompleteAfter,
   SetupProgress,
 } from "./setup-progress";
 
@@ -16,35 +17,55 @@ import {
  *
  * The suite has no DOM (`vitest.config.mts`), so nothing here submits a form:
  * the markup is rendered to a string, which is what the server sends, and the
- * one thing that only a mounted component knows — that this visit began with
- * setup incomplete — is `progressNotice()`, tested as the function it is. The
- * walk through the three saves in a browser is T-046.
+ * one thing that only a mounted component knows — that setup has been
+ * incomplete during this visit — is `seenIncompleteAfter()` and
+ * `progressNotice()`, tested as the functions they are, over a sequence of
+ * renders. The walk through the three saves in a browser is T-046.
  */
 
 describe("progressNotice", () => {
   it("names the next item while setup is incomplete", () => {
     expect(
-      progressNotice({ complete: false, openedIncomplete: true, hasNext: true }),
+      progressNotice({ complete: false, seenIncomplete: true, hasNext: true }),
     ).toBe("next");
   });
 
-  it("announces completion when this visit began incomplete", () => {
+  it("announces completion when setup was incomplete during this visit", () => {
     // The save that completed it was made on this screen.
     expect(
-      progressNotice({ complete: true, openedIncomplete: true, hasNext: false }),
+      progressNotice({ complete: true, seenIncomplete: true, hasNext: false }),
     ).toBe("complete");
   });
 
   it("says nothing on a screen opened with setup already complete", () => {
     expect(
-      progressNotice({ complete: true, openedIncomplete: false, hasNext: false }),
+      progressNotice({ complete: true, seenIncomplete: false, hasNext: false }),
     ).toBeNull();
   });
+});
 
-  it("names the next item again when a deletion reopens the setup", () => {
-    expect(
-      progressNotice({ complete: false, openedIncomplete: false, hasNext: true }),
-    ).toBe("next");
+describe("seenIncompleteAfter, over the renders of one visit", () => {
+  /** The notice after each render, given `complete` at each one. */
+  function walk(completes: boolean[]): ReturnType<typeof progressNotice>[] {
+    let seen = !completes[0];
+    return completes.map((complete) => {
+      seen = seenIncompleteAfter(seen, complete);
+      return progressNotice({ complete, seenIncomplete: seen, hasNext: !complete });
+    });
+  }
+
+  it("a first setup: incomplete, then completed by a save", () => {
+    expect(walk([false, false, true])).toStrictEqual(["next", "next", "complete"]);
+  });
+
+  it("opened complete and left so: the ordinary screen throughout", () => {
+    expect(walk([true, true])).toStrictEqual([null, null]);
+  });
+
+  it("opened complete, reopened by a deletion, completed again by a save", () => {
+    // Review R1-2: the save that completes it is still one made on this
+    // screen, and is answered as one.
+    expect(walk([true, false, true])).toStrictEqual([null, "next", "complete"]);
   });
 });
 

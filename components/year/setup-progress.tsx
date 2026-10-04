@@ -13,22 +13,32 @@ export type ProgressNotice = "next" | "complete" | null;
  * Which notice the bar shows — overview §8.6, T-041.
  *
  * While setup is incomplete, the next missing item. Once it is complete, the
- * completion notice — but only if this screen was opened while it was still
- * incomplete, so it is the save the teacher just made that completed it. A
- * teacher who opens `/year` with setup already complete is on the ordinary
- * year-setup screen and is told nothing.
+ * completion notice — but only if setup was incomplete at some point of this
+ * visit to the screen, so it is a save the teacher made here that completed
+ * it. That includes a visit that began complete, lost a condition to a
+ * deletion and regained it. A teacher who opens `/year` with setup complete
+ * and leaves it so is on the ordinary year-setup screen and is told nothing.
  */
 export function progressNotice({
   complete,
-  openedIncomplete,
+  seenIncomplete,
   hasNext,
 }: {
   complete: boolean;
-  openedIncomplete: boolean;
+  /** Setup was incomplete at mount or at any render since. */
+  seenIncomplete: boolean;
   hasNext: boolean;
 }): ProgressNotice {
   if (!complete) return hasNext ? "next" : null;
-  return openedIncomplete ? "complete" : null;
+  return seenIncomplete ? "complete" : null;
+}
+
+/**
+ * Whether setup has been incomplete during this visit, after one more render
+ * with `complete`. Once true it stays true until the screen is left.
+ */
+export function seenIncompleteAfter(seen: boolean, complete: boolean): boolean {
+  return seen || !complete;
 }
 
 /**
@@ -40,13 +50,14 @@ export function progressNotice({
  * menu item, so the teacher learns the rest of the app is open without opening
  * the menu.
  *
- * Whether the screen was opened incomplete is remembered in state rather than
- * read from anything: a save revalidates `/year` and re-renders the page around
- * this component without remounting it, so the state survives exactly as long
- * as the visit does. The page renders it as its last child, unconditionally,
- * for that reason — moved or wrapped in a condition, it would be remounted by
- * the save that completes setup and would forget it was ever incomplete.
- * Leaving the screen, or opening it again, starts from the ordinary screen.
+ * Whether setup has been incomplete during this visit is remembered in state
+ * rather than read from anything: a save revalidates `/year` and re-renders the
+ * page around this component without remounting it, so the state survives
+ * exactly as long as the visit does. The page renders it as its last child,
+ * unconditionally, for that reason — moved or wrapped in a condition, it would
+ * be remounted by the save that completes setup and would forget it was ever
+ * incomplete. Leaving the screen, or opening it again, starts from the
+ * ordinary screen.
  */
 export function SetupProgress({
   complete,
@@ -56,10 +67,15 @@ export function SetupProgress({
   /** The first missing item, as `nextSetupStep()` gives it; `null` when none. */
   next: { label: string; href: string } | null;
 }) {
-  const [openedIncomplete] = useState(!complete);
+  const [seenIncomplete, setSeenIncomplete] = useState(!complete);
+  // Set during render, the way React adjusts state to a prop that changed: a
+  // deletion that reopens setup is a re-render with `complete` false, and an
+  // effect would record it one commit late for no gain.
+  const seen = seenIncompleteAfter(seenIncomplete, complete);
+  if (seen !== seenIncomplete) setSeenIncomplete(seen);
   const notice = progressNotice({
     complete,
-    openedIncomplete,
+    seenIncomplete,
     hasNext: next !== null,
   });
 

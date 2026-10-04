@@ -44,10 +44,6 @@ comes next, and the save that completes setup changes nothing they can see.
       `getSetupStatus()`, `requireCompleteSetup()` and the redirect stay as
       T-038 left them.
 
-## Notes`.
-- [x] ~~That test is run by `npm run gate` and by `ci.yml` …~~ — moved to
-      `T-046`, see `## Notes`.
-
 ## Notes
 
 Found on the deployed app with a new teacher account, 2026-10-01: the teacher
