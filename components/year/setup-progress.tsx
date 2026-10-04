@@ -13,32 +13,48 @@ export type ProgressNotice = "next" | "complete" | null;
  * Which notice the bar shows — overview §8.6, T-041.
  *
  * While setup is incomplete, the next missing item. Once it is complete, the
- * completion notice — but only if setup was incomplete at some point of this
- * visit to the screen, so it is a save the teacher made here that completed
- * it. That includes a visit that began complete, lost a condition to a
- * deletion and regained it. A teacher who opens `/year` with setup complete
- * and leaves it so is on the ordinary year-setup screen and is told nothing.
+ * completion notice — but only on the render that the completing save
+ * produced (`completedHere`). Every later render of the page is the ordinary
+ * screen: opening `/year` again, from the menu or the year switcher, and any
+ * further save alike.
  */
 export function progressNotice({
   complete,
-  seenIncomplete,
+  completedHere,
   hasNext,
 }: {
   complete: boolean;
-  /** Setup was incomplete at mount or at any render since. */
-  seenIncomplete: boolean;
+  /** This render is the one in which setup turned complete. */
+  completedHere: boolean;
   hasNext: boolean;
 }): ProgressNotice {
   if (!complete) return hasNext ? "next" : null;
-  return seenIncomplete ? "complete" : null;
+  return completedHere ? "complete" : null;
 }
 
+/** What the bar remembers between the renders of one mount. */
+export type ProgressMemory = {
+  /** `complete` as of the last render seen. */
+  complete: boolean;
+  /** The `renderId` of the render in which setup turned complete, if any. */
+  completedIn: string | null;
+};
+
 /**
- * Whether setup has been incomplete during this visit, after one more render
- * with `complete`. Once true it stays true until the screen is left.
+ * The memory after one more render.
+ *
+ * A render that finds setup complete where the previous one found it
+ * incomplete is the completing save's, and its id is kept; anything else
+ * leaves the memory as it was, or forgets that id once setup is incomplete
+ * again. The same object comes back when nothing changed, so the component
+ * can tell whether to store it.
  */
-export function seenIncompleteAfter(seen: boolean, complete: boolean): boolean {
-  return seen || !complete;
+export function rememberRender(
+  memory: ProgressMemory,
+  { complete, renderId }: { complete: boolean; renderId: string },
+): ProgressMemory {
+  if (complete === memory.complete) return memory;
+  return { complete, completedIn: complete ? renderId : null };
 }
 
 /**
@@ -50,32 +66,43 @@ export function seenIncompleteAfter(seen: boolean, complete: boolean): boolean {
  * menu item, so the teacher learns the rest of the app is open without opening
  * the menu.
  *
- * Whether setup has been incomplete during this visit is remembered in state
- * rather than read from anything: a save revalidates `/year` and re-renders the
- * page around this component without remounting it, so the state survives
- * exactly as long as the visit does. The page renders it as its last child,
- * unconditionally, for that reason — moved or wrapped in a condition, it would
- * be remounted by the save that completes setup and would forget it was ever
- * incomplete. Leaving the screen, or opening it again, starts from the
- * ordinary screen.
+ * Which render completed setup is remembered in state: a save revalidates
+ * `/year` and re-renders the page around this component without remounting it,
+ * which is what lets it compare one render with the next. The page renders it
+ * as its last child, unconditionally, for that reason — moved or wrapped in a
+ * condition, it would be remounted by the completing save and would have
+ * nothing to compare with.
+ *
+ * The same holds for a navigation that stays on `/year` — the menu's link to
+ * the screen already open, the year switcher: the router keys the page without
+ * its search parameters and does not remount it (review of PR #50). So the
+ * state cannot say whether the screen was opened again; `renderId` does. The
+ * page draws a new one on every server render, so the completion notice is
+ * shown on the completing save's render and on no later one.
  */
 export function SetupProgress({
   complete,
   next,
+  renderId,
 }: {
   complete: boolean;
   /** The first missing item, as `nextSetupStep()` gives it; `null` when none. */
   next: { label: string; href: string } | null;
+  /** Unique to the server render this came from. */
+  renderId: string;
 }) {
-  const [seenIncomplete, setSeenIncomplete] = useState(!complete);
-  // Set during render, the way React adjusts state to a prop that changed: a
-  // deletion that reopens setup is a re-render with `complete` false, and an
-  // effect would record it one commit late for no gain.
-  const seen = seenIncompleteAfter(seenIncomplete, complete);
-  if (seen !== seenIncomplete) setSeenIncomplete(seen);
+  const [memory, setMemory] = useState<ProgressMemory>({
+    complete,
+    completedIn: null,
+  });
+  // Set during render, the way React adjusts state to a prop that changed: an
+  // effect would record the completing render one commit late, after the
+  // screen had already been drawn without its notice.
+  const remembered = rememberRender(memory, { complete, renderId });
+  if (remembered !== memory) setMemory(remembered);
   const notice = progressNotice({
     complete,
-    seenIncomplete,
+    completedHere: remembered.completedIn === renderId,
     hasNext: next !== null,
   });
 

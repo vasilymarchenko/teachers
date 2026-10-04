@@ -87,11 +87,14 @@ Evidence, criterion by criterion (PR #50, CI green on `7d2c2fd`):
    link to its section".
 3. `components/year/setup-progress.tsx:114` (`CompletionNotice`, `/schedule`
    first); `setup-progress.test.ts` › "offers the weekly template first…" and the
-   three-visit walk of `seenIncompleteAfter`; `architect-overview.md` §8.6.
+   walk of `rememberRender` over the renders of one mount; `architect-overview.md` §8.6.
 4. `app/(app)/(schedule)/year/page.tsx:203` — the bar is page content, outside
    `AppNav`/`MobileNav`.
 5. `setup-progress.test.ts` › "is empty on the ordinary screen", "opened
-   complete and left so: the ordinary screen throughout".
+   complete and left so: the ordinary screen throughout", "opened again after
+   completing — the menu, the year switcher — is ordinary" (a PR #50 review
+   finding: the router does not remount the page on a navigation that stays on
+   `/year`, so the notice is bound to the completing render's `renderId`).
 6. No change under `lib/`, `app/(app)/layout.tsx` or `components/navigation/`;
    `lib/auth/setupGate.integration.test.ts` green in CI's integration job.
 

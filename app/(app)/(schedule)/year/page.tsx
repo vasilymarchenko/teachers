@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { BellsSection } from "@/components/year/bells-section";
 import {
@@ -196,13 +197,15 @@ export default async function Page({
       ) : null}
 
       {/*
-        Last, and never inside a condition: it remembers that this visit began
-        with setup incomplete, and only a component the save does not remount
-        can remember anything (T-041).
+        Last, and never inside a condition: it compares this render with the
+        previous one, and only a component the save does not remount can. The
+        id tells this render from every other, so the completion notice lasts
+        exactly as long as the render the completing save produced (T-041).
       */}
       <SetupProgress
         complete={setup.complete}
         next={next === null ? null : { label: next.label, href: next.href }}
+        renderId={randomUUID()}
       />
     </div>
   );

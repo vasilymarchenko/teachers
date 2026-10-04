@@ -15,10 +15,10 @@ setup.
 |---|---|
 | `components/year/setup-steps.ts` | `SETUP_ANCHORS`; `setupSteps(status, academicYearId)` — the four items, in page order, each with `label`, `done`, `href`; `nextSetupStep(steps)` — the first item not done, or `null`. Pure. |
 | `components/year/setup-checklist.tsx` | The checklist at the top of the page, built from `setupSteps()`. A missing item's label is `<a href="#…">`; a done item is text. |
-| `components/year/setup-progress.tsx` | `SetupProgress` (client) — the sticky bar; `seenIncompleteAfter()` — its one piece of state, render by render; `progressNotice()` — which notice it shows; `CompletionNotice`. |
+| `components/year/setup-progress.tsx` | `SetupProgress` (client) — the sticky bar; `rememberRender()` — its one piece of state, render by render; `progressNotice()` — which notice it shows; `CompletionNotice`. |
 | `components/year/section.tsx` | `Section` takes an optional `id`, rendered on the `<section>` with `scroll-mt-4`. |
 | `components/year/labels.ts` | `SETUP_PROGRESS` — every word of the bar. |
-| `app/(app)/(schedule)/year/page.tsx` | Computes `nextSetupStep(setupSteps(setup, selected?.id ?? null))` and renders `<SetupProgress>` as the page's last child, outside every condition. |
+| `app/(app)/(schedule)/year/page.tsx` | Computes `nextSetupStep(setupSteps(setup, selected?.id ?? null))` and renders `<SetupProgress renderId={randomUUID()}>` as the page's last child, outside every condition. |
 
 `getSetupStatus()`, `requireCompleteSetup()`, the `(app)` layout and
 `navItemsFor()` are unchanged (T-038).
@@ -42,18 +42,29 @@ The selected year is `pickYear()`'s, the one whose forms are on screen.
 
 ## 3. The bar's states
 
-`SetupProgress({ complete, next })` keeps one piece of state,
-`seenIncomplete`: `!complete` at mount, and `seenIncompleteAfter(seen, complete)`
-— set to `true` during any later render with `complete` false — a deletion that reopens setup — and never set
-back. A save revalidates `/year`; the page re-renders around the component
-without remounting it, so the value lasts exactly one visit.
+`page.tsx` passes `renderId = randomUUID()`, drawn anew on every server render
+of `/year` — a save's revalidation and every navigation to it alike.
 
-| `complete` | `seenIncomplete` | `next` | `progressNotice()` | Shown |
+`SetupProgress({ complete, next, renderId })` keeps one piece of state,
+`ProgressMemory = { complete, completedIn }`, starting at
+`{ complete, completedIn: null }` on mount. Each render applies
+`rememberRender(memory, { complete, renderId })`: when `complete` changed from
+false to true, `completedIn` becomes this `renderId`; when it changed back,
+`completedIn` is `null`; otherwise the memory is unchanged. `completedHere` is
+`completedIn === renderId`.
+
+Mount alone is not a visit boundary. The router keys the page without its search
+parameters (`createRouterCacheKey(…, true)` in Next's `layout-router`), so the
+menu's link to `/year` on `/year` and a `YearSwitcher` change re-render the
+component without remounting it. The new `renderId` of that render is what ends
+the notice.
+
+| `complete` | `completedHere` | `next` | `progressNotice()` | Shown |
 |---|---|---|---|---|
-| false | any | an item | `"next"` | «Наступний крок: *label*» and «Перейти» → `next.href` |
-| false | any | `null` | `null` | nothing |
+| false | — | an item | `"next"` | «Наступний крок: *label*» and «Перейти» → `next.href` |
+| false | — | `null` | `null` | nothing |
 | true | true | — | `"complete"` | `CompletionNotice`: «Навчальний рік налаштовано», the text, **«Заповнити розклад» → `/schedule`** (`Button size="lg"`), «Перейти до календаря» → `/calendar` |
-| true | false | — | `null` | nothing — the ordinary screen: opened complete and never reopened during the visit |
+| true | false | — | `null` | nothing — the ordinary screen: opened complete, or any render after the completing one (opened again, another year selected, another save) |
 
 The wrapper is `sticky bottom-4 z-10`, `role="status"`, `aria-live="polite"`,
 and is rendered in every state so that the live region exists before its content
@@ -79,8 +90,9 @@ true is answered with `CompletionNotice`.
 
 `components/year/setup-steps.test.ts` covers §2 and the "next" column of §4.
 `components/year/setup-progress.test.ts` covers `progressNotice()` over §3,
-`seenIncompleteAfter()` folded over the renders of a visit (a first setup; opened
-complete and left so; opened complete, reopened by a deletion, completed again),
+`rememberRender()` folded over the renders of one mount, each with its own id (a
+first setup; opened complete and left so; opened complete, reopened by a
+deletion, completed again; completed, then opened again on the same route),
 the server-rendered bar in its "next" and ordinary states, `CompletionNotice`'s
 two links in order, and the checklist's links. The unit suite has no DOM, so the
 transition from "next" to "complete" across a real save is not exercised there;

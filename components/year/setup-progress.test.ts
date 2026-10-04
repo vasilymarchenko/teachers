@@ -7,7 +7,8 @@ import { SetupChecklist } from "./setup-checklist";
 import {
   CompletionNotice,
   progressNotice,
-  seenIncompleteAfter,
+  type ProgressMemory,
+  rememberRender,
   SetupProgress,
 } from "./setup-progress";
 
@@ -17,40 +18,47 @@ import {
  *
  * The suite has no DOM (`vitest.config.mts`), so nothing here submits a form:
  * the markup is rendered to a string, which is what the server sends, and the
- * one thing that only a mounted component knows — that setup has been
- * incomplete during this visit — is `seenIncompleteAfter()` and
- * `progressNotice()`, tested as the functions they are, over a sequence of
- * renders. The walk through the three saves in a browser is T-046.
+ * one thing only a mounted component knows — which render completed setup — is
+ * `rememberRender()` and `progressNotice()`, folded over a sequence of renders
+ * as the page would produce them. The walk through the three saves in a
+ * browser is T-046.
  */
 
 describe("progressNotice", () => {
   it("names the next item while setup is incomplete", () => {
     expect(
-      progressNotice({ complete: false, seenIncomplete: true, hasNext: true }),
+      progressNotice({ complete: false, completedHere: false, hasNext: true }),
     ).toBe("next");
   });
 
-  it("announces completion when setup was incomplete during this visit", () => {
-    // The save that completed it was made on this screen.
+  it("announces completion on the render that completed setup", () => {
     expect(
-      progressNotice({ complete: true, seenIncomplete: true, hasNext: false }),
+      progressNotice({ complete: true, completedHere: true, hasNext: false }),
     ).toBe("complete");
   });
 
-  it("says nothing on a screen opened with setup already complete", () => {
+  it("says nothing on any other render of a complete setup", () => {
     expect(
-      progressNotice({ complete: true, seenIncomplete: false, hasNext: false }),
+      progressNotice({ complete: true, completedHere: false, hasNext: false }),
     ).toBeNull();
   });
 });
 
-describe("seenIncompleteAfter, over the renders of one visit", () => {
-  /** The notice after each render, given `complete` at each one. */
+describe("rememberRender, over the renders of one mount", () => {
+  /**
+   * The notice after each render. Every render is a server render, so each
+   * gets an id of its own — as `randomUUID()` gives the page one per request.
+   */
   function walk(completes: boolean[]): ReturnType<typeof progressNotice>[] {
-    let seen = !completes[0];
-    return completes.map((complete) => {
-      seen = seenIncompleteAfter(seen, complete);
-      return progressNotice({ complete, seenIncomplete: seen, hasNext: !complete });
+    let memory: ProgressMemory = { complete: completes[0], completedIn: null };
+    return completes.map((complete, index) => {
+      const renderId = `render-${index}`;
+      memory = rememberRender(memory, { complete, renderId });
+      return progressNotice({
+        complete,
+        completedHere: memory.completedIn === renderId,
+        hasNext: !complete,
+      });
     });
   }
 
@@ -67,6 +75,19 @@ describe("seenIncompleteAfter, over the renders of one visit", () => {
     // screen, and is answered as one.
     expect(walk([true, false, true])).toStrictEqual([null, "next", "complete"]);
   });
+
+  it("opened again after completing — the menu, the year switcher — is ordinary", () => {
+    // Review of PR #50: a navigation that stays on `/year` does not remount
+    // the bar, so the render after the completing one must clear it.
+    expect(walk([false, true, true])).toStrictEqual(["next", "complete", null]);
+  });
+
+  it("keeps the same memory when nothing changed", () => {
+    const memory: ProgressMemory = { complete: true, completedIn: "render-1" };
+    expect(rememberRender(memory, { complete: true, renderId: "render-2" })).toBe(
+      memory,
+    );
+  });
 });
 
 describe("SetupProgress, as the server renders it", () => {
@@ -75,6 +96,7 @@ describe("SetupProgress, as the server renders it", () => {
       createElement(SetupProgress, {
         complete: false,
         next: { label: SETUP_GATE.items.semesters, href: "#semesters" },
+        renderId: "render-0",
       }),
     );
     expect(html).toContain(SETUP_PROGRESS.next);
@@ -85,7 +107,11 @@ describe("SetupProgress, as the server renders it", () => {
 
   it("is empty on the ordinary screen", () => {
     const html = renderToStaticMarkup(
-      createElement(SetupProgress, { complete: true, next: null }),
+      createElement(SetupProgress, {
+        complete: true,
+        next: null,
+        renderId: "render-0",
+      }),
     );
     expect(html).not.toContain(SETUP_PROGRESS.completeTitle);
     expect(html).not.toContain("<a");
