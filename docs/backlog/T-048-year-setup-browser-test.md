@@ -46,6 +46,6 @@ Split out of T-041 before that ticket was implemented (2026-10-04): the two
 criteria above that name a browser test and its gate were T-041's last two, and
 the choice of a separate `e2e` job was made then.
 
-Filed as T-046 in #50, an id T-046-template-row-clear-icon.md already held;
-renumbered to T-048 (2026-10-04). References to T-046 in commits and pull
-requests before that date that name the browser test mean this ticket.
+Filed as T-046 in #50, an id already held by `T-046-template-row-clear-icon.md`;
+renumbered to T-048 in #51. Where #50 and its commits name T-046 for the
+browser test, they mean this ticket.
