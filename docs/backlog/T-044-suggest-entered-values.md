@@ -2,7 +2,7 @@
 id: T-044
 type: ticket
 title: Lesson fields suggest the subjects, classes and teachers already entered
-status: in-progress
+status: done
 depends_on: [T-010, T-011]
 refs:
   - docs/specs/specification.md §5.1
@@ -23,26 +23,26 @@ and no screen to manage them; the values stay free text.
 
 ## Acceptance criteria
 
-- [ ] One read query in `lib/db/queries`, `userId` first, returns three
+- [x] One read query in `lib/db/queries`, `userId` first, returns three
       sorted lists of distinct non-empty values: subjects (from both views),
       class names (from `OWN`) and teacher names (from `CLASS`). It reads the
       payloads of `template_slot` and `day_override` of every version and
       every date, and nothing from another user.
-- [ ] Values are trimmed and deduplicated exactly; two spellings that differ
+- [x] Values are trimmed and deduplicated exactly; two spellings that differ
       only in case are both offered. They are sorted with the Ukrainian
       collation, not by code point.
-- [ ] The inputs for `subject`, `className` and `teacherName` in the template
+- [x] The inputs for `subject`, `className` and `teacherName` in the template
       day form and in the override form are bound to the matching list
       through a native `<datalist>`, so the suggestions work with JavaScript
       off. `zoomLink` and `note` get no suggestions.
-- [ ] Suggestions never constrain input: a value that is in no list is saved
+- [x] Suggestions never constrain input: a value that is in no list is saved
       as typed, and the validation of the slot payload is unchanged.
-- [ ] A screen loads the lists once, not per day form or per row.
-- [ ] An integration test covers the query: values from both tables, the
+- [x] A screen loads the lists once, not per day form or per row.
+- [x] An integration test covers the query: values from both tables, the
       view each list reads, trimming and deduplication, and that another
       user's values never appear. It is held to the same invariants as every
       other query in `lib/db/queries`.
-- [ ] `design/T-010-weekly-template-editor.md` §1 and
+- [x] `design/T-010-weekly-template-editor.md` §1 and
       `design/T-011-day-overrides.md` §1 name the query and the forms that use
       it.
 
@@ -57,4 +57,4 @@ The query is `lib/db/queries/suggestions.ts`, the lists' order and trimming
 `components/forms/suggestions.tsx`. The sort is `Intl.Collator("uk",
 { numeric: true })`, so «8-А» comes before «10-А»; it runs in the application
 rather than as a Postgres ICU collation, so it does not depend on the
-collations the database image ships. Remaining: the review round and CI.
+collations the database image ships.

@@ -16,7 +16,7 @@ for reading. Order is priority; the ID number is not.
 | [T-041](T-041-year-setup-shows-the-way-out.md) | Year setup shows the teacher the next step, and says when the rest of the app is open | todo | T-038 |
 | [T-042](T-042-month-day-is-one-click-target.md) | Month view — the whole day is one click target, not only its number | done | T-007 |
 | [T-043](T-043-template-day-for-both-parity-weeks.md) | Template editor — fill a day for both parity weeks at once, and show where the weeks differ | todo | T-010 |
-| [T-044](T-044-suggest-entered-values.md) | Lesson fields suggest the subjects, classes and teachers already entered | in-progress | T-010, T-011 |
+| [T-044](T-044-suggest-entered-values.md) | Lesson fields suggest the subjects, classes and teachers already entered | done | T-010, T-011 |
 | [T-045](T-045-my-class-highlight.md) | My class — the teacher names it per year, and my lessons in it are highlighted | todo | T-007, T-009, T-044 |
 | [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | done | — |
 | [T-037](T-037-cost-a-change-what-it-is-worth.md) | A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all | done | T-033 |
