@@ -29,6 +29,7 @@ what each screen state is computed from.
 | `components/calendar/override-actions.tsx` | **new**, client: `ClearLessonForm`, `RemoveOverrideForm` |
 | `components/calendar/{lesson-row,day-lessons,day-card,views}.tsx` | thread an optional `DayEditing` down to the row |
 | `app/(app)/(calendar)/calendar/[view]/[date]/lesson/[lessonNumber]/page.tsx` | **new**: the screen |
+| `lib/db/queries/suggestions.ts`, `components/forms/suggestions.tsx` | **T-044**: the screen reads `getLessonSuggestions(userId)` once and renders `SuggestionLists` beside `OverrideForm`, whose `subject`, `className` and `teacherName` inputs point at them through `list={suggestionListFor(field)}`. The query and the order are stated in `design/T-010-weekly-template-editor.md` §1 |
 
 ## 2. URL
 

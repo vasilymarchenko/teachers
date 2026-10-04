@@ -6,6 +6,7 @@ import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { SLOT_FIELD_LABELS } from "@/components/forms/slot-labels";
+import { suggestionListFor } from "@/components/forms/suggestions";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { saveTemplateDayAction } from "@/lib/actions/scheduleTemplate";
@@ -148,6 +149,7 @@ function SlotInput({
         <Input
           {...props}
           defaultValue={fieldValue(state, name, storedValue(stored, field))}
+          list={suggestionListFor(field)}
           placeholder={SLOT_FIELD_LABELS[field]}
           type={field === "zoomLink" ? "url" : "text"}
         />

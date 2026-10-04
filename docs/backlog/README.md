@@ -18,7 +18,7 @@ for reading. Order is priority; the ID number is not.
 | [T-047](T-047-save-enabled-only-when-changed.md) | Edit forms enable «Зберегти» only when they hold unsaved changes | todo | T-009, T-010, T-011, T-012 |
 | [T-046](T-046-template-row-clear-icon.md) | Template editor — a lesson row is cleared by an icon, and the clear can be undone before saving | todo | T-010, T-047 |
 | [T-043](T-043-template-day-for-both-parity-weeks.md) | Template editor — a lesson row is written into both parity weeks by a per-row toggle, and the form shows where the weeks differ | todo | T-010, T-046, T-047 |
-| [T-044](T-044-suggest-entered-values.md) | Lesson fields suggest the subjects, classes and teachers already entered | todo | T-010, T-011 |
+| [T-044](T-044-suggest-entered-values.md) | Lesson fields suggest the subjects, classes and teachers already entered | done | T-010, T-011 |
 | [T-045](T-045-my-class-highlight.md) | My class — the teacher names it per year, and my lessons in it are highlighted | todo | T-007, T-009, T-044 |
 | [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | done | — |
 | [T-037](T-037-cost-a-change-what-it-is-worth.md) | A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all | done | T-033 |
