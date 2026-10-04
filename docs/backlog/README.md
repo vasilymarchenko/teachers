@@ -13,7 +13,7 @@ for reading. Order is priority; the ID number is not.
 | [T-038](T-038-first-run-year-setup-gate.md) | A teacher whose year setup is incomplete is sent to year setup, and nowhere else | done | T-009, T-014 |
 | [T-039](T-039-teacher-management-console.md) | Manage teacher accounts from the console — create, set password, deactivate, list | done | T-006, T-015 |
 | [T-040](T-040-bell-schedule-start-times-only.md) | Bell schedule — the teacher enters start times and one lesson length, ends are computed | done | T-009 |
-| [T-041](T-041-year-setup-shows-the-way-out.md) | Year setup shows the teacher the next step, and says when the rest of the app is open | in-progress | T-038 |
+| [T-041](T-041-year-setup-shows-the-way-out.md) | Year setup shows the teacher the next step, and says when the rest of the app is open | done | T-038 |
 | [T-046](T-046-year-setup-browser-test.md) | Browser test for the first year setup, run in a new e2e job of ci.yml | todo | T-041 |
 | [T-042](T-042-month-day-is-one-click-target.md) | Month view — the whole day is one click target, not only its number | done | T-007 |
 | [T-043](T-043-template-day-for-both-parity-weeks.md) | Template editor — fill a day for both parity weeks at once, and show where the weeks differ | todo | T-010 |

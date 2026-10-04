@@ -1,8 +1,8 @@
 # Year setup shows the way out
 
 **Ticket:** `docs/backlog/T-041-year-setup-shows-the-way-out.md`
-**Status:** authoritative for T-041; the expected screens in §4 are what
-`T-046`'s browser test asserts.
+**Status:** authoritative for T-041 and matches what was built (PR #50); the
+expected screens in §4 are what `T-046`'s browser test asserts.
 
 Rationale lives in `docs/architecture/architect-overview.md` §8.6. This document
 adds no reasoning: it states the item → section mapping, the states of the bar

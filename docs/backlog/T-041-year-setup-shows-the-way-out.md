@@ -2,7 +2,7 @@
 id: T-041
 type: ticket
 title: Year setup shows the teacher the next step, and says when the rest of the app is open
-status: in-progress
+status: done
 depends_on: [T-038]
 refs:
   - docs/specs/specification.md §3
@@ -20,27 +20,27 @@ comes next, and the save that completes setup changes nothing they can see.
 
 ## Acceptance criteria
 
-- [ ] Each item of the setup checklist that is still missing is a link to the
+- [x] Each item of the setup checklist that is still missing is a link to the
       section of the page where it is entered. Following it brings that section
       into view.
-- [ ] After a save on `/year` while setup is still incomplete, the teacher
+- [x] After a save on `/year` while setup is still incomplete, the teacher
       sees, without scrolling, which item is next and can reach it in one click.
       Saving the year's dates is the case that must not dead-end: the
       checklist still lists the semesters and the bell schedule as missing.
-- [ ] The save that completes setup — whichever of the three it is: the year
+- [x] The save that completes setup — whichever of the three it is: the year
       with its initial parity, the semesters, or the bell schedule — tells the
       teacher, in Ukrainian and in view of the button they pressed, that setup
       is complete and the rest of the app is open, and offers the next step as
       a prominent action rather than the link at the bottom of the page.
       Where that action leads (the weekly template or the calendar) is
       decided in the plan and stated in `architect-overview.md` §8.6.
-- [ ] On a narrow screen, where the navigation panel is collapsed, the same
+- [x] On a narrow screen, where the navigation panel is collapsed, the same
       notice and action are shown; the teacher does not have to open the menu
       to find out the app is open.
-- [ ] Once setup is complete and the notice has been acted on or the page is
+- [x] Once setup is complete and the notice has been acted on or the page is
       opened again, `/year` is the ordinary year setup screen — no checklist,
       no completion notice.
-- [ ] The behaviour of the gate itself does not change: the four conditions,
+- [x] The behaviour of the gate itself does not change: the four conditions,
       `getSetupStatus()`, `requireCompleteSetup()` and the redirect stay as
       T-038 left them.
 
@@ -75,3 +75,25 @@ Implemented as `architect-overview.md` §8.6 («Як `/year` веде до ві�
 застосунку») states it: the completing save offers the weekly template
 (`/schedule`) as the action. Mechanics, including the expected screen after
 each save that `T-046` asserts: `docs/architecture/design/T-041-year-setup-way-out.md`.
+
+Evidence, criterion by criterion (PR #50, CI green on `7d2c2fd`):
+
+1. `components/year/setup-checklist.tsx:53`, targets from
+   `components/year/setup-steps.ts`; `setup-progress.test.ts` › "links each
+   missing item to the section it is entered in", `setup-steps.test.ts`.
+2. `components/year/setup-progress.tsx:83` (sticky bar), `:100` («Перейти»);
+   `setup-steps.test.ts` › "after the year is saved, the semesters are next and
+   link to their section", `setup-progress.test.ts` › "shows the next item and a
+   link to its section".
+3. `components/year/setup-progress.tsx:114` (`CompletionNotice`, `/schedule`
+   first); `setup-progress.test.ts` › "offers the weekly template first…" and the
+   three-visit walk of `seenIncompleteAfter`; `architect-overview.md` §8.6.
+4. `app/(app)/(schedule)/year/page.tsx:203` — the bar is page content, outside
+   `AppNav`/`MobileNav`.
+5. `setup-progress.test.ts` › "is empty on the ordinary screen", "opened
+   complete and left so: the ordinary screen throughout".
+6. No change under `lib/`, `app/(app)/layout.tsx` or `components/navigation/`;
+   `lib/auth/setupGate.integration.test.ts` green in CI's integration job.
+
+Not measured in a browser here — the local database was not reachable from
+the session; that walk is `T-046`.
