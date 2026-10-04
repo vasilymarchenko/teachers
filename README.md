@@ -175,7 +175,7 @@ network.
 ```sh
 git clone git@github.com:vasilymarchenko/teachers.git && cd teachers
 cp .env.example .env    # set POSTGRES_*, BETTER_AUTH_SECRET, CADDY_DOMAIN, CADDY_EMAIL
-docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml --profile tools pull
 docker compose -f docker-compose.prod.yml run --rm migrate
 docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml exec web node teacher.cjs create olena@example.com --name "Олена Шевченко"
@@ -199,10 +199,18 @@ or a cron entry add `-T` and `--generate`.
 
 `migrate` runs `drizzle-kit migrate` once and exits — it is not one of the
 services `up -d` starts. It is its own published image
-(`ghcr.io/vasilymarchenko/teachers-migrator`, ADR-003), pulled like `web` and
-never built on the VPS, and it always deploys at the same `IMAGE_TAG` as `web`
-so the schema a release expects and the code that runs against it can never
-drift apart.
+(`ghcr.io/vasilymarchenko/teachers-migrator`, ADR-003), never built on the VPS,
+and it always deploys at the same `IMAGE_TAG` as `web` so the schema a release
+expects and the code that runs against it can never drift apart.
+
+That last promise holds only if `pull` fetches it, which is what
+`--profile tools` is for. `migrate` sits in the `tools` profile so that `up -d`
+leaves it alone, and Compose applies profiles to every command: a bare `pull`
+skips it and fetches `web`, `db` and `caddy` only. `run --rm migrate` does not
+pull an image it already has, so under `latest` it would run whatever migrator
+an earlier deploy left behind — succeed, apply nothing new, and leave the new
+`web` reading columns that do not exist. `--profile tools` adds `migrate` to the
+pull; it removes nothing from it.
 
 ### Redeploying and rolling back
 
@@ -216,7 +224,7 @@ To roll back, set `IMAGE_TAG` in `.env` to a previous `sha-<short-sha>` (GitHub
 Actions publishes one for both images alongside `latest`, for every commit on
 `main` **whose gate passed** — a commit whose CI run went red was never
 published, so check the run before picking a tag out of `git log`) and repeat
-`pull` + `migrate` + `up -d`. A rollback across a migration
+the same three commands — `--profile tools pull`, `run --rm migrate`, `up -d`. A rollback across a migration
 that changed the schema also needs the matching down step run by hand — there
 is no automated down migration.
 
@@ -293,7 +301,7 @@ The usual causes, by what the log says:
 |---|---|
 | `web`: `connect ECONNREFUSED <ip>:5432` | `db` is not listening — stopped, crash-looping, or still starting after a reboot; `dc ps` and `dc logs db` say which. Nothing to do with the password |
 | `web`: `password authentication failed` | `POSTGRES_*` in `.env` do not match the volume — Postgres sets the password only when `teachers-pgdata` is first initialised, so changing it in `.env` later changes nothing inside the database. Bring the two back together with `ALTER ROLE … PASSWORD` inside `db`, never by recreating the volume, which deletes every teacher's data |
-| `web`: `relation "…" does not exist` | `migrate` was not run for this `IMAGE_TAG` |
+| `web`: `relation "…" does not exist` or `column "…" does not exist` | `migrate` was not run for this `IMAGE_TAG`, or ran from a stale migrator image because `pull` was run without `--profile tools`. `dc images` shows when each image was built; pull again with `--profile tools` and rerun `migrate` |
 | `caddy`: an `error` near `obtaining certificate` | `CADDY_DOMAIN` does not resolve to this VPS, or ports 80/443 are closed |
 
 **From outside, and around Caddy.** `curl -sI https://<CADDY_DOMAIN> | head -1`
