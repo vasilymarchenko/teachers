@@ -1,12 +1,14 @@
 # Production stack for the VPS: web + Postgres + Caddy.
 #
 # Deploy: git pull                                            # Compose/Caddy files only
-#         docker compose -f docker-compose.prod.yml pull
+#         docker compose -f docker-compose.prod.yml --profile tools pull
 #         docker compose -f docker-compose.prod.yml run --rm migrate
 #         docker compose -f docker-compose.prod.yml up -d
 #
 # `migrate` never starts on its own (profile "tools") — drizzle-kit migrate is
 # an explicit deploy step, never something the web process does at start-up.
+# The profile also hides it from a bare `pull`, hence `--profile tools` above —
+# README "First deploy" says why it matters.
 # It is a separately published image (ADR-003), not built on the VPS, and
 # always deployed at the same IMAGE_TAG as `web` so the two never drift apart.
 # See README "Deploying to the VPS" for the full procedure and rollback.
