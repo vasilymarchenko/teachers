@@ -15,11 +15,11 @@ for reading. Order is priority; the ID number is not.
 | [T-040](T-040-bell-schedule-start-times-only.md) | Bell schedule — the teacher enters start times and one lesson length, ends are computed | done | T-009 |
 | [T-041](T-041-year-setup-shows-the-way-out.md) | Year setup shows the teacher the next step, and says when the rest of the app is open | todo | T-038 |
 | [T-042](T-042-month-day-is-one-click-target.md) | Month view — the whole day is one click target, not only its number | done | T-007 |
-| [T-043](T-043-template-day-for-both-parity-weeks.md) | Template editor — a lesson row is written into both parity weeks by a per-row toggle, and the form shows where the weeks differ | todo | T-010 |
+| [T-047](T-047-save-enabled-only-when-changed.md) | Edit forms enable «Зберегти» only when they hold unsaved changes | todo | T-009, T-010, T-011, T-012 |
+| [T-046](T-046-template-row-clear-icon.md) | Template editor — a lesson row is cleared by an icon, and the clear can be undone before saving | todo | T-010, T-047 |
+| [T-043](T-043-template-day-for-both-parity-weeks.md) | Template editor — a lesson row is written into both parity weeks by a per-row toggle, and the form shows where the weeks differ | todo | T-010, T-046, T-047 |
 | [T-044](T-044-suggest-entered-values.md) | Lesson fields suggest the subjects, classes and teachers already entered | todo | T-010, T-011 |
 | [T-045](T-045-my-class-highlight.md) | My class — the teacher names it per year, and my lessons in it are highlighted | todo | T-007, T-009, T-044 |
-| [T-046](T-046-template-row-clear-icon.md) | Template editor — a lesson row is cleared by an icon, and the clear can be undone before saving | todo | T-010 |
-| [T-047](T-047-save-enabled-only-when-changed.md) | Edit forms enable «Зберегти» only when they hold unsaved changes | todo | T-009, T-010, T-011, T-012 |
 | [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | done | — |
 | [T-037](T-037-cost-a-change-what-it-is-worth.md) | A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all | done | T-033 |
 | [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | done | T-017 |
@@ -144,14 +144,17 @@ setup screen is entered, and nothing in the diagram waits on it. T-041 hangs
 off T-038 and is not drawn: it changes how the gated year setup screen leads
 the teacher to the open app, and nothing in the diagram waits on it.
 T-042 hangs off T-007 and is not drawn: it widens the click target of the month
-view that ticket built. T-043 hangs off T-010 and T-044 off T-010 and T-011:
-both change how the forms those tickets built are filled, and neither is drawn.
+view that ticket built. T-044 hangs off T-010 and T-011
+and is not drawn: it changes how the forms those tickets built are filled.
 T-045 hangs off T-009 for the year form it adds a field to, off T-007 for the
 views it highlights lessons in, and off T-044 for the class-name suggestions its
 field offers; it is not drawn, and nothing in the diagram waits on any of the four.
-T-046 hangs off T-010 for the day form whose rows it gives a clear action, and
-T-047 off T-009, T-010, T-011 and T-012 for the edit forms whose save button it
-gates; neither is drawn.
+T-047 hangs off T-009, T-010, T-011 and T-012 for the edit forms whose save
+button it gates. T-046 hangs off T-010 for the day form whose rows it gives a
+clear action, and off T-047, whose contract for a value set from code its clear
+and undo follow. T-043 hangs off T-010 for the day form it adds a toggle to,
+and off T-046 and T-047 for the row header it shares with the clear icon and
+for the per-field "changed" its row messages read. None of the three is drawn.
 
 ## Coverage
 

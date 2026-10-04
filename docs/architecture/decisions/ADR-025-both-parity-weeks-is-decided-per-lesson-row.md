@@ -42,9 +42,16 @@ twice whenever the toggle is forgotten.
 weeks.** A row reads as one lesson shared by the two weeks until the teacher
 separates it. Costs: a change meant for one week only, made on a row that is
 still shared, reaches the other week unless the toggle is switched off first.
-The form mitigates that by showing the toggle on every row and by saying, on
-a row that is about to be written into the other week, what it will replace
-there.
+In the sequence above that is step 2: both denominator-only changes are made
+on rows still shared, so their toggles have to be switched off before the
+edit. A same-day save replaces the version (ADR-006), so a change that leaked
+leaves no earlier version to recover the other week from. The form mitigates
+that in three ways: the toggle's state is visible on every row; a row about to
+change the other week says whether it adds, replaces or removes a lesson there
+— without JavaScript for a row that already differs or is emptied, with it for
+an edited shared row; and, because an edited shared row cannot be told without
+JavaScript, every save says afterwards which lessons of the other week it
+changed.
 
 ## Decision
 
@@ -63,23 +70,18 @@ the whole-week action.
 ## Consequences
 
 No migration, no change to `expand()` or to any reader of slots. This record
-replaces only the first part of ADR-006's decision, the save unit; the rest
-of it holds unchanged and is restated here so that it survives ADR-006 being
-superseded: every write goes through `planTemplateEdit()`, with
-`applyTemplateEdit()` as the single write path; the boundary («доки діє цей
-розклад») is copy-on-write too, never an in-place `UPDATE` of `valid_to`,
-which would be the one write able to move a version's end backwards over
-days already taught; and a new version stops where a later one starts
-(`capToNextVersion()`). One save is still at most one version per view per
-day of editing.
+changes only the save unit of ADR-006; everything else ADR-006 decides holds
+as written there, and ADR-006 stays `accepted`. One save is still at most one
+version per view per day of editing.
 
 The day form gains one input per row, read as a boolean per lesson number,
 and loses the day-level checkbox ADR-021 would have added. The toggle sits in
-the row's header line.
+the row's header line. `FormState` gains an optional message about a
+successful submission, which carries the after-save report.
 
 Revisit if teachers report one-week edits leaking into the other week — that
 is the cost this default accepts, and the evidence would argue for the
 off-by-default option above.
 
 ADR-021 is superseded by this record. When T-043 lands, this ADR becomes
-`accepted` and ADR-006 becomes `superseded by ADR-025`.
+`accepted`.
