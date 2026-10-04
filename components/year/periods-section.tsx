@@ -7,6 +7,7 @@ import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -89,7 +90,12 @@ function PeriodForm({
 
   return (
     <Row>
-      <form action={formAction} className="space-y-4">
+      <TrackedForm
+        action={formAction}
+        className="space-y-4"
+        state={state}
+        tracked={period !== undefined}
+      >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FormField
             name={NON_TEACHING_PERIOD_FIELD.kind}
@@ -171,7 +177,7 @@ function PeriodForm({
             />
           ) : null}
         </div>
-      </form>
+      </TrackedForm>
     </Row>
   );
 }

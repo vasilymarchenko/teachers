@@ -12,6 +12,7 @@ import {
   NON_TEACHING_KIND_OPTIONS,
   PARITY_OPTION_LABELS,
   PARITY_OPTIONS,
+  RULES_SECTION,
   SEMESTERS_SECTION,
   WEEKDAY_LABELS,
   WEEKDAY_OPTIONS,
@@ -61,5 +62,13 @@ describe("the labels that are not enum values", () => {
     // Specification §3.2 — two, and never a third.
     expect(SEMESTERS_SECTION.option(1)).toBe("Перший");
     expect(SEMESTERS_SECTION.option(2)).toBe("Другий");
+  });
+});
+
+// T-047: the sentence beside a rule whose break or semester has moved names the
+// last day a save would now write — the day before the exclusive bound.
+describe("RULES_SECTION.restated", () => {
+  it("names the new last day", () => {
+    expect(RULES_SECTION.restated("2026-10-27")).toContain("27 жовтня 2026");
   });
 });

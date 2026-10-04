@@ -109,6 +109,14 @@ native `<datalist>`s the page renders once beside the seven forms, and
 `FormField` gained a `labelHidden` prop for the grid's cells: the label is kept
 for a screen reader and taken off the screen.
 
+`day-form.tsx` and `boundary-form.tsx` render through `TrackedForm` (T-047):
+their «Зберегти» is available only while the form holds something to save,
+and `BoundaryForm` opens as changed when the page's `restatedUntil` says the
+stored symbol now resolves elsewhere. The convention — which forms opt in,
+what "changed" means, a field left out of it, and the contract for a value set
+from code — is `architect-overview.md` §8.2; the mechanics are
+`design/T-047-save-when-changed.md`.
+
 ---
 
 ## 2. The write path

@@ -1,3 +1,4 @@
+import { fullDate } from "@/components/calendar/labels";
 import type {
   BoundaryKind,
   NonTeachingKind,
@@ -10,6 +11,7 @@ import {
   PARITY_VALUES,
   WEEKDAY_VALUES,
 } from "@/lib/validation/enums";
+import type { IsoDate } from "@/lib/time/today";
 
 /**
  * Every word the year-setup screen shows the teacher — Ukrainian, because she
@@ -196,6 +198,13 @@ export const RULES_SECTION = {
   until: "Діє до",
   empty: "Правил ще немає — уроки є всі сім днів тижня, зокрема в суботу й неділю.",
   removeConfirm: "Видалити це правило?",
+  /**
+   * The rule ends on a break or a semester whose dates have changed since it
+   * was saved (overview §8.1): saving it again writes the new last day, which
+   * is why the form opens with «Зберегти» available (T-047).
+   */
+  restated: (lastDay: IsoDate) =>
+    `Дати канікул або семестру змінилися: після збереження правило діятиме до ${fullDate(lastDay)}`,
 };
 
 export const BELLS_SECTION = {

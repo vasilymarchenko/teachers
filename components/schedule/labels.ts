@@ -88,6 +88,9 @@ export const BOUNDARY_SECTION = {
   lastDay: "Останній день дії",
   lastDayHint: "Потрібен лише для варіанта «До вибраної дати».",
   save: "Змінити межу",
+  /** The same case as the weekday rule's `restated` (overview §8.1, T-047). */
+  restated: (lastDay: IsoDate) =>
+    `Дати канікул або семестру змінилися: після збереження розклад діятиме до ${fullDate(lastDay)}`,
 };
 
 /**

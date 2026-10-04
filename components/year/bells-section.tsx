@@ -5,6 +5,7 @@ import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { saveBellScheduleAction } from "@/lib/actions/bellSchedule";
@@ -18,6 +19,7 @@ import {
 import { LESSON_NUMBERS } from "@/lib/validation/enums";
 import { clockTimeInput } from "@/lib/validation/fields";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation/formState";
+import { bellGridChanged } from "./bell-grid";
 import { ACTION_LABELS, BELLS_SECTION } from "./labels";
 import { Row, Section } from "./section";
 import { SETUP_ANCHORS } from "./setup-steps";
@@ -106,9 +108,13 @@ function BellsForm({
     setStarts((current) => ({ ...current, [lessonNumber]: value }));
 
   return (
-    <form
+    <TrackedForm
       action={formAction}
+      // Controlled, so the grid answers "changed?" from its own state rather
+      // than from the DOM — overview §8.2.
+      changed={bellGridChanged(bells, lessonMinutes, starts)}
       className="space-y-4"
+      state={state}
       // Enter submits without a blur, so the starts are spelled here as well;
       // the action spells them for itself and does not depend on this.
       onSubmit={() =>
@@ -195,6 +201,6 @@ function BellsForm({
       <SubmitButton pendingLabel={ACTION_LABELS.saving}>
         {ACTION_LABELS.save}
       </SubmitButton>
-    </form>
+    </TrackedForm>
   );
 }

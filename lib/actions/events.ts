@@ -5,8 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { constraintMessage } from "@/lib/db/constraintViolation";
-import { getYearFrame } from "@/lib/db/queries/yearFrame";
-import { listNonTeachingPeriods } from "@/lib/db/queries/yearSetup";
+import { getBoundaryFrame } from "@/lib/db/queries/boundaryFrame";
 import { event } from "@/lib/db/schema";
 import type { BoundaryKind, RecurrenceKind } from "@/lib/db/schema/enums";
 import { resolveBoundary } from "@/lib/domain/schedule/boundaries";
@@ -322,7 +321,7 @@ async function resolveFor(
 
   // A symbolic boundary is resolved against the year the event falls in — its
   // breaks and its semesters. An event outside every year has neither.
-  const frame = await getYearFrame(userId, input.dateFrom);
+  const frame = await getBoundaryFrame(userId, input.dateFrom);
   if (frame === null) {
     return {
       error: (formData) =>
@@ -334,12 +333,10 @@ async function resolveFor(
     };
   }
 
-  const periods = await listNonTeachingPeriods(userId, frame.id);
   const boundaryDate = resolveBoundary({
     kind,
     referenceDate: input.dateFrom,
-    // «найближчі канікули» means a break, not a public holiday (schema §4.3).
-    breaks: periods.filter((period) => period.kind === "BREAK"),
+    breaks: frame.breaks,
     semesters: frame.semesters,
   });
 

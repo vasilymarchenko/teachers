@@ -6,8 +6,10 @@ import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Select } from "@/components/ui/select";
+import { RestatedBoundary } from "@/components/year/section";
 import { setTemplateBoundaryAction } from "@/lib/actions/scheduleTemplate";
 import type { BoundaryKind, ScheduleView } from "@/lib/db/schema/enums";
 import { addIsoDays } from "@/lib/domain/schedule/dates";
@@ -35,12 +37,18 @@ export function BoundaryForm({
   view,
   boundaryKind,
   validTo,
+  restatedUntil,
 }: {
   view: ScheduleView;
   /** How the version in force ends today; absent when there is no version. */
   boundaryKind?: BoundaryKind;
   /** Exclusive (schema §6) — the teacher is shown the day before it. */
   validTo?: IsoDate;
+  /**
+   * Exclusive too: where saving this form again would end the version, when
+   * the page found that the stored symbol now resolves elsewhere (T-047).
+   */
+  restatedUntil?: IsoDate;
 }) {
   const [state, formAction] = useActionState(
     setTemplateBoundaryAction.bind(null, view),
@@ -49,7 +57,12 @@ export function BoundaryForm({
   const errors = formErrorsOf(state);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <TrackedForm
+      action={formAction}
+      changedOnOpen={restatedUntil !== undefined}
+      className="space-y-4"
+      state={state}
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           error={errors.for(TEMPLATE_BOUNDARY_FIELD.boundaryKind)}
@@ -93,11 +106,17 @@ export function BoundaryForm({
         />
       </div>
 
+      {restatedUntil !== undefined ? (
+        <RestatedBoundary>
+          {BOUNDARY_SECTION.restated(addIsoDays(restatedUntil, -1))}
+        </RestatedBoundary>
+      ) : null}
+
       <FormMessage errors={errors} />
 
       <SubmitButton pendingLabel={ACTION_LABELS.saving}>
         {BOUNDARY_SECTION.save}
       </SubmitButton>
-    </form>
+    </TrackedForm>
   );
 }

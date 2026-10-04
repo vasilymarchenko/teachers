@@ -30,8 +30,12 @@ import {
   listParityAnchors,
   listSemesters,
   listWeekdayRules,
+  type NonTeachingPeriodEditRow,
+  type SemesterRow,
+  type WeekdayRuleRow,
 } from "@/lib/db/queries/yearSetup";
-import { today } from "@/lib/time/today";
+import { restatedBoundary } from "@/lib/domain/schedule/boundaries";
+import { today, type IsoDate } from "@/lib/time/today";
 
 // The teacher's own data, read per request; nothing may be frozen into the
 // build.
@@ -171,6 +175,7 @@ export default async function Page({
             academicYearId={selected.id}
             key={`rules-${selected.id}`}
             optionalMark={optionalMark}
+            restated={restatedRules(frame[0], frame[1], frame[2])}
             rules={frame[2]}
           />
         </>
@@ -209,4 +214,30 @@ export default async function Page({
       />
     </div>
   );
+}
+
+/**
+ * The weekday rules whose symbolic boundary a save would now move — T-047,
+ * overview §8.1. Resolved the way `lib/actions/weekdayRules.ts` resolves an
+ * edit: from the rule's own `validFrom`, against the selected year's breaks
+ * and semesters, which this page has already read.
+ */
+function restatedRules(
+  semesters: readonly SemesterRow[],
+  periods: readonly NonTeachingPeriodEditRow[],
+  rules: readonly WeekdayRuleRow[],
+): Map<string, IsoDate> {
+  const breaks = periods.filter((period) => period.kind === "BREAK");
+  const restated = new Map<string, IsoDate>();
+
+  for (const rule of rules) {
+    const date = restatedBoundary(rule, {
+      referenceDate: rule.validFrom,
+      breaks,
+      semesters,
+    });
+    if (date !== undefined) restated.set(rule.id, date);
+  }
+
+  return restated;
 }

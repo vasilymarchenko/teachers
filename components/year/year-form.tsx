@@ -6,6 +6,7 @@ import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -52,7 +53,12 @@ export function YearForm({
 
   return (
     <Row>
-      <form action={formAction} className="space-y-4">
+      <TrackedForm
+        action={formAction}
+        className="space-y-4"
+        state={state}
+        tracked={year !== undefined}
+      >
         <div className="grid gap-4 sm:grid-cols-3">
           <FormField
             name={ACADEMIC_YEAR_FIELD.dateFrom}
@@ -131,7 +137,7 @@ export function YearForm({
             />
           ) : null}
         </div>
-      </form>
+      </TrackedForm>
     </Row>
   );
 }
