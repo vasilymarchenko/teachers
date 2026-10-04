@@ -240,6 +240,57 @@ entry on the VPS:
 0 3 * * * cd /path/to/teachers && docker compose -f docker-compose.prod.yml exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > /var/backups/teachers/teachers-$(date +\%F).sql.gz
 ```
 
+### Checking the running stack
+
+Run from the checkout on the VPS, next to `.env`. The alias only shortens what
+follows:
+
+```sh
+alias dc='docker compose -f docker-compose.prod.yml'
+```
+
+**What is running.** `dc ps` should list `web`, `db` and `caddy`, all
+`running`, with `db` marked `(healthy)` — its healthcheck is `pg_isready`, and
+`web` does not start until it passes. `migrate` is not in the list, and should
+not be: it runs only under `run --rm`. `dc ps -a` also shows containers that
+have exited; a `web` that is `Restarting` or `Exited (1)` says why in its log.
+`dc images` shows which `IMAGE_TAG` is actually deployed.
+
+**The database.**
+
+```sh
+dc exec db sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+dc exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "select id, created_at from drizzle.__drizzle_migrations order by id"'
+```
+
+The second lists the migrations applied; it should have as many rows as
+`drizzle/meta/_journal.json` has entries at the deployed tag. No
+`drizzle.__drizzle_migrations` table at all means `migrate` was never run
+against this volume. (`sh -c '...'` for the same reason as under "Backups".)
+
+**The logs.**
+
+```sh
+dc logs --tail=100 web                  # likewise db, caddy
+dc logs -f --since=10m web              # follow, starting ten minutes back
+dc logs --since=24h 2>&1 | grep -iE 'error|fatal|refused|ECONN|unhandled'
+```
+
+The usual causes, by what the log says:
+
+| Log | Cause |
+|---|---|
+| `web`: `ECONNREFUSED db:5432` or `password authentication failed` | `POSTGRES_*` in `.env` do not match the volume — Postgres sets the password only when `teachers-pgdata` is first initialised, so changing it in `.env` later changes nothing inside the database |
+| `web`: `relation "…" does not exist` | `migrate` was not run for this `IMAGE_TAG` |
+| `caddy`: an `error` near `obtaining certificate` | `CADDY_DOMAIN` does not resolve to this VPS, or ports 80/443 are closed |
+
+**From outside, and around Caddy.** `curl -sI https://<CADDY_DOMAIN> | head -1`
+should answer `200` or a redirect to the sign-in page. If it does not while
+`dc ps` looks healthy, ask `web` directly over the Compose network, bypassing
+the proxy — `dc exec caddy wget -qS -O /dev/null http://web:3000` — to tell a
+Caddy problem from an application one.
+
 ## Layout
 
 ```
