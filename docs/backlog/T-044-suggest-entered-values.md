@@ -52,9 +52,6 @@ dictionaries stays the row of overview §9.
 
 ## Notes
 
-The query is `lib/db/queries/suggestions.ts`, the lists' order and trimming
-`lib/domain/schedule/suggestions.ts`, the datalists
-`components/forms/suggestions.tsx`. The sort is `Intl.Collator("uk",
-{ numeric: true })`, so «8-А» comes before «10-А»; it runs in the application
-rather than as a Postgres ICU collation, so it does not depend on the
-collations the database image ships.
+Built as `design/T-010-weekly-template-editor.md` §1 states it — the query,
+the sort and why the sort is not in SQL — and `design/T-011-day-overrides.md`
+§1 for the override screen.

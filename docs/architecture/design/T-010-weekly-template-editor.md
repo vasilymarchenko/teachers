@@ -69,7 +69,11 @@ domain must not see.
 the distinct trimmed `subject`, `className` (`OWN`) and `teacherName` (`CLASS`)
 of every `template_slot` and `day_override` payload, every version and every
 date, sorted by `collectSuggestions()` in `lib/domain/schedule/suggestions.ts`
-(`Intl.Collator("uk", { numeric: true })`). The page reads it once.
+(`Intl.Collator("uk", { numeric: true })`, so «8-А» sorts before «10-А»). The
+sort runs in the application, not as `ORDER BY … COLLATE` in the query: a
+Postgres ICU collation exists only if the `postgres` image ships it, and the
+order would then depend on the image rather than on the code. The page reads
+it once.
 
 `lib/db/queries/yearFrame.ts` gains `getUpcomingYearFrame(userId, date)` — the
 earliest year beginning after `date`, same shape as `getYearFrame()`. §3 below
