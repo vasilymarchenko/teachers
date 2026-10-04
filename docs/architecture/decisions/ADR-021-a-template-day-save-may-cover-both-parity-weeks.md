@@ -1,7 +1,7 @@
 ---
 id: ADR-021
 title: A template day save may cover both parity weeks, without a «both» value of parity
-status: proposed
+status: superseded by ADR-025
 date: 2026-10-01
 ticket: T-043
 ---
