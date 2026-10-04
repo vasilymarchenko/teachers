@@ -7,6 +7,7 @@ import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Select } from "@/components/ui/select";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/lib/actions/weekdayRules";
 import type { WeekdayRuleRow } from "@/lib/db/queries/yearSetup";
 import { addIsoDays } from "@/lib/domain/schedule/dates";
+import type { IsoDate } from "@/lib/time/today";
 import { EMPTY_FORM_STATE } from "@/lib/validation/formState";
 import { WEEKDAY_RULE_FIELD } from "@/lib/validation/weekdayRule";
 import {
@@ -25,7 +27,7 @@ import {
   RULES_SECTION,
   WEEKDAY_OPTIONS,
 } from "./labels";
-import { Empty, Row, Section } from "./section";
+import { Empty, RestatedBoundary, Row, Section } from "./section";
 
 /**
  * Weekdays excluded from the schedule — specification §3.4, «методичний день».
@@ -42,10 +44,16 @@ import { Empty, Row, Section } from "./section";
 export function RulesSection({
   academicYearId,
   rules,
+  restated,
   optionalMark,
 }: {
   academicYearId: string;
   rules: WeekdayRuleRow[];
+  /**
+   * Per rule id, the boundary a save would now write in place of the stored
+   * one (`restatedBoundary()`, T-047) — decided by the page, on the server.
+   */
+  restated: ReadonlyMap<string, IsoDate>;
   optionalMark?: string;
 }) {
   return (
@@ -59,7 +67,12 @@ export function RulesSection({
       ) : (
         <div className="space-y-3">
           {rules.map((rule) => (
-            <RuleForm academicYearId={academicYearId} key={rule.id} rule={rule} />
+            <RuleForm
+              academicYearId={academicYearId}
+              key={rule.id}
+              restatedUntil={restated.get(rule.id)}
+              rule={rule}
+            />
           ))}
         </div>
       )}
@@ -72,10 +85,13 @@ export function RulesSection({
 function RuleForm({
   academicYearId,
   rule,
+  restatedUntil,
 }: {
   academicYearId: string;
   /** Absent for the form that adds one. */
   rule?: WeekdayRuleRow;
+  /** Exclusive, like `boundaryDate`: what a save would write instead. */
+  restatedUntil?: IsoDate;
 }) {
   const [state, formAction] = useActionState(
     rule === undefined
@@ -87,7 +103,13 @@ function RuleForm({
 
   return (
     <Row>
-      <form action={formAction} className="space-y-4">
+      <TrackedForm
+        action={formAction}
+        className="space-y-4"
+        changedOnOpen={restatedUntil !== undefined}
+        state={state}
+        tracked={rule !== undefined}
+      >
         <div className="grid gap-4 sm:grid-cols-3">
           <FormField
             name={WEEKDAY_RULE_FIELD.weekday}
@@ -161,6 +183,12 @@ function RuleForm({
           </p>
         ) : null}
 
+        {restatedUntil !== undefined ? (
+          <RestatedBoundary>
+            {RULES_SECTION.restated(addIsoDays(restatedUntil, -1))}
+          </RestatedBoundary>
+        ) : null}
+
         <FormMessage errors={errors} />
 
         <div className="flex flex-wrap gap-2">
@@ -175,7 +203,7 @@ function RuleForm({
             />
           ) : null}
         </div>
-      </form>
+      </TrackedForm>
     </Row>
   );
 }

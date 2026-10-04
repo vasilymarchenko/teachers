@@ -1,4 +1,5 @@
 import type { EventEditRow } from "@/lib/db/queries/events";
+import type { IsoDate } from "@/lib/time/today";
 import { Empty, Section } from "@/components/year/section";
 import { DeadlineForm, InfoEventForm } from "./event-form";
 import {
@@ -20,7 +21,17 @@ import {
  * that the screens a teacher fills in read as one thing — the same reason the
  * weekly template editor reuses it.
  */
-export function EventsList({ events }: { events: EventEditRow[] }) {
+export function EventsList({
+  events,
+  restated,
+}: {
+  events: EventEditRow[];
+  /**
+   * Per event id, the boundary a save would now write in place of the stored
+   * one (`restatedBoundary()`, T-047).
+   */
+  restated: ReadonlyMap<string, IsoDate>;
+}) {
   const deadlines = events.filter((event) => event.kind === "DEADLINE");
   const infoEvents = events.filter((event) => event.kind === "INFO");
 
@@ -57,7 +68,10 @@ export function EventsList({ events }: { events: EventEditRow[] }) {
             {infoEvents.map((event) => (
               <div className="space-y-1" key={event.id}>
                 <EventCaption event={event} />
-                <InfoEventForm event={event} />
+                <InfoEventForm
+                  event={event}
+                  restatedUntil={restated.get(event.id)}
+                />
               </div>
             ))}
           </div>

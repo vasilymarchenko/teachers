@@ -16,7 +16,7 @@ for reading. Order is priority; the ID number is not.
 | [T-041](T-041-year-setup-shows-the-way-out.md) | Year setup shows the teacher the next step, and says when the rest of the app is open | done | T-038 |
 | [T-048](T-048-year-setup-browser-test.md) | Browser test for the first year setup, run in a new e2e job of ci.yml | todo | T-041 |
 | [T-042](T-042-month-day-is-one-click-target.md) | Month view — the whole day is one click target, not only its number | done | T-007 |
-| [T-047](T-047-save-enabled-only-when-changed.md) | Edit forms enable «Зберегти» only when they hold unsaved changes | todo | T-009, T-010, T-011, T-012 |
+| [T-047](T-047-save-enabled-only-when-changed.md) | Edit forms enable «Зберегти» only when they hold unsaved changes | done | T-009, T-010, T-011, T-012 |
 | [T-046](T-046-template-row-clear-icon.md) | Template editor — a lesson row is cleared by an icon, and the clear can be undone before saving | todo | T-010, T-047 |
 | [T-043](T-043-template-day-for-both-parity-weeks.md) | Template editor — a lesson row is written into both parity weeks by a per-row toggle, and the form shows where the weeks differ | todo | T-010, T-046, T-047 |
 | [T-044](T-044-suggest-entered-values.md) | Lesson fields suggest the subjects, classes and teachers already entered | done | T-010, T-011 |

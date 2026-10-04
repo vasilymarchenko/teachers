@@ -7,6 +7,7 @@ import { formErrorsOf } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Select } from "@/components/ui/select";
 import {
@@ -81,7 +82,12 @@ function SemesterForm({
 
   return (
     <Row>
-      <form action={formAction} className="space-y-4">
+      <TrackedForm
+        action={formAction}
+        className="space-y-4"
+        state={state}
+        tracked={semester !== undefined}
+      >
         <div className="grid gap-4 sm:grid-cols-3">
           <FormField
             name={SEMESTER_FIELD.index}
@@ -137,7 +143,7 @@ function SemesterForm({
             />
           ) : null}
         </div>
-      </form>
+      </TrackedForm>
     </Row>
   );
 }

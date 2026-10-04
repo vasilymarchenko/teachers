@@ -91,6 +91,30 @@ function resolveKind({
 const earlier = (a: IsoDate, b: IsoDate): IsoDate => (a <= b ? a : b);
 
 /**
+ * The date a stored symbolic boundary would be rewritten to if its form were
+ * saved again now, or `undefined` when a save would leave it where it is.
+ *
+ * §8.1 resolves a symbol once and never again, so a break or a semester moved
+ * after the write leaves the stored date behind — and the form that shows the
+ * symbol would rewrite it on its next save, unchanged as the form looks. That
+ * is what the edit form says out loud and why it opens as changed (T-047).
+ *
+ * `undefined` in three cases: a `DATE`, whose stored date *is* the teacher's
+ * choice; a symbol that still resolves to the stored date; and a symbol that
+ * now resolves to nothing — that save would be refused with a message of its
+ * own, so there is no new date to announce. `request` is what the form's
+ * action would resolve against, built the same way the action builds it.
+ */
+export function restatedBoundary(
+  stored: { boundaryKind: BoundaryKind; boundaryDate: IsoDate },
+  request: Omit<BoundaryRequest, "kind" | "lastDay">,
+): IsoDate | undefined {
+  if (stored.boundaryKind === "DATE") return undefined;
+  const resolved = resolveBoundary({ ...request, kind: stored.boundaryKind });
+  return resolved === stored.boundaryDate ? undefined : resolved;
+}
+
+/**
  * Where a rule written by the year-setup screens starts applying — ADR-004.
  *
  * The later of the year's first day and today. Setting a year up before it

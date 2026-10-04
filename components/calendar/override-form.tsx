@@ -7,6 +7,7 @@ import { FieldMessage, FormMessage } from "@/components/forms/form-message";
 import { SLOT_FIELD_LABELS } from "@/components/forms/slot-labels";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { suggestionListFor } from "@/components/forms/suggestions";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { saveDayOverrideAction } from "@/lib/actions/dayOverride";
@@ -74,7 +75,10 @@ export function OverrideForm({
     kind === "SUBSTITUTION" ? "SUBSTITUTION" : "EDIT";
 
   return (
-    <form action={formAction} className="space-y-4">
+    // Tracked whether or not an override is in force: without one the form
+    // opens filled with the planned lesson, and saving that unchanged would
+    // create an override row that repeats the template (T-047).
+    <TrackedForm action={formAction} className="space-y-4" state={state}>
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">
           {OVERRIDE_LABELS.kindLabel}
@@ -126,7 +130,7 @@ export function OverrideForm({
       <SubmitButton pendingLabel={OVERRIDE_LABELS.saving}>
         {OVERRIDE_LABELS.save}
       </SubmitButton>
-    </form>
+    </TrackedForm>
   );
 }
 

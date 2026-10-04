@@ -7,6 +7,7 @@ import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { SLOT_FIELD_LABELS } from "@/components/forms/slot-labels";
 import { suggestionListFor } from "@/components/forms/suggestions";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { saveTemplateDayAction } from "@/lib/actions/scheduleTemplate";
@@ -68,10 +69,11 @@ export function DayForm({
   const fields = TEMPLATE_SLOT_FIELDS[view];
 
   return (
-    <form
+    <TrackedForm
       action={formAction}
       aria-label={dayFormLabel(WEEKDAY_LABELS[weekday], parity, view)}
       className="border-border bg-card flex h-full flex-col gap-4 rounded-lg border p-4"
+      state={state}
     >
       <h3 className="text-sm font-semibold">{WEEKDAY_LABELS[weekday]}</h3>
 
@@ -110,7 +112,7 @@ export function DayForm({
           </SubmitButton>
         </div>
       ) : null}
-    </form>
+    </TrackedForm>
   );
 }
 

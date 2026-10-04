@@ -7,6 +7,7 @@ import { formErrorsOf, type FormErrors } from "@/components/forms/field-errors";
 import { FormField } from "@/components/forms/form-field";
 import { FormMessage } from "@/components/forms/form-message";
 import { SubmitButton } from "@/components/forms/submit-button";
+import { TrackedForm } from "@/components/forms/tracked-form";
 import { fieldValue } from "@/components/forms/values";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -19,6 +20,7 @@ import {
 } from "@/lib/actions/events";
 import type { EventEditRow } from "@/lib/db/queries/events";
 import { addIsoDays } from "@/lib/domain/schedule/dates";
+import type { IsoDate } from "@/lib/time/today";
 import { EVENT_FIELD } from "@/lib/validation/event";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation/formState";
 import {
@@ -29,7 +31,7 @@ import {
   INFO_SECTION,
   RECURRENCE_OPTIONS,
 } from "./labels";
-import { Row } from "@/components/year/section";
+import { RestatedBoundary, Row } from "@/components/year/section";
 
 /**
  * The two event forms — specification §6.3.
@@ -57,7 +59,12 @@ export function DeadlineForm({ event }: { event?: EventEditRow }) {
 
   return (
     <Row>
-      <form action={formAction} className="space-y-4">
+      <TrackedForm
+        action={formAction}
+        className="space-y-4"
+        state={state}
+        tracked={event !== undefined}
+      >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <TitleField errors={errors} event={event} state={state} />
           <DateField
@@ -84,12 +91,23 @@ export function DeadlineForm({ event }: { event?: EventEditRow }) {
             />
           ) : null}
         </div>
-      </form>
+      </TrackedForm>
     </Row>
   );
 }
 
-export function InfoEventForm({ event }: { event?: EventEditRow }) {
+export function InfoEventForm({
+  event,
+  restatedUntil,
+}: {
+  event?: EventEditRow;
+  /**
+   * Exclusive, like `boundaryDate`: what saving this event again would write in
+   * place of its stored boundary (`restatedBoundary()`, T-047). The page
+   * decides it on the server.
+   */
+  restatedUntil?: IsoDate;
+}) {
   const [state, formAction] = useActionState(
     event === undefined
       ? createInfoEventAction
@@ -123,7 +141,13 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
 
   return (
     <Row>
-      <form action={formAction} className="space-y-4">
+      <TrackedForm
+        action={formAction}
+        className="space-y-4"
+        changedOnOpen={restatedUntil !== undefined}
+        state={state}
+        tracked={event !== undefined}
+      >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <TitleField errors={errors} event={event} state={state} />
           <DateField
@@ -141,11 +165,16 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
             name={EVENT_FIELD.recurrenceKind}
           >
             {(props) => (
+              // Uncontrolled, with the choice mirrored into state: a controlled
+              // `<select>` mounted on the client renders no default for
+              // `TrackedForm` to record (T-047). `Select` remounts when
+              // `chosen` changes, so after an action it shows `chosen`, exactly
+              // as the re-seed above sets the state.
               <Select
                 {...props}
+                defaultValue={chosen}
                 onChange={(changed) => setRecurrenceKind(changed.target.value)}
                 required
-                value={recurrenceKind}
               >
                 {RECURRENCE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -212,6 +241,12 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
           )}
         </div>
 
+        {repeats && restatedUntil !== undefined ? (
+          <RestatedBoundary>
+            {EVENT_FORM.restated(addIsoDays(restatedUntil, -1))}
+          </RestatedBoundary>
+        ) : null}
+
         <FormMessage errors={errors} />
 
         <div className="flex flex-wrap gap-2">
@@ -226,7 +261,7 @@ export function InfoEventForm({ event }: { event?: EventEditRow }) {
             />
           ) : null}
         </div>
-      </form>
+      </TrackedForm>
     </Row>
   );
 }

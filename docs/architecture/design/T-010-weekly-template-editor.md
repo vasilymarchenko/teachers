@@ -109,6 +109,14 @@ native `<datalist>`s the page renders once beside the seven forms, and
 `FormField` gained a `labelHidden` prop for the grid's cells: the label is kept
 for a screen reader and taken off the screen.
 
+`day-form.tsx` and `boundary-form.tsx` render through `TrackedForm` (T-047):
+their «Зберегти» is available only while the form holds something to save,
+and `BoundaryForm` opens as changed when the page's `restatedUntil` says the
+stored symbol now resolves elsewhere. The convention — which forms opt in,
+what "changed" means, a field left out of it, and the contract for a value set
+from code — is `architect-overview.md` §8.2; the mechanics are
+`design/T-047-save-when-changed.md`.
+
 ---
 
 ## 2. The write path
@@ -171,17 +179,20 @@ different slots — and this shape keeps step 7 to a single way of writing slots
 3. **neither** → `END_OF_SEMESTER`, the default of specification §5.1, resolved
    now.
 
-`DATE` needs no rows. `NEXT_BREAK` and `END_OF_SEMESTER` resolve against a year
-frame (semesters) and `listNonTeachingPeriods()` filtered to `kind = 'BREAK'`.
+`DATE` needs no rows. `NEXT_BREAK` and `END_OF_SEMESTER` resolve against
+`getBoundaryFrame(userId, cutAt, { orUpcoming: true })`
+(`lib/db/queries/boundaryFrame.ts`): the year's semesters and its `BREAK`
+periods. The schedule page's `restatedTemplateBoundary()` reads the same frame
+(T-047), so the action and the page cannot resolve the symbol differently.
 A symbol that resolves to nothing → `boundaryRefusal()`.
 
-**Which frame, and from which date.** `getYearFrame(userId, cutAt)` when today
-falls inside a year — the reference date is then `cutAt` and this is the whole
-of the mid-year case. When it falls in none, `getUpcomingYearFrame(userId,
-cutAt)`: the year about to begin, resolved **from its first day**. That is not a
-special case bolted on, it is ADR-004's, and the expression is literally
-`ruleValidFrom(frame.dateFrom, cutAt)` — the later of the year's first day and
-today. Without it the first save of a template entered in August is refused with
+**Which frame, and from which date.** `getBoundaryFrame()` takes the year
+today falls inside (`getYearFrame()`) — the reference date is then `cutAt` and
+this is the whole of the mid-year case. With `orUpcoming: true`, when today
+falls in none, it takes the year about to begin (`getUpcomingYearFrame()`),
+resolved **from its first day**. That is not a special case bolted on, it is
+ADR-004's, and the expression is literally `ruleValidFrom(frame.yearStart,
+cutAt)` — the later of the year's first day and today. Without it the first save of a template entered in August is refused with
 `NO_YEAR`, which tells the teacher to set up the year she has just set up; the
 day form renders no boundary control, so she has no way to answer it. Only when
 neither read finds a year is `NO_YEAR` the truth, and the save is refused.

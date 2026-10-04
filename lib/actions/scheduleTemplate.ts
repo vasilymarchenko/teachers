@@ -9,11 +9,7 @@ import {
   getNextTemplateVersionStart,
   getTemplateVersionInForce,
 } from "@/lib/db/queries/templateEditor";
-import { listNonTeachingPeriods } from "@/lib/db/queries/yearSetup";
-import {
-  getUpcomingYearFrame,
-  getYearFrame,
-} from "@/lib/db/queries/yearFrame";
+import { getBoundaryFrame } from "@/lib/db/queries/boundaryFrame";
 import { scheduleTemplate, templateSlot } from "@/lib/db/schema";
 import type {
   BoundaryKind,
@@ -139,16 +135,13 @@ async function boundaryFor(
   // first day. `ruleValidFrom()` is the expression ADR-004 settled on — the
   // later of the year's first day and today — so the mid-year case still
   // resolves against `cutAt` and nothing about it changes.
-  const frame =
-    (await getYearFrame(userId, cutAt)) ??
-    (await getUpcomingYearFrame(userId, cutAt));
+  const frame = await getBoundaryFrame(userId, cutAt, { orUpcoming: true });
   if (frame === null) return { error: "noYear", kind };
 
-  const periods = await listNonTeachingPeriods(userId, frame.id);
   const validTo = resolveBoundary({
     kind,
-    referenceDate: ruleValidFrom(frame.dateFrom, cutAt),
-    breaks: periods.filter((period) => period.kind === "BREAK"),
+    referenceDate: ruleValidFrom(frame.yearStart, cutAt),
+    breaks: frame.breaks,
     semesters: frame.semesters,
   });
 

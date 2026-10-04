@@ -56,6 +56,20 @@ export function Row({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * The sentence an edit form shows beside its boundary when the symbol stored
+ * there now resolves to another date — overview §8.1, T-047. The page decides
+ * it on the server, so it is there with JavaScript off; the words are the
+ * caller's.
+ */
+export function RestatedBoundary({ children }: { children: string }) {
+  return (
+    <p className="text-muted-foreground border-border border-l-2 pl-3 text-sm">
+      {children}
+    </p>
+  );
+}
+
 /** What a section says when it has no rows yet. */
 export function Empty({ children }: { children: string }) {
   return <p className="text-muted-foreground text-sm">{children}</p>;

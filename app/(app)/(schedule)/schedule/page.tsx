@@ -18,12 +18,23 @@ import { Section } from "@/components/year/section";
 import { requireCompleteSetup } from "@/lib/auth/setupGate";
 import { getBellSchedule } from "@/lib/db/queries/bells";
 import { getLessonSuggestions } from "@/lib/db/queries/suggestions";
+import { getBoundaryFrame } from "@/lib/db/queries/boundaryFrame";
 import {
+  getNextTemplateVersionStart,
   getTemplateVersionInForce,
   listTemplateVersions,
 } from "@/lib/db/queries/templateEditor";
+import type { ScheduleView } from "@/lib/db/schema/enums";
+import {
+  restatedBoundary,
+  ruleValidFrom,
+} from "@/lib/domain/schedule/boundaries";
 import { weekdayOf } from "@/lib/domain/schedule/calendarRules";
-import { today } from "@/lib/time/today";
+import {
+  capToNextVersion,
+  type TemplateBoundary,
+} from "@/lib/domain/schedule/copyOnWrite";
+import { today, type IsoDate } from "@/lib/time/today";
 import type { TemplateSearchParams } from "@/components/schedule/selection";
 
 // The teacher's own data, read per request; nothing may be frozen into the
@@ -67,6 +78,11 @@ export default async function Page({
     listTemplateVersions(userId, selection.view),
     getLessonSuggestions(userId),
   ]);
+
+  const restatedUntil =
+    current === null
+      ? undefined
+      : await restatedTemplateBoundary(userId, selection.view, cutAt, current);
 
   const slots = current?.slots ?? [];
   const rows = lessonRows(bells, slots);
@@ -134,6 +150,7 @@ export default async function Page({
         <BoundaryForm
           boundaryKind={current?.boundaryKind}
           key={`boundary-${selection.view}`}
+          restatedUntil={restatedUntil}
           validTo={current?.validTo}
           view={selection.view}
         />
@@ -156,4 +173,41 @@ export default async function Page({
       </p>
     </div>
   );
+}
+
+/**
+ * Where saving «доки діє» again today would end the version in force, when
+ * that is not where it ends now — T-047, overview §8.1. Resolved and capped
+ * exactly as `setTemplateBoundaryAction()` would: against the year around
+ * today, or the one about to begin, and never past the next version's start.
+ */
+async function restatedTemplateBoundary(
+  userId: string,
+  view: ScheduleView,
+  cutAt: IsoDate,
+  stored: TemplateBoundary,
+): Promise<IsoDate | undefined> {
+  if (stored.boundaryKind === "DATE") return undefined;
+
+  const [frame, nextStart] = await Promise.all([
+    getBoundaryFrame(userId, cutAt, { orUpcoming: true }),
+    getNextTemplateVersionStart(userId, view, cutAt),
+  ]);
+  if (frame === null) return undefined;
+
+  const restated = restatedBoundary(
+    { boundaryKind: stored.boundaryKind, boundaryDate: stored.validTo },
+    {
+      referenceDate: ruleValidFrom(frame.yearStart, cutAt),
+      breaks: frame.breaks,
+      semesters: frame.semesters,
+    },
+  );
+  if (restated === undefined) return undefined;
+
+  const { validTo } = capToNextVersion(
+    { validTo: restated, boundaryKind: stored.boundaryKind },
+    nextStart,
+  );
+  return validTo === stored.validTo ? undefined : validTo;
 }

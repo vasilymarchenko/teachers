@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   boundaryWithinYear,
   resolveBoundary,
+  restatedBoundary,
   ruleValidFrom,
 } from "./boundaries";
 import { BREAKS, SEMESTERS, YEAR } from "./fixtures/scenario";
@@ -111,6 +112,62 @@ describe("resolveBoundary()", () => {
  * The fixture's R1–R3 are the "set the year up in advance" case and pin the
  * year's first day; the mid-year case is the one the ADR exists for.
  */
+/**
+ * A stored symbol against the year as it is now — T-047. R1 of fixtures §3.3
+ * («до найближчих канікул», stored `2026-10-26`) is the row; moving the autumn
+ * break is the edit that leaves it behind.
+ */
+describe("restatedBoundary()", () => {
+  const R1 = { boundaryKind: "NEXT_BREAK", boundaryDate: "2026-10-26" } as const;
+  const fromYearStart = { referenceDate: YEAR.dateFrom, semesters: SEMESTERS };
+
+  it("says nothing while the symbol still resolves to the stored date", () => {
+    expect(
+      restatedBoundary(R1, { ...fromYearStart, breaks: BREAKS }),
+    ).toBeUndefined();
+  });
+
+  it("names the new date once the break has moved", () => {
+    expect(
+      restatedBoundary(R1, {
+        ...fromYearStart,
+        breaks: [{ dateFrom: "2026-10-28", dateTo: "2026-11-03" }],
+      }),
+    ).toBe("2026-10-28");
+  });
+
+  // OWN-V1 of fixtures §3.6, stored `2026-12-25`; S1 now ends a week earlier.
+  it("names the new date once the semester has moved", () => {
+    expect(
+      restatedBoundary(
+        { boundaryKind: "END_OF_SEMESTER", boundaryDate: "2026-12-25" },
+        {
+          referenceDate: YEAR.dateFrom,
+          semesters: [
+            { dateFrom: "2026-09-01", dateTo: "2026-12-17" },
+            SEMESTERS[1],
+          ],
+        },
+      ),
+    ).toBe("2026-12-18");
+  });
+
+  it("never restates a date the teacher chose", () => {
+    expect(
+      restatedBoundary(
+        { boundaryKind: "DATE", boundaryDate: "2027-06-01" },
+        { ...fromYearStart, breaks: [] },
+      ),
+    ).toBeUndefined();
+  });
+
+  it("has nothing to announce when the symbol resolves to nothing", () => {
+    expect(
+      restatedBoundary(R1, { ...fromYearStart, breaks: [] }),
+    ).toBeUndefined();
+  });
+});
+
 describe("ruleValidFrom()", () => {
   it("starts at the year's first day when the year has not begun", () => {
     // Fixtures §3.3 — R1–R3 are dated 2026-09-01, entered before term.

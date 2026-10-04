@@ -130,7 +130,9 @@ event entered in August for September means the break after the event.
 
 - `DATE` — resolves against `lastDay` alone; no year needed.
 - `NEXT_BREAK`, `END_OF_SEMESTER` — resolve against the `AcademicYear` covering
-  `dateFrom` (`getYearFrame()`), its `BREAK` periods and its semesters.
+  `dateFrom`, its `BREAK` periods and its semesters, read by
+  `getBoundaryFrame(userId, dateFrom)` (`lib/db/queries/boundaryFrame.ts`). The
+  events page's `restatedBoundaries()` reads the same frame (T-047).
 
 An event dated outside every year the teacher has set up cannot resolve a
 symbol, because `event` has no `academic_year_id` and the screen deliberately
