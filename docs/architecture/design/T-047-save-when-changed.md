@@ -56,11 +56,14 @@ In the browser `read()` is `new FormData(form)` without `$ACTION*` entries and
 `File`s; `readDefaults()` is the same over `form.cloneNode(true)` after
 `reset()` on the copy. A `MutationObserver` (`childList`, `subtree`) calls
 `refresh()` for a field the page adds or removes, and an effect with no
-dependencies calls it after every render. A DOM-compared form therefore keeps
-its controls' defaults in the DOM: `InfoEventForm`'s repetition select is
-uncontrolled (`defaultValue`) with its choice mirrored into state, because a
-controlled `<select>` mounted on the client marks no option as default. `hydrated` is `useSyncExternalStore` with a
-`false` server snapshot.
+dependencies calls it after every render. A DOM-compared form therefore renders
+every control uncontrolled, with its default in the DOM. A controlled input
+cannot be in one: React writes its current value into the `value` attribute,
+the reset copy reads it back, and the record follows every keystroke. A
+controlled `<select>` mounted on the client marks no option as default. A form
+that needs either passes `changed` itself; `InfoEventForm`'s repetition select
+is instead uncontrolled (`defaultValue`) with its choice mirrored into state.
+`hydrated` is `useSyncExternalStore` with a `false` server snapshot.
 
 ## 2. The button
 

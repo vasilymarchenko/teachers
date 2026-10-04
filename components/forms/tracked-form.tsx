@@ -36,16 +36,19 @@ export function useFormChanges(): FormChanges | null {
  * A form opts in when it opens filled with stored or planned values: an edit
  * form, never one that adds a row. Its `SubmitButton` is then unavailable
  * while the fields still submit what the form opened with. The inputs stay
- * uncontrolled: the record is the form's own `FormData` read once it has
- * hydrated, and the comparison runs on the form's `input`, `change` and
- * `reset` events (`createChangeTracker()`), plus a `MutationObserver` for a
- * field the page adds or removes without an event of its own.
+ * uncontrolled: the record is the `FormData` the form would submit if reset to
+ * the defaults it renders, taken again on every render, and the comparison
+ * runs on the form's `input`, `change` and `reset` events
+ * (`createChangeTracker()`), plus a `MutationObserver` for a field the page
+ * adds or removes without an event of its own.
  *
- * The record is the defaults the form renders, so a DOM-compared form renders
- * its controls with defaults: uncontrolled, or controlled inputs, whose `value`
- * attribute React keeps in step. Not a controlled `<select>`: mounted on the
- * client, it marks no option as the default, and its record would be the first
- * option. A form that has to control its state reports `changed` itself.
+ * So a DOM-compared form renders every control uncontrolled, with a default.
+ * Not a controlled input: React writes its current value into the `value`
+ * attribute, the reset copy reads that back as the default, and the record
+ * would follow every keystroke — the form would never read as changed. Not a
+ * controlled `<select>` either: mounted on the client, it marks no option as
+ * the default, and its record would be the first option. A form that has to
+ * control its state reports `changed` itself.
  *
  * `tracked={false}` renders a plain form, so one component serves a form that
  * both adds and edits rows and opts in only for the second.
