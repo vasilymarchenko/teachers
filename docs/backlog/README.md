@@ -154,7 +154,7 @@ button it gates. T-046 hangs off T-010 for the day form whose rows it gives a
 clear action, and off T-047, whose contract for a value set from code its clear
 and undo follow. T-043 hangs off T-010 for the day form it adds a toggle to,
 and off T-046 and T-047 for the row header it shares with the clear icon and
-for the per-field "changed" its row messages read. None of the three is drawn.
+for the comparison its toggles are left out of. None of the three is drawn.
 
 ## Coverage
 

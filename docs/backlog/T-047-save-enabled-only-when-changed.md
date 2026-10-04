@@ -14,12 +14,12 @@ refs:
 
 ## Goal
 
-Every form that opens filled with values whose resubmission would change
-nothing stored shows its save button as unavailable while it still holds those
-values, and as available as soon as any input differs from them — and
-unavailable again if the teacher puts the old value back. One mechanism serves
-every such form: a form opts in, and `SubmitButton` reads the form's changed
-state from it. Forms that open empty keep today's button.
+Every form that opens filled with stored or planned values shows its save
+button as unavailable while it still holds those values, and as available as
+soon as any input differs from them — and unavailable again if the teacher
+puts the old value back. One mechanism serves every such form: a form opts
+in, and `SubmitButton` reads the form's changed state from it. Forms that open
+empty keep today's button.
 
 ## Acceptance criteria
 
@@ -35,9 +35,10 @@ state from it. Forms that open empty keep today's button.
 - [ ] A controlled form (the bell grid of `components/year/bells-section.tsx`)
       reports its changed state to the mechanism itself, computed from its own
       state against the stored rows, instead of the DOM comparison.
-- [ ] The mechanism also answers, for one field name, whether that field
-      differs from the record, so a form can mark or explain a single row
-      (T-043) without a comparison of its own.
+- [ ] A form can leave a field out of the comparison: a field that changes
+      how the save is written but, in that row, not what it writes (T-043's
+      toggle on a row equal in both weeks) does not make the form changed by
+      itself.
 - [ ] "Changed" means the current fields differ from the record, not that an
       input event happened: restoring every edited value makes the form
       unchanged again.
@@ -54,9 +55,11 @@ state from it. Forms that open empty keep today's button.
       opted-in form it behaves exactly as today.
 - [ ] Unavailable is `aria-disabled="true"`, not `disabled`: the button stays
       in the tab order, a click on it submits nothing, and it is visibly
-      muted. Why it is unavailable is the button's hover hint (`title`) and its
-      `aria-describedby`, not text on the screen; the hint's text lives in
-      `components/forms/`, next to `SubmitButton`.
+      muted. Nothing is said while the teacher has not touched it. Activating
+      the muted button — a click, a tap, Enter in a field — shows next to it,
+      as text, why nothing was saved, and the button's `aria-describedby`
+      points at that text; it goes away once the form changes. The text lives
+      in `components/forms/`, next to `SubmitButton`.
 - [ ] After a successful save the record is taken again from the re-rendered
       form, so the button is unavailable. After a save that returned errors
       the record is kept, so the form still reads as changed and the button
@@ -67,7 +70,8 @@ state from it. Forms that open empty keep today's button.
       the `components/year/*` forms rendered for a stored row (the year, a
       semester, a non-teaching period, a weekday rule) and the bell grid,
       `DayForm`, `BoundaryForm`, the override form (whether or not an override
-      is in force: without one it opens filled with the planned lesson), and
+      is in force: without one it opens filled with the planned lesson, and an
+      unchanged save would create an override row), and
       the event form when it edits an existing event. Not opted in: sign-in,
       every form that opens empty (the empty year, semester, period, rule and
       parity reset forms of `/year`, and the event form when it creates one),
@@ -75,15 +79,19 @@ state from it. Forms that open empty keep today's button.
       (`DeleteButton`, the forms of `override-actions`, `copy-parity-form`).
 - [ ] Tests: the comparison (an edit, an edit reverted, a cleared field, a
       checkbox, a field added to the form by the page, a value set from code
-      with its `input` event, a form reset); a controlled form's own report;
-      the per-field answer; a stale symbolic boundary opening as changed and a
-      current one as unchanged; the record kept after an error and retaken
-      after a success.
-- [ ] The convention — which forms opt in (those whose resubmission would
-      change nothing), what "changed" means, and the contract for a value set
-      from code — is stated once, in `architect-overview.md` §8.2, and
+      with its `input` event, a form reset, a field left out of the
+      comparison); a controlled form's own report; a stale symbolic boundary
+      opening as changed and a current one as unchanged; the reason shown only
+      after the muted button is activated; the record kept after an error and
+      retaken after a success.
+- [ ] The convention — which forms opt in (those that open filled with stored
+      or planned values), what "changed" means, a field left out of it, and
+      the contract for a value set from code — is stated once, in
+      `architect-overview.md` §8.2, and
       `design/T-010-weekly-template-editor.md` §1 and
-      `design/T-011-day-overrides.md` §1 reference it.
+      `design/T-011-day-overrides.md` §1 reference it. `architect-overview.md`
+      §8.1 states that a form whose symbolic boundary is stale opens as
+      changed and says so, beside the period form's hint it already names.
 
 Out of scope: a warning on leaving the page with unsaved changes, and a
 marker of unsaved changes outside the form itself.
