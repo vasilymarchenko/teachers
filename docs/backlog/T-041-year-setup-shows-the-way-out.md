@@ -2,12 +2,13 @@
 id: T-041
 type: ticket
 title: Year setup shows the teacher the next step, and says when the rest of the app is open
-status: todo
+status: in-progress
 depends_on: [T-038]
 refs:
   - docs/specs/specification.md §3
   - docs/specs/specification.md §8
   - docs/architecture/architect-overview.md §8.6
+  - docs/architecture/design/T-041-year-setup-way-out.md
 ---
 
 ## Goal
@@ -42,16 +43,10 @@ comes next, and the save that completes setup changes nothing they can see.
 - [ ] The behaviour of the gate itself does not change: the four conditions,
       `getSetupStatus()`, `requireCompleteSetup()` and the redirect stay as
       T-038 left them.
-- [ ] A browser-level test walks a teacher with no rows through the three
-      saves — the year with its initial parity, both semesters, the bell
-      schedule — in the order the page presents them, and asserts after each
-      save what the teacher sees: the next missing item, and finally the
-      completion notice with the full navigation.
-- [ ] That test is run by `npm run gate` and by `ci.yml` through the one check
-      definition (`ADR-012`). Its browser-test dependency and the seeded
-      database it renders from — the costs `ADR-013` recorded when it
-      deferred a browser test — are recorded in an ADR and in
-      `docs/tech-stack.md`.
+
+## Notes`.
+- [x] ~~That test is run by `npm run gate` and by `ci.yml` …~~ — moved to
+      `T-046`, see `## Notes`.
 
 ## Notes
 
@@ -72,3 +67,15 @@ the production build, with Playwright. The gate works as T-038 specified:
   of the page, out of view, and the only way on is «Перейти до календаря» at the
   very bottom. On a narrow screen the new menu items are behind the collapsed
   menu.
+
+Two criteria were moved to `T-046` before implementation (2026-10-04, the
+user's decision in the ticket run), where they are stated in full: a
+browser-level test that walks a teacher with no rows through the three saves,
+and that test run by `npm run gate` and `ci.yml` with its dependency recorded in
+an ADR and `docs/tech-stack.md`. They bring the project's first browser-test
+dependency and a new `e2e` job in `ci.yml` — a gate-contract change of its own.
+
+Implemented as `architect-overview.md` §8.6 («Як `/year` веде до відкритого
+застосунку») states it: the completing save offers the weekly template
+(`/schedule`) as the action. Mechanics, including the expected screen after
+each save that `T-046` asserts: `docs/architecture/design/T-041-year-setup-way-out.md`.

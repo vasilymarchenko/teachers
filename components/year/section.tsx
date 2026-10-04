@@ -8,11 +8,17 @@
  * two screens a teacher fills in read as one thing.
  */
 export function Section({
+  id,
   title,
   description,
   optionalMark,
   children,
 }: {
+  /**
+   * The fragment a link jumps to — set on the sections the year-setup
+   * checklist points at (`SETUP_ANCHORS`, T-041).
+   */
+  id?: string;
   title: string;
   description: string;
   /**
@@ -24,7 +30,9 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4">
+    // `scroll-mt-4`: a jump to the fragment leaves the heading a little room
+    // rather than flush against the top edge of the screen.
+    <section className="scroll-mt-4 space-y-4" id={id}>
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">
           {title}

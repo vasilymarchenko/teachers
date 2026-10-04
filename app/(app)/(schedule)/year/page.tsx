@@ -12,6 +12,12 @@ import { Section } from "@/components/year/section";
 import { pickYear } from "@/components/year/selection";
 import { SemestersSection } from "@/components/year/semesters-section";
 import { SetupChecklist } from "@/components/year/setup-checklist";
+import { SetupProgress } from "@/components/year/setup-progress";
+import {
+  nextSetupStep,
+  SETUP_ANCHORS,
+  setupSteps,
+} from "@/components/year/setup-steps";
 import { YearForm } from "@/components/year/year-form";
 import { YearSwitcher } from "@/components/year/year-switcher";
 import { requireUser } from "@/lib/auth/session";
@@ -50,8 +56,10 @@ export const dynamic = "force-dynamic";
  * This is the one page of the `(app)` group that does **not** call
  * `requireCompleteSetup()`: it is where the gate sends a teacher whose setup is
  * incomplete (overview §8.6). In that state it says so, lists what is still
- * missing, marks the sections she may skip, and offers no way out to a screen
- * that would only send her back.
+ * missing with a link to where each is entered, marks the sections she may
+ * skip, and offers no way out to a screen that would only send her back. The
+ * bar at the bottom names the next missing item, and when a save here completes
+ * the setup it says so and offers the weekly template (T-041).
  */
 export default async function Page({
   searchParams,
@@ -87,6 +95,7 @@ export default async function Page({
         ]);
 
   const optionalMark = setup.complete ? undefined : SETUP_GATE.optional;
+  const next = nextSetupStep(setupSteps(setup, selected?.id ?? null));
 
   return (
     <div className="space-y-10">
@@ -100,6 +109,7 @@ export default async function Page({
       )}
 
       <Section
+        id={SETUP_ANCHORS.year}
         title={YEAR_SECTION.title}
         description={YEAR_SECTION.description}
       >
@@ -184,6 +194,16 @@ export default async function Page({
           </Link>
         </p>
       ) : null}
+
+      {/*
+        Last, and never inside a condition: it remembers that this visit began
+        with setup incomplete, and only a component the save does not remount
+        can remember anything (T-041).
+      */}
+      <SetupProgress
+        complete={setup.complete}
+        next={next === null ? null : { label: next.label, href: next.href }}
+      />
     </div>
   );
 }

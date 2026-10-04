@@ -20,6 +20,7 @@ import { clockTimeInput } from "@/lib/validation/fields";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation/formState";
 import { ACTION_LABELS, BELLS_SECTION } from "./labels";
 import { Row, Section } from "./section";
+import { SETUP_ANCHORS } from "./setup-steps";
 
 /**
  * The bell schedule — specification §3.3.
@@ -50,7 +51,11 @@ export function BellsSection({ bells }: { bells: BellInput[] }) {
     .join(",");
 
   return (
-    <Section title={BELLS_SECTION.title} description={BELLS_SECTION.description}>
+    <Section
+      id={SETUP_ANCHORS.bells}
+      title={BELLS_SECTION.title}
+      description={BELLS_SECTION.description}
+    >
       <Row>
         <BellsForm
           key={storedKey}
