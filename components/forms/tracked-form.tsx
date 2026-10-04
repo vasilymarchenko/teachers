@@ -41,6 +41,12 @@ export function useFormChanges(): FormChanges | null {
  * `reset` events (`createChangeTracker()`), plus a `MutationObserver` for a
  * field the page adds or removes without an event of its own.
  *
+ * The record is the defaults the form renders, so a DOM-compared form renders
+ * its controls with defaults: uncontrolled, or controlled inputs, whose `value`
+ * attribute React keeps in step. Not a controlled `<select>`: mounted on the
+ * client, it marks no option as the default, and its record would be the first
+ * option. A form that has to control its state reports `changed` itself.
+ *
  * `tracked={false}` renders a plain form, so one component serves a form that
  * both adds and edits rows and opts in only for the second.
  */
@@ -86,9 +92,10 @@ export function TrackedForm({
     const tracker = createChangeTracker({
       target: form,
       read: () => fieldsOf(form),
+      readDefaults: () => defaultFieldsOf(form),
       onChange: setDomChanged,
     });
-    const observer = new MutationObserver(() => tracker.check());
+    const observer = new MutationObserver(() => tracker.refresh());
     observer.observe(form, { childList: true, subtree: true });
     trackerRef.current = tracker;
 
@@ -112,6 +119,14 @@ export function TrackedForm({
     settled.current = state;
     trackerRef.current?.settle(state);
   }, [state]);
+
+  // Every other render may carry new defaults too: another form's save that
+  // changed what this one shows — a removed override, a sibling day's rows —
+  // with this form mounted throughout. Reading the defaults is cheap, and a
+  // record that did not change leaves the answer as it was.
+  useEffect(() => {
+    trackerRef.current?.refresh();
+  });
 
   const form = (
     <form {...formProps} ref={formRef}>
@@ -142,6 +157,19 @@ function useHydrated(): boolean {
     () => true,
     () => false,
   );
+}
+
+/**
+ * The fields the form would submit if it were reset — the defaults the page
+ * rendered. Read from a detached copy, because resetting the form itself would
+ * throw away what the teacher typed: a cloned control keeps its default
+ * (`value` attribute, `defaultChecked`, `defaultSelected`), and `reset()` on the
+ * copy puts every one of them back without an event reaching the page.
+ */
+function defaultFieldsOf(form: HTMLFormElement): FieldEntries {
+  const copy = form.cloneNode(true) as HTMLFormElement;
+  copy.reset();
+  return fieldsOf(copy);
 }
 
 /** The submitted fields, as the browser would submit them. */

@@ -56,12 +56,21 @@ export function savedCleanly(state: FormState): boolean {
 }
 
 export type ChangeTracker = {
-  /** Compares the fields against the record now — a field the page added. */
+  /** Compares the current fields against the record. */
   check(): void;
   /**
-   * The form's action resolved. After a success the re-rendered form is the
-   * new record, so it reads as unchanged; after a refusal the record is kept,
-   * so the submission React put back into the fields still reads as changed.
+   * The page rendered the form again — its own save, another form's save that
+   * changed what this one shows, a field the page added. The record is taken
+   * again from the defaults the form now renders, unless the form is showing a
+   * refusal: then its defaults are the echoed submission, and the record that
+   * submission is measured against is kept.
+   */
+  refresh(): void;
+  /**
+   * The form's action resolved. A success ends the refusal, if there was one,
+   * and the re-rendered form is the record, so it reads as unchanged; a
+   * refusal keeps the record, so the submission React put back into the fields
+   * still reads as changed.
    */
   settle(state: FormState): void;
   /** Replaces the fields left out of the comparison. */
@@ -70,8 +79,13 @@ export type ChangeTracker = {
 };
 
 /**
- * Records the fields as they are now and reports, through `onChange`, every
- * time the answer to "do they differ from the record?" flips.
+ * Compares a form's fields with the record of what it rendered, and reports,
+ * through `onChange`, every time the answer to "do they differ?" flips.
+ *
+ * The record is `readDefaults()` — what the form would submit if it were reset
+ * to what the page rendered — not the fields as they are: a value typed before
+ * hydration, or kept across a re-render that changed what is stored, is a
+ * change and must read as one.
  *
  * It listens to `input`, `change` and `reset` on `target` and to nothing else.
  * That is the contract for a value set from code — a clear by icon, a value
@@ -83,15 +97,18 @@ export type ChangeTracker = {
 export function createChangeTracker({
   target,
   read,
+  readDefaults,
   untracked: initialUntracked = [],
   onChange,
 }: {
   target: EventTarget;
   read: () => FieldEntries;
+  readDefaults: () => FieldEntries;
   untracked?: readonly string[];
   onChange: (changed: boolean) => void;
 }): ChangeTracker {
-  let record = read();
+  let record = readDefaults();
+  let refused = false;
   let untracked = initialUntracked;
   let changed = false;
 
@@ -107,10 +124,18 @@ export function createChangeTracker({
   target.addEventListener("change", check);
   target.addEventListener("reset", checkAfterReset);
 
+  // A form that opens with a value typed before hydration has to say so.
+  check();
+
   return {
     check,
+    refresh() {
+      if (!refused) record = readDefaults();
+      check();
+    },
     settle(state) {
-      if (savedCleanly(state)) record = read();
+      refused = !savedCleanly(state);
+      if (!refused) record = readDefaults();
       check();
     },
     setUntracked(names) {

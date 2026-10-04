@@ -19,19 +19,26 @@ opt-in and where each form's "opens as changed" comes from.
 | `components/year/bell-grid.ts` | **new**: `bellGridChanged()` — the controlled bell grid's own report |
 | `components/year/section.tsx` | gains `RestatedBoundary` — the sentence beside a stale boundary |
 | `lib/domain/schedule/boundaries.ts` | gains `restatedBoundary()` |
+| `components/events/event-form.tsx` | the repetition select becomes `defaultValue` + `onChange` (see `TrackedForm` below) |
 | `lib/db/queries/boundaryFrame.ts` | **new**: `getBoundaryFrame(userId, date, { orUpcoming })` → `{ yearStart, breaks, semesters }` or `null`. `boundaryFor()` in `lib/actions/scheduleTemplate.ts` (`orUpcoming: true`) and `resolveFor()` in `lib/actions/events.ts` read it instead of assembling the frame themselves |
 
-### `createChangeTracker({ target, read, untracked, onChange })`
+### `createChangeTracker({ target, read, readDefaults, untracked, onChange })`
 
-- `read()` is taken once on creation: that is the **record**.
+- `readDefaults()` — what the form would submit if reset to what the page
+  rendered — is the **record**, taken on creation; the fields are compared at
+  once, so a value typed before hydration reads as a change.
 - `input` and `change` on `target` → `check()`; `reset` → `check()` one
   microtask later (the event fires before the defaults are restored).
 - `check()` compares `read()` with the record by `sameFields()` — names and
   values in document order, `untracked` names dropped from both sides — and
   calls `onChange` only when the answer flips.
 - `settle(state)`: `savedCleanly(state)` (no `error`, no `fieldErrors`, no
-  `values` — what every action returns on success) → retake the record; then
+  `values` — what every action returns on success) → leave the refused state
+  and retake the record; otherwise enter it and keep the record. Then
   `check()`.
+- `refresh()`: retake the record unless refused, then `check()` — every
+  render of the form (another form's save may have changed its defaults with
+  this one mounted) and every `MutationObserver` callback.
 - `setUntracked(names)`, `dispose()`.
 
 ### `TrackedForm`
@@ -45,8 +52,13 @@ opt-in and where each form's "opens as changed" comes from.
 | `untracked` | names left out of the comparison |
 
 In the browser `read()` is `new FormData(form)` without `$ACTION*` entries and
-`File`s, and a `MutationObserver` (`childList`, `subtree`) calls `check()` for a
-field the page adds or removes. `hydrated` is `useSyncExternalStore` with a
+`File`s; `readDefaults()` is the same over `form.cloneNode(true)` after
+`reset()` on the copy. A `MutationObserver` (`childList`, `subtree`) calls
+`refresh()` for a field the page adds or removes, and an effect with no
+dependencies calls it after every render. A DOM-compared form therefore keeps
+its controls' defaults in the DOM: `InfoEventForm`'s repetition select is
+uncontrolled (`defaultValue`) with its choice mirrored into state, because a
+controlled `<select>` mounted on the client marks no option as default. `hydrated` is `useSyncExternalStore` with a
 `false` server snapshot.
 
 ## 2. The button
@@ -96,7 +108,7 @@ nothing.
 
 | File | Covers |
 |---|---|
-| `components/forms/form-changes.test.ts` | an edit, an edit reverted, a cleared field, a checkbox, a field added by the page (`check()`), a value set from code with its `input` event, a reset, an untracked field, the record kept after a refusal and retaken after a success, `formChanged()` (stale and current boundary, controlled report), `submitAvailability()`, `reasonShown()` |
+| `components/forms/form-changes.test.ts` | an edit, an edit reverted, a cleared field, a checkbox, fields added and removed by the page, new defaults rendered by another form's save (with and without typing), a value typed before hydration, a value set from code with its `input` event, a reset, an untracked field, the record kept after a refusal (across a later render) and retaken after a success, `formChanged()` (stale and current boundary, controlled report), `submitAvailability()`, `reasonShown()` |
 | `components/forms/submit-button.test.ts` | server render: available, no reason text, before hydration; unchanged outside a tracked form |
 | `components/year/bell-grid.test.ts` | the controlled grid's report |
 | `lib/domain/schedule/boundaries.test.ts` | `restatedBoundary()`: moved break, moved semester, current, `DATE`, unresolvable |

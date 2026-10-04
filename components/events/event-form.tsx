@@ -165,11 +165,15 @@ export function InfoEventForm({
             name={EVENT_FIELD.recurrenceKind}
           >
             {(props) => (
+              // Uncontrolled, with the choice mirrored into state: a controlled
+              // `<select>` mounted on the client renders no default for
+              // `TrackedForm` to record (T-047), and the form reset after an
+              // action puts `chosen` back exactly as the re-seed above does.
               <Select
                 {...props}
+                defaultValue={chosen}
                 onChange={(changed) => setRecurrenceKind(changed.target.value)}
                 required
-                value={recurrenceKind}
               >
                 {RECURRENCE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>

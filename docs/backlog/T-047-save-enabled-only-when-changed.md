@@ -102,7 +102,8 @@ Implemented on `claude/ticket-t-047-save-when-changed`. Mechanics:
 `docs/architecture/design/T-047-save-when-changed.md`; the decision between a
 DOM record and controlled forms, and `aria-disabled` over `disabled`:
 `docs/architecture/decisions/ADR-026-save-is-available-only-with-changes.md`.
-The page and the action resolve a symbolic boundary against the same
-`getBoundaryFrame()` read, so a stale boundary is never announced that the
+The page and the action resolve a symbolic boundary against the same data —
+`getBoundaryFrame()` for the template and event forms, the selected year's own
+lists for a weekday rule — so a stale boundary is never announced that the
 save would not write. Remaining: the review (phase 7) and the criteria ticked
 against evidence.

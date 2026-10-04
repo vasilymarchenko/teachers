@@ -19,14 +19,16 @@ import {
  * is `new FormData(form)`. Each case changes the reading the way the browser
  * would and dispatches the event the browser would.
  */
-function fakeForm(initial: [string, string][]) {
+function fakeForm(rendered: [string, string][], typed = rendered) {
   const target = new EventTarget();
-  let fields = initial;
+  let defaults = rendered;
+  let fields = typed;
   const reports: boolean[] = [];
 
   const tracker = createChangeTracker({
     target,
     read: () => fields,
+    readDefaults: () => defaults,
     onChange: (changed) => reports.push(changed),
   });
 
@@ -37,12 +39,22 @@ function fakeForm(initial: [string, string][]) {
       fields = next;
       target.dispatchEvent(new Event(type, { bubbles: true }));
     },
-    /** The fields changed with no event at all — React re-rendered the form. */
+    /** The fields changed with no event at all. */
     replace(next: [string, string][]) {
       fields = next;
     },
+    /**
+     * React rendered the form again with new defaults; a control the teacher
+     * has not touched follows its default, so `now` is what the fields hold.
+     * Nothing is compared until `TrackedForm`'s effect calls `refresh()` or
+     * `settle()`.
+     */
+    render(next: [string, string][], now = next) {
+      defaults = next;
+      fields = now;
+    },
     /** `form.reset()`: the event first, the defaults back afterwards. */
-    reset(defaults: [string, string][]) {
+    reset() {
       target.dispatchEvent(new Event("reset"));
       fields = defaults;
     },
@@ -113,17 +125,53 @@ describe("createChangeTracker()", () => {
 
   // The information event's form swaps «Останній день» for the two boundary
   // fields when a repetition is chosen, and back again — fields the page adds
-  // and removes with no event of their own. `TrackedForm` calls `check()` from
-  // a `MutationObserver` for exactly this.
-  it("compares a field added by the page on check()", () => {
+  // and removes with no event of their own, each rendered with its default.
+  it("compares across fields the page adds and removes", () => {
     const form = fakeForm(STORED);
-    form.replace([...STORED, ["boundaryKind", "NEXT_BREAK"]]);
-    expect(form.changed).toBe(false);
-    form.tracker.check();
+    const repeating: [string, string][] = [...STORED, ["recurrenceKind", "WEEKLY"]];
+    const withBoundary: [string, string][] = [
+      ...repeating,
+      ["boundaryKind", "END_OF_SEMESTER"],
+    ];
+    form.render([...STORED, ["recurrenceKind", "NONE"]]);
+    form.tracker.refresh();
+    form.set(repeating, "change");
     expect(form.changed).toBe(true);
-    form.replace(STORED);
-    form.tracker.check();
+    form.render(
+      [...STORED, ["recurrenceKind", "NONE"], ["boundaryKind", "END_OF_SEMESTER"]],
+      withBoundary,
+    );
+    form.tracker.refresh();
+    expect(form.changed).toBe(true);
+    form.render([...STORED, ["recurrenceKind", "NONE"]]);
+    form.tracker.refresh();
     expect(form.changed).toBe(false);
+  });
+
+  // Another form's save re-renders this one, mounted throughout: «Прибрати
+  // правку» under the override form, a row removed by a sibling day.
+  it("takes the record again when the page renders new defaults", () => {
+    const form = fakeForm(STORED);
+    const nowStored: [string, string][] = [STORED[0], ["dateTo", "2026-12-17"]];
+    form.render(nowStored);
+    form.tracker.refresh();
+    expect(form.changed).toBe(false);
+    form.set(STORED);
+    expect(form.changed).toBe(true);
+  });
+
+  it("keeps what was typed as a change across such a render", () => {
+    const form = fakeForm(STORED);
+    const typed: [string, string][] = [STORED[0], ["dateTo", "2027-01-10"]];
+    form.set(typed);
+    form.render([STORED[0], ["dateTo", "2026-12-17"]], typed);
+    form.tracker.refresh();
+    expect(form.changed).toBe(true);
+  });
+
+  it("reads a value typed before hydration as a change", () => {
+    const form = fakeForm(STORED, [STORED[0], ["dateTo", "2027-01-10"]]);
+    expect(form.changed).toBe(true);
   });
 
   // The contract for a value set from code (a clear by icon, T-046; a value
@@ -140,7 +188,7 @@ describe("createChangeTracker()", () => {
   it("compares a reset once the defaults are back, not when it fires", async () => {
     const form = fakeForm(STORED);
     form.set([STORED[0], ["dateTo", "2026-12-25"]]);
-    form.reset(STORED);
+    form.reset();
     expect(form.changed).toBe(true);
     await Promise.resolve();
     expect(form.changed).toBe(false);
@@ -159,12 +207,15 @@ describe("createChangeTracker()", () => {
     const form = fakeForm(STORED);
     const edited: [string, string][] = [STORED[0], ["dateTo", "2027-06-30"]];
     form.set(edited);
-    // React resets the form to the echoed submission, then the effect settles.
-    form.replace(edited);
+    // The echoed submission is now the form's default, and React reset the
+    // fields to it; then the effect settles, and later renders refresh.
+    form.render(edited);
     form.tracker.settle({
       fieldErrors: { dateTo: "Поза межами року" },
       values: Object.fromEntries(edited),
     });
+    expect(form.changed).toBe(true);
+    form.tracker.refresh();
     expect(form.changed).toBe(true);
   });
 
@@ -173,7 +224,7 @@ describe("createChangeTracker()", () => {
     const saved: [string, string][] = [STORED[0], ["dateTo", "2026-12-25"]];
     form.set(saved);
     // The re-rendered form holds what is now stored.
-    form.replace(saved);
+    form.render(saved);
     form.tracker.settle({});
     expect(form.changed).toBe(false);
   });

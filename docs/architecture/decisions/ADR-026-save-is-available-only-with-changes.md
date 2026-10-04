@@ -33,8 +33,9 @@ be rewritten and keeps its own copy of the comparison.
 `isDirty` compares against `defaultValues` declared in JavaScript, which is a
 second record of what the page rendered, kept beside the first one.
 
-**A record of the rendered form, compared on DOM events.** Read the form's own
-`FormData` once it has hydrated, compare again on `input`, `change` and `reset`,
+**A record of the rendered form, compared on DOM events.** Record the
+`FormData` the form would submit if reset to its rendered defaults, compare the
+current `FormData` against it on `input`, `change` and `reset`,
 and let the one controlled form report its own answer. The inputs stay
 uncontrolled. The comparison is one function for every form. The price is a
 contract: code that sets a value has to say so with an `input` event, because
@@ -51,8 +52,9 @@ answered with text. The cost is that the press has to be cancelled by hand.
 - A form that opens filled with stored or planned values renders through
   `TrackedForm`. A form that opens empty, and a form without fields, does not.
 - "Changed" means the `FormData` the form would submit now differs from the
-  record. The record is retaken after a successful save and kept after a
-  refusal. Names in `untracked` are left out of the comparison.
+  record, which is the form's rendered defaults. The record is retaken on every
+  render of the form, except while it shows a refusal, so that it is kept after
+  a refusal. Names in `untracked` are left out of the comparison.
 - A value set from code dispatches a bubbling `input` event on its field. A
   field the page adds or removes is caught by a `MutationObserver`.
 - A controlled form passes `changed` itself. A page passes `changedOnOpen` when
