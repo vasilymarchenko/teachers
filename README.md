@@ -251,10 +251,19 @@ alias dc='docker compose -f docker-compose.prod.yml'
 
 **What is running.** `dc ps` should list `web`, `db` and `caddy`, all
 `running`, with `db` marked `(healthy)` — its healthcheck is `pg_isready`, and
-`web` does not start until it passes. `migrate` is not in the list, and should
+on `up` `web` does not start until it passes. After a reboot that ordering is
+gone: the Docker daemon restarts both containers by their `restart` policy and
+knows nothing of `depends_on`. `migrate` is not in the list, and should
 not be: it runs only under `run --rm`. `dc ps -a` also shows containers that
 have exited; a `web` that is `Restarting` or `Exited (1)` says why in its log.
-`dc images` shows which `IMAGE_TAG` is actually deployed.
+`dc images` shows which `IMAGE_TAG` is deployed, and under the default `latest`
+that names no commit; the image's own label does:
+
+```sh
+docker image inspect --format \
+  '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \
+  "$(dc images -q web)"
+```
 
 **The database.**
 
@@ -265,7 +274,8 @@ dc exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
 ```
 
 The second lists the migrations applied; it should have as many rows as
-`drizzle/meta/_journal.json` has entries at the deployed tag. No
+`drizzle/meta/_journal.json` has entries at the commit the image was built from
+— the revision above, not the checkout on the VPS. No
 `drizzle.__drizzle_migrations` table at all means `migrate` was never run
 against this volume. (`sh -c '...'` for the same reason as under "Backups".)
 
@@ -281,7 +291,8 @@ The usual causes, by what the log says:
 
 | Log | Cause |
 |---|---|
-| `web`: `ECONNREFUSED db:5432` or `password authentication failed` | `POSTGRES_*` in `.env` do not match the volume — Postgres sets the password only when `teachers-pgdata` is first initialised, so changing it in `.env` later changes nothing inside the database |
+| `web`: `connect ECONNREFUSED <ip>:5432` | `db` is not listening — stopped, crash-looping, or still starting after a reboot; `dc ps` and `dc logs db` say which. Nothing to do with the password |
+| `web`: `password authentication failed` | `POSTGRES_*` in `.env` do not match the volume — Postgres sets the password only when `teachers-pgdata` is first initialised, so changing it in `.env` later changes nothing inside the database. Bring the two back together with `ALTER ROLE … PASSWORD` inside `db`, never by recreating the volume, which deletes every teacher's data |
 | `web`: `relation "…" does not exist` | `migrate` was not run for this `IMAGE_TAG` |
 | `caddy`: an `error` near `obtaining certificate` | `CADDY_DOMAIN` does not resolve to this VPS, or ports 80/443 are closed |
 
