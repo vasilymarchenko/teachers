@@ -84,7 +84,10 @@ Option 3.
   anything.
 - The tool interface for AI clients is an MCP endpoint served by a Route
   Handler in the same application, calling the commands and the
-  `lib/db/queries` reads directly. There is no REST layer underneath it. A REST
+  `lib/db/queries` reads directly. Its write tools default to `dryRun` and
+  take an idempotency key, because an AI client retries on failure and is
+  expected to show the teacher the preview first. There is no REST layer
+  underneath it. A REST
   API is added only when a consumer appears that MCP does not serve, and it
   calls the same commands.
 - Rules that are about where `userId` comes from do not change: it comes from
@@ -97,9 +100,12 @@ Option 3.
   copy-on-write paths testable as functions, not only through forms.
 - Every new caller gets I1, I2, I3, §8.1 and §8.4 by construction. No adapter
   can reach Drizzle on a path that skips them.
-- `lib/actions` gets thinner. Each Server Action becomes a short adapter, and
-  the convention test of T-022 (every UPDATE checks the rows it matched) has to
-  be pointed at `lib/commands` as well.
+- `lib/actions` gets thinner. Each Server Action becomes a short adapter. Both
+  static checks that scan for writes move with them: the T-022 convention test
+  (every UPDATE checks the rows it matched) and the §8.4 check in
+  `lib/auth/queryDiscipline.test.ts` have to scan `lib/commands` as well.
+- Overview §8.4 and the root `CLAUDE.md` say a mutation cannot take `userId`
+  first. That stops being true of the commands, and is restated by T-049.
 - One more directory in the layout of overview §2. It is updated by T-049.
 - The commands are a contract other tickets (T-050–T-053) are written against.
   Changing a command's input now costs every adapter, not one form.

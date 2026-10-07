@@ -89,7 +89,8 @@ Option 2.
 - Relative dates are tested like every other date in the domain, with fixed
   instants, and are never wrong by the UTC/Kyiv offset.
 - The closed set of kinds is the feature's scope. Students and birthdays are
-  not in it until `Student` exists (Q-005), and adding a kind is adding a
+  not in it until `Student` exists (second-phase work, specification §9,
+  overview §7), and adding a kind is adding a
   command and a schema, not teaching the model something.
 - This needs the product decision of Q-007: the specification currently
   excludes AI from the release (§11), and teacher data goes to an external

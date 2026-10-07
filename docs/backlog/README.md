@@ -58,7 +58,7 @@ for reading. Order is priority; the ID number is not.
 | [T-030](T-030-one-migrator-smoke-definition.md) | One migrator smoke test, called by both CI and the gate | todo | T-029 |
 | [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | done | T-029 |
 | [T-032](T-032-gate-counts-under-report.md) | The gate can under-report — a missing origin/main, a dirty tree, an unresolvable opening head | todo | T-029 |
-| [T-049](T-049-extract-write-commands.md) | Extract every write into a command function taking userId first; Server Actions become adapters | todo | T-009, T-010, T-011, T-012 |
+| [T-049](T-049-extract-write-commands.md) | Extract every write into a command function taking userId first; Server Actions become adapters | todo | T-009, T-010, T-011, T-012, T-043, T-046 |
 | [T-050](T-050-quick-add-events-from-text.md) | Quick add — free text becomes deadlines and info events through a proposal the teacher confirms | todo | T-049, Q-007 |
 | [T-051](T-051-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-050 |
 | [T-052](T-052-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-051, Q-008 |
@@ -167,7 +167,8 @@ and off T-046 and T-047 for the row header it shares with the clear icon and
 for the comparison its toggles are left out of. None of the three is drawn.
 T-049–T-053 are the import track (specification §10, ADR-027, ADR-028) and
 are not drawn. T-049 hangs off T-009, T-010, T-011 and T-012 for the writes it
-moves into commands, and is the only one of the five that does not wait on
+moves into commands, and off T-043 and T-046, which change the template day
+save it extracts, and is the only one of the five that does not wait on
 Q-007. T-050 hangs off T-049 for those commands and off Q-007 for the decision
 to build it at all. T-051 hangs off T-050 for the proposal pipeline it extends,
 and off T-043 for the per-row both-weeks choice its parity question sets.

@@ -36,6 +36,8 @@ the `lib/db/queries` reads directly, with `userId` taken from a verified token.
       returns the first result without writing again.
 - [ ] Calls are rate-limited per teacher.
 - [ ] `architect-overview.md` §8.3 names the endpoint as the second
-      authentication path and what it shares with the session path.
+      authentication path and what it shares with the session path, and
+      §8.4 names the verified token as the second source of `userId`.
+- [ ] `lesson-input-and-import.md` §8 describes the endpoint as built.
 
 ## Notes

@@ -35,8 +35,8 @@ not touch the template.
 - [ ] Relative dates arrive as date expressions and are resolved by a pure
       function in `lib/domain` against `today()`. Unit tests with fixed
       instants cover «сьогодні», «завтра», a named weekday on that weekday and
-      on the day after it, and a Kyiv evening that is already the next day in
-      UTC.
+      on the day after it, and a Kyiv night after midnight that is still
+      the previous day in UTC.
 - [ ] The model is called from one module that is the only importer of
       `@anthropic-ai/sdk`. The API key comes from the environment, and its
       absence hides the input rather than failing a page. Calls are limited per
@@ -57,5 +57,7 @@ not touch the template.
       with a script that runs it on demand. Neither the gate nor CI runs it.
 - [ ] `architect-overview.md` §7 states what import is now, and ADR-028 moves
       to `accepted`.
+- [ ] `lesson-input-and-import.md` §7 describes the proposal as built, not
+      as proposed.
 
 ## Notes
