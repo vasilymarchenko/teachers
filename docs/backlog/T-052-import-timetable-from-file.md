@@ -1,0 +1,42 @@
+---
+id: T-052
+type: ticket
+title: Import a timetable from a spreadsheet or a photo as one new template version, with bell times
+status: todo
+depends_on: [T-051, Q-008]
+refs:
+  - docs/architecture/decisions/ADR-028-the-model-proposes-and-deterministic-code-writes.md
+  - docs/architecture/lesson-input-and-import.md §7
+  - docs/specs/specification.md §10
+  - docs/specs/specification.md §3.3
+  - docs/specs/specification.md §5.1
+  - docs/architecture/architect-overview.md §3.2
+---
+
+## Goal
+
+The teacher drops an `.xlsx`, `.csv` or a photo of a printed timetable onto
+the quick-add input. The application proposes the whole week (both parity
+weeks where the file distinguishes them) and, if the file has them, the bell
+times. The teacher reviews it as a grid laid out like the template editor and
+confirms it as one new template version.
+
+## Acceptance criteria
+
+- [ ] A spreadsheet is read on the server into a text grid with cell addresses,
+      merged cells unrolled. The model receives the grid, not the file. A photo
+      is sent as an image.
+- [ ] File size and the number of rows and cells are limited, and exceeding a
+      limit is a message, not a truncated import.
+- [ ] The confirmation view shows the proposed week in the layout of the
+      template editor, with the cells that differ from the version in force
+      marked.
+- [ ] Confirming creates exactly one template version for the view through the
+      T-049 commands. Proposed bell times go through the bell schedule command
+      in the same transaction.
+- [ ] The start date follows the answer to Q-008. Until it is answered, the
+      version starts at `today()` and the screen says so.
+- [ ] The evaluation set gains at least five timetable files, including one
+      with merged cells and one with both parity weeks on a single sheet.
+
+## Notes
