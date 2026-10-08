@@ -29,8 +29,8 @@ ADR-007's Consequences.
 - [x] The same rule requires *"Require branches to be up to date before
       merging"*.
 - [x] The rule is demonstrated to block: a pull request whose head commit has a
-      red gate cannot be merged, and the same pull request can be merged once
-      the gate is green.
+      red gate cannot be merged without an explicit admin bypass, and the same
+      pull request can be merged once the gate is green.
 - [x] T-024's third criterion is checked, and its `## Notes` says the setting is
       enabled — in the same commit as this ticket's `status`.
 
@@ -50,9 +50,13 @@ The demonstration is PR #57, which closes this ticket:
 - Head `9cc6aaf` added a deliberately failing unit test. The gate went red, the
   pull request was `BLOCKED`, and the merge box offered no normal merge — only
   the admin "bypass rules" checkbox, which was not used.
-- Head `a8e5dc6` removed the test. The gate went green and the merge was
-  allowed.
+- Head `a8e5dc6` removed the test. All three required checks passed and the
+  branch was up to date with `main`, so nothing in the rule held the merge back.
+  Merging PR #57 itself is the final proof.
 
 Decided while doing it: no required approvals, and the admin bypass left on.
-So "cannot be merged" above means cannot be merged without an explicit admin
-bypass. README's "Deploying to the VPS" records both settings and why.
+README's "Deploying to the VPS" records both settings and why.
+
+ADR-016's revisit trigger — branch protection making `checks` a required status
+— fired here. Option 3 stands: `ci.yml` runs every job on every push, so every
+required check reports on every pull request, documentation-only ones included.

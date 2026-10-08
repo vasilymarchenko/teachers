@@ -106,8 +106,8 @@ The version agreement of the seventh criterion is
 was closed it was not enabled, so the third criterion was left unchecked and
 T-025 carried it: `status: done` meant every part a commit can contain had
 shipped. **T-025 has since enabled it, and the third criterion is checked: a
-red gate now blocks the merge into `main`.** The evidence is in T-025's
-`## Notes`.
+red gate now blocks a normal merge into `main`; only an explicit admin bypass
+gets past it.** The evidence is in T-025's `## Notes`.
 
 Out of scope: a preview deployment per pull request, and running the suite
 against more than one Postgres version. Neither is a first-release need.
