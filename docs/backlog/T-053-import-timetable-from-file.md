@@ -3,7 +3,7 @@ id: T-053
 type: ticket
 title: Import a timetable from a spreadsheet or a photo as one new template version, with bell times
 status: todo
-depends_on: [T-052, T-055]
+depends_on: [T-052, T-055, T-057, T-059]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/lesson-input-and-import.md §7
@@ -33,7 +33,7 @@ confirms it as one new template version.
       template editor, with the cells that differ from the version in force
       marked.
 - [ ] Confirming creates exactly one template version for the view through the
-      T-050 commands. Proposed bell times go through the bell schedule command
+      T-059 commands. Proposed bell times go through the T-057 bell schedule command
       in the same transaction.
 - [ ] The confirmation screen offers the start choices of T-055 («з
       сьогодні», «після канікул», «з дати»), proposed from the file or the

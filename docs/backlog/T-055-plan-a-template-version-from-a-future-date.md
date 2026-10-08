@@ -3,7 +3,7 @@ id: T-055
 type: ticket
 title: Plan a new template version from a future date — after a break or from a date — and cancel it by overwriting
 status: todo
-depends_on: [T-010, T-043, T-046]
+depends_on: [T-059]
 refs:
   - docs/architecture/architect-overview.md §10.8
   - docs/architecture/architect-overview.md §3.2

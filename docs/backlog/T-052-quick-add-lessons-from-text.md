@@ -3,7 +3,7 @@ id: T-052
 type: ticket
 title: Quick add — free text becomes template lessons and day overrides, with a preview of the new version
 status: todo
-depends_on: [T-043, T-051]
+depends_on: [T-043, T-051, T-058, T-059]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/lesson-input-and-import.md §7
@@ -28,7 +28,7 @@ from which date and for which parity weeks, before anything is written.
 
 - [ ] The proposal schema gains the template day and day override kinds. Their
       payloads are the raw inputs of the template day and day override commands
-      of T-050, for the view the teacher has selected, with the override's date
+      of T-059 and T-058, for the view the teacher has selected, with the override's date
       widened to accept a date expression.
 - [ ] The model receives the teacher's subjects, classes, lesson numbers and
       bell times (`getLessonSuggestions()`, `getBellSchedule()`). A subject or
@@ -38,7 +38,7 @@ from which date and for which parity weeks, before anything is written.
       лише в чисельнику?»), not a default. The teacher's answer sets the
       per-row both-weeks choice of ADR-025.
 - [ ] All template changes of one confirmation are applied as one template
-      version, through the T-050 commands in one transaction. A dry run of the
+      version, through the T-059 commands in one transaction. A dry run of the
       same commands produces the preview shown on the confirmation screen.
 - [ ] The preview names the cut date (`today()`) and, where the version in
       force is trimmed, the warning of overview §3.2 I2.

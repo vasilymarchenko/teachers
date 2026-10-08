@@ -3,7 +3,7 @@ id: T-051
 type: ticket
 title: Quick add — free text becomes deadlines and info events through a proposal the teacher confirms
 status: todo
-depends_on: [T-050, Q-007]
+depends_on: [T-056, Q-007]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md
@@ -30,7 +30,7 @@ not touch the template.
       are built, and no longer as planned.
 - [ ] The proposal schema (Zod, `lib/validation`) has the deadline and info
       event kinds, whose payloads are the raw inputs of the deadline and info
-      event commands of T-050 (`z.input` of `deadlineInput` and
+      event commands of T-056 (`z.input` of `deadlineInput` and
       `infoEventInput`) with each date field widened to accept a date
       expression, plus `questions` and `notUnderstood`. The model's
       structured-output schema is `z.toJSONSchema(…, { io: "input" })` of the
@@ -54,7 +54,7 @@ not touch the template.
       existing event form pre-filled. «Додати вибране» sends the confirmed list
       back.
 - [ ] The server parses the confirmed list from scratch and applies it through
-      the T-050 event commands in one transaction. A refusal on any item writes
+      the T-056 event commands in one transaction. A refusal on any item writes
       nothing and names that item.
 - [ ] Each date on the confirmation screen comes back as its symbol and the
       date shown. The server resolves the symbol again and writes only if the

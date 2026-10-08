@@ -3,7 +3,7 @@ id: ADR-028
 title: Every write is a command function taking userId first; Server Actions and the import screen are adapters over it
 status: proposed
 date: 2026-10-07
-ticket: T-050
+ticket: T-056
 ---
 
 ## Context
@@ -54,8 +54,7 @@ nobody has asked for yet.
 result`, and make every caller an adapter over the commands.** The Server
 Action keeps its signature and becomes `requireUser()` → read `FormData` →
 command → `FormState`. The import screen calls the commands directly. The
-cost is one refactor across `lib/actions`, done once, with no change in
-behaviour.
+cost is one refactor across `lib/actions`, with no change in behaviour.
 
 ## Decision
 
@@ -138,9 +137,9 @@ Option 3.
   (every UPDATE checks the rows it matched) and the §8.4 check in
   `lib/auth/queryDiscipline.test.ts` have to scan `lib/commands` as well.
 - Overview §8.4 and the root `CLAUDE.md` say a mutation cannot take `userId`
-  first. That stops being true of the commands, and is restated by T-050.
+  first. That stops being true of the commands, and is restated by T-056.
 - Overview §8.2 says the schema is parsed only in the Server Action. It is
-  now parsed only in the command; T-050 restates §8.2.
+  now parsed only in the command; T-056 restates §8.2.
 - A command's input is string-shaped: a test or the model passes `"45"`, not
   `45`, and `""` for an empty field. The JSON Schema of the input side says
   «string» where the rule is «a number from 10 to 90», so the model learns the
@@ -148,7 +147,16 @@ Option 3.
 - A convention test asserts that `z.toJSONSchema(schema, { io: "input" })`
   converts every schema a command parses. A schema construct the input side
   cannot represent fails it before the model ever sees the schema.
-- One more directory in the layout of overview §2. It is updated by T-050.
+- One more directory in the layout of overview §2. It is updated by T-056.
+- The refactor runs as a series, not as one change. T-050 first pins down
+  with integration tests what each of the 27 write Server Actions does,
+  since none had a test, so "no change in behaviour" can be checked. Then
+  T-056 sets the pattern on the event writes, T-057 and T-058 move the year
+  frame, the bells and the day overrides, and T-059 moves the template after
+  T-043 has changed its save. T-059 also adds a test that no file in
+  `lib/actions` writes to the database. The two styles live side by side
+  only while the series runs, and the test stops them from doing so after
+  it.
 - The commands are a contract other tickets (T-051–T-053) are written against.
   Changing a command's input now costs every adapter, not one form.
 - Revisit if a second deployment of the commands is needed, for example a
