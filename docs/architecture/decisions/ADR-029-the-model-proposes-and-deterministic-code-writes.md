@@ -78,6 +78,20 @@ Option 2.
   back to the server as data and is parsed again from scratch. The server
   does not trust what it sent out earlier. It is then applied through the
   ADR-028 commands, in one transaction.
+- A resolved date travels back with its symbol. Each date the confirmation
+  screen showed, from a date expression or from a boundary symbol
+  («до кінця семестру», «після канікул»), comes back as the pair: the symbol,
+  and the date the teacher saw. The server resolves the symbol again at write
+  time and compares. If the two agree, it writes, and the symbol is kept for
+  display as overview §8.1 keeps `boundaryKind`. If they differ, because
+  midnight passed or the year's breaks were edited meanwhile, it writes
+  nothing and shows the proposal again with the new date. Re-resolving alone
+  could write a date the teacher never saw, and sending the date alone would
+  lose the symbol the screen shows. The pattern is the one the template
+  editor already follows when a version changed in another window.
+- A named weekday said on that weekday («до п'ятниці» on a Friday) resolves to
+  today. The teacher sees the date on the confirmation screen and corrects it
+  there if next week was meant.
 - The proposal is not stored. It lives in the request and on the confirmation
   screen. A table for drafts appears only with asynchronous processing (a
   `worker`, `docs/tech-stack.md`).

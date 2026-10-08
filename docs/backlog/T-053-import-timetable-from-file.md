@@ -39,7 +39,8 @@ confirms it as one new template version.
       сьогодні», «після канікул», «з дати»), proposed from the file or the
       teacher's text where it names one («з 03.11», «після канікул»), and the
       version is created through T-055's future cut. A planned version already
-      ahead is handled as T-055 handles it.
+      ahead is handled as T-055 handles it. The start date comes back with its
+      symbol and is checked as T-051 checks a date.
 - [ ] The evaluation set gains at least five timetable files, including one
       with merged cells and one with both parity weeks on a single sheet.
 

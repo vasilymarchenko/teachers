@@ -40,9 +40,9 @@ not touch the template.
       schema, not with a copy of it.
 - [ ] Relative dates arrive as date expressions and are resolved by a pure
       function in `lib/domain` against `today()`. Unit tests with fixed
-      instants cover «сьогодні», «завтра», a named weekday on that weekday and
-      on the day after it, and a Kyiv night after midnight that is still
-      the previous day in UTC.
+      instants cover «сьогодні», «завтра», a named weekday on that weekday
+      (which resolves to today, ADR-029) and on the day after it, and a Kyiv
+      night after midnight that is still the previous day in UTC.
 - [ ] The model is called from one module that is the only importer of
       `@anthropic-ai/sdk`. The API key comes from the environment, and its
       absence hides the input rather than failing a page. Calls are limited per
@@ -56,6 +56,12 @@ not touch the template.
 - [ ] The server parses the confirmed list from scratch and applies it through
       the T-050 event commands in one transaction. A refusal on any item writes
       nothing and names that item.
+- [ ] Each date on the confirmation screen comes back as its symbol and the
+      date shown. The server resolves the symbol again and writes only if the
+      two agree. Otherwise it writes nothing and shows the proposal again with
+      the new date. A test confirms at 00:05 a proposal resolved at 23:55 the
+      day before, and asserts that nothing is written and the new date is
+      shown.
 - [ ] `questions` and `notUnderstood` are shown as text above the list. Nothing
       in them is written.
 - [ ] Unit tests cover the pipeline with the model call stubbed. An evaluation
