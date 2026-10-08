@@ -29,13 +29,15 @@ not touch the template.
 - [ ] `glossary.md` §9 states `ImportProposal` and `DateExpression` as they
       are built, and no longer as planned.
 - [ ] The proposal schema (Zod, `lib/validation`) has the deadline and info
-      event kinds, whose payloads are the deadline and info event command
-      input schemas of T-050 with each date field widened to accept a date
-      expression, plus `questions` and `notUnderstood`. `z.toJSONSchema()` of
-      the proposal schema is the model's structured-output schema, and a test
-      asserts that it converts.
-- [ ] After the date expressions are resolved, each proposed change is parsed
-      with its command input schema itself, not with a copy of it.
+      event kinds, whose payloads are the raw inputs of the deadline and info
+      event commands of T-050 (`z.input` of `deadlineInput` and
+      `infoEventInput`) with each date field widened to accept a date
+      expression, plus `questions` and `notUnderstood`. The model's
+      structured-output schema is `z.toJSONSchema(…, { io: "input" })` of the
+      proposal schema, and a test asserts that it converts.
+- [ ] After the date expressions are resolved, each proposed change is passed
+      to its command as raw input and parsed there with the write's own
+      schema, not with a copy of it.
 - [ ] Relative dates arrive as date expressions and are resolved by a pure
       function in `lib/domain` against `today()`. Unit tests with fixed
       instants cover «сьогодні», «завтра», a named weekday on that weekday and
