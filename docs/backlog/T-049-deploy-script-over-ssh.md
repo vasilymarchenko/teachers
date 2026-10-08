@@ -1,7 +1,7 @@
 ---
 id: T-049
 type: ticket
-title: One deploy script per server — PROD run by hand over SSH, DEV on a timer
+title: One deploy script for both servers — PROD run by hand over SSH, DEV on a timer
 status: todo
 depends_on: [T-015]
 refs:

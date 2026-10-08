@@ -42,7 +42,7 @@ third-party action included.
    additionally cannot run `migrate` before `up -d`.
 4. **A script on the server, run by a person over SSH with the tag as its
    argument.** No inbound access beyond the SSH the operator already has, no
-   credentials in GitHub, and nothing scheduled on the production server. It
+   credentials in GitHub, and no deploy scheduled on the production server. It
    costs a login per deploy, and GitHub shows no deployment record.
 
 ## Decision
@@ -56,7 +56,7 @@ Option 4 for PROD, and the same script for DEV.
   `migrate` then `up -d`, checks that the site answers, persists the deployed
   tag so a later bare `docker compose up -d` keeps it, and records the deploy.
   A rollback is the same script with an older tag.
-- On PROD nothing runs on a schedule. The script runs only when a person
+- On PROD no deploy runs on a schedule. The script runs only when a person
   invokes it — `ssh <prod> <path>/deploy.sh sha-<short-sha>` — and refuses
   `latest` there, so what PROD runs is always a named commit.
 - On DEV a systemd timer runs the same script with `latest`, so DEV follows
