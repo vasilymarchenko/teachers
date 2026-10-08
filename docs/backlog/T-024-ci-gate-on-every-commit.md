@@ -35,15 +35,12 @@ have no database. T-010 shipped with four unexecuted tests for that reason.
       attaches to a commit, so the pull request shows the run its head commit
       already has. Opening, reopening or re-targeting a pull request re-runs
       nothing, because the commit has not changed.
-- [ ] Branch protection on `main` requires **both** the gate and *"Require
+- [x] Branch protection on `main` requires **both** the gate and *"Require
       branches to be up to date before merging"*. The second is what makes the
       first a statement about `main`: a branch that contains the current `main`
       merges to the same tree it was checked at. Without it the gate is a claim
-      about the branch alone. **Not met: the two settings are repository
-      configuration and nothing in a commit can enable them. Everything this
-      repository can contain is in place — the workflow, and README's "Deploying
-      to the VPS" naming both settings verbatim — and the setting itself is
-      carried by T-025.**
+      about the branch alone. **Met by T-025: the two settings are repository
+      configuration, so nothing in this ticket's commits could enable them.**
 - [x] The gate covers `npm run lint`, `npm run typecheck`, `npm test`,
       `npm run build` and `npm run test:integration` — the five commands the root
       `CLAUDE.md` names, no fewer.
@@ -84,7 +81,7 @@ have no database. T-010 shipped with four unexecuted tests for that reason.
       not block a merge is a notification, not a gate — PR #17 was merged with
       nothing required and nothing run. **The run and the publish dependency
       ship here; the blocking half is the branch protection of the third
-      criterion, which is not met and is carried by T-025.**
+      criterion, met by T-025.**
 
 ## Notes
 
@@ -105,12 +102,12 @@ The version agreement of the seventh criterion is
 `lib/db/postgresImage.test.ts`; the migration-applied assertion of the fifth is
 `scripts/verify-schema.sql`, run in both database jobs.
 
-**Branch protection is repository configuration, not code, and it is not
-enabled yet**, so the third criterion is left unchecked and T-025 carries it.
-**Until it is enabled, CI reports and does not block: a red commit can still be
-merged into `main`, exactly as PR #17 was.** `status: done` here means every
-part of this ticket a commit can contain has shipped; the one part it cannot is
-tracked as its own item rather than ticked off here.
+**Branch protection is repository configuration, not code.** When this ticket
+was closed it was not enabled, so the third criterion was left unchecked and
+T-025 carried it: `status: done` meant every part a commit can contain had
+shipped. **T-025 has since enabled it, and the third criterion is checked: a
+red gate now blocks a normal merge into `main`; only an explicit admin bypass
+gets past it.** The evidence is in T-025's `## Notes`.
 
 Out of scope: a preview deployment per pull request, and running the suite
 against more than one Postgres version. Neither is a first-release need.

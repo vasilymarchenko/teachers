@@ -160,9 +160,14 @@ protection rules* for `main`:
    describes the branch alone, and two branches that pass separately can still
    break `main` together.
 
-**Neither is enabled yet** — `docs/backlog/T-025-enable-branch-protection.md`
-carries them. Until they are, CI reports and does not block: a red commit can
-still be merged into `main`.
+**Both are enabled** (T-025). The same rule also requires a pull request
+before merging, with no approvals: the repository has one maintainer, and an
+author cannot approve their own pull request. *"Do not allow bypassing the
+above settings"* is left **off** on purpose, so a repository admin can still
+merge past a red gate, or push to `main` directly. Neither happens by
+accident: the merge needs an explicit "bypass" choice, and no step of this
+repository's process pushes to `main`. A normal merge of a red pull request is
+blocked.
 
 ### First deploy
 
