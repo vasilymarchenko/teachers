@@ -51,6 +51,7 @@ for reading. Order is priority; the ID number is not.
 | [T-015](T-015-deploy-pipeline.md) | Deploy pipeline — GHCR image, Compose on the VPS, Caddy, migrations | done | T-002, T-004 |
 | [T-024](T-024-ci-gate-on-every-commit.md) | CI — run the full gate on every pushed commit, and gate the image publish on it | done | T-015 |
 | [T-025](T-025-enable-branch-protection.md) | Enable branch protection on `main` so the CI gate blocks rather than reports | todo | T-024 |
+| [T-049](T-049-deploy-script-over-ssh.md) | One deploy script for both servers — PROD run by hand over SSH, DEV on a timer | todo | T-015 |
 | [T-026](T-026-deterministic-ticket-loop.md) | Deterministic feedback loop for /teachers-ticket — one gate, a run ledger, a bounded review loop | declined | T-017, T-024 |
 | [T-027](T-027-backlog-contract-convention-tests.md) | Convention tests for the backlog and document contract | todo | T-017 |
 | [T-028](T-028-index-invariant-composite-fk-join.md) | Make the index-usage invariant accept the composite-FK join | done | T-008 |
@@ -158,6 +159,9 @@ clear action, and off T-047, whose contract for a value set from code its clear
 and undo follow. T-043 hangs off T-010 for the day form it adds a toggle to,
 and off T-046 and T-047 for the row header it shares with the clear icon and
 for the comparison its toggles are left out of. None of the three is drawn.
+T-049 hangs off T-015 and is not drawn: it replaces the deploy procedure that
+ticket documented with a script, for the two servers ADR-027 names; nothing in
+the diagram waits on it.
 
 ## Coverage
 
