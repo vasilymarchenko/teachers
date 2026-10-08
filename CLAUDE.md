@@ -1,45 +1,33 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Documents
 
-## Project status
-
-The scaffold (T-002), the database schema (T-004), the schedule domain (T-005), the auth boundary (T-006), the calendar read queries (T-008), the calendar read views (T-007), the application shell (T-014), the deploy pipeline (T-015), the year-setup screens (T-009), the weekly template editor (T-010), day-override editing (T-011), events (T-012), the CI gate (T-024), the year-setup gate (T-038) and the teacher-account command (T-039) are in place: the app builds and runs against a migrated Postgres, behind sign-in, with the navigation panel, a working calendar — day, week, month and year over real schedule data — a `/year` screen the teacher enters that data on and a `/schedule` screen where the weekly template is edited under copy-on-write versioning and a per-lesson screen under the calendar where a single day is edited, replaced or cancelled through one `DayOverride` row and an `/events` screen where deadlines and information events are entered — the repeating ones expanded onto the calendar's dates by `lib/domain/events`, never stored per occurrence; it is deployable to a VPS via Docker Compose, GHCR and Caddy, and every pushed commit is checked by `.github/workflows/ci.yml` — the five commands below plus both Docker images — with the GHCR publish gated on that run (ADR-007). Until a teacher's year setup is complete — an `AcademicYear` with its initial `ParityAnchor` and both `Semester` rows, plus at least one `BellSchedule` row — every page of the `(app)` group but `/year` redirects there: each page calls `requireCompleteSetup()` instead of `requireUser()` (T-038, overview §8.6, ADR-018). There is no sign-up screen: a teacher's account is created, given a password, deactivated and listed by `npm run teacher`, a console front end over the functions in `lib/auth/teachers.ts` that ships inside the `web` image as one bundled file (T-039, ADR-019, ADR-020). The first writes landed with T-009: `lib/db/queries` stays read-only and every mutation is a Server Action in `lib/actions` going to Drizzle directly, which is what `architect-overview.md` §2 prescribes for CRUD forms. The planning documents are:
+What is built and what is next is tracked in `docs/backlog/README.md`, not here. The planning documents are:
 
 - `docs/specs/specification.md` — product specification (Ukrainian), the primary document
 - `docs/tech-stack.md` — stack and its rationale
 - `docs/architecture/architect-overview.md` — application architecture: data model, layers, trade-offs (§9) and open questions (§10)
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
-- `docs/architecture/decisions/` — ADRs: one file per significant decision, English, dated and immutable. An ADR records *why* a decision was taken, which alternatives were rejected and at what cost; `architect-overview.md` states what is true **now** and links to the ADR instead of re-arguing it. Write one when a decision changes the data model or a contract other tickets are written against, chooses between real alternatives with a lasting cost, or would otherwise have to be reverse-engineered from the code — not for every ticket. Conventions and the template: `docs/architecture/decisions/README.md`
+- `docs/architecture/decisions/` — ADRs: one file per significant decision, English, dated and immutable; they record why, which alternatives were rejected and at what cost, while `architect-overview.md` states what is true **now**. When to write one, the conventions and the template: `docs/architecture/decisions/README.md`
 - `docs/architecture/lesson-input-and-import.md` — a plain-Ukrainian guide: the data model, template versions, `expand()` and the lesson input chain as built, then the proposed import (ADR-027, ADR-028); it restates and links, and its sources win where they differ
 - `docs/architecture/harness.md` — map of the development harness: the skills, agents, hook, gate, CI and `.gate/` state, who calls whom and which file owns which fact
-- `docs/backlog/` — the work tracker: one file per ticket (`T-NNN`) and per open question (`Q-NNN`), index in `docs/backlog/README.md`, conventions in `docs/backlog/CLAUDE.md`. There is no external tracker; a ticket states what to do and when it is done, and references the architecture document rather than restating it
+- `docs/backlog/` — the work tracker (there is no external tracker): `T-NNN` tickets and `Q-NNN` open questions, index in `README.md`, conventions in `CLAUDE.md`. A ticket states what to do and when it is done, and references the architecture document rather than restating it
 
 ## Commands
 
 Package manager: **npm** (`package-lock.json` is committed). Node version: `.nvmrc`.
 
 ```sh
-npm run dev          # dev server on :3000
-npm run build        # production build
-npm start            # serve the production build
 npm run gate         # the checks this change needs, all of them, in one table
-npm run lint         # ESLint
-npm run typecheck    # tsc --noEmit
-npm test             # Vitest, the unit suite, once
-npm run test:watch   # the unit suite, watching
 npm run test:integration  # the *.integration.test.ts files — needs a migrated Postgres
-npm run db:generate  # drizzle-kit generate — migration from lib/db/schema
-npm run db:migrate   # drizzle-kit migrate — also an explicit deploy step
 npm run db:seed      # reset the demo teacher and re-insert the fixture scenario
 npm run teacher -- list   # teacher accounts: create | password | deactivate | activate | list
-npm run db:studio    # Drizzle Studio
 npm run cost         # what one session cost, read out of its own transcript
 ```
 
 Postgres runs from `docker-compose.yml` (`docker compose up -d`). Copy `.env.example` to `.env` first; `DATABASE_URL` must agree with the `POSTGRES_*` values in the same file. `docker-compose.yml` is dev-only; the production stack (web, Postgres, Caddy) is `docker-compose.prod.yml`, deployed as described in `README.md` ("Deploying to the VPS").
 
-Before pushing, run `npm run gate`. It checks the Node version against `.nvmrc` first — too old, and it names that as the reason and stops there, before selecting a single check. Otherwise it selects the checks the change actually needs — always `lint`, `typecheck` and `hygiene`, plus `test` and `build` for a change that contains code, the database checks for `lib/db/**`, `drizzle/**`, `drizzle.config.ts` or `scripts/verify-schema.sql`, and the image builds for the `Dockerfile` or a Compose file — runs all of them without stopping at the first failure, prints one table and exits non-zero if any failed. A check it cannot run here (no Docker daemon, no `DATABASE_URL`), or that this kind of change does not need, is reported `skipped` with the reason, which is not a pass. The routing has two dimensions and lives in `scripts/gate/checks.ts`: the paths a change touches decide which extra checks it pulls in, and `changeKind()` decides whether a diff with no code in it pays for the ones every change otherwise gets. It is held in step with `.github/workflows/ci.yml` by a convention test — `docs/architecture/decisions/ADR-012-one-check-definition.md` — and the one place the two deliberately differ, `ci.yml` running `test` and `build` on every push while the gate routes them, is declared inside that same test: `docs/architecture/decisions/ADR-016-route-by-kind-of-change.md`. A single test file: `npx vitest run lib/time/today.test.ts`.
+Before pushing, run `npm run gate`: it checks the Node version against `.nvmrc`, selects the checks the change needs by the paths it touches and by `changeKind()` (routing in `scripts/gate/checks.ts`; held in step with `.github/workflows/ci.yml` by ADR-012, with the one declared difference in ADR-016), runs all of them without stopping at the first failure, prints one table and exits non-zero if any failed. A check it cannot run here, or that this kind of change does not need, is reported `skipped` with the reason, which is not a pass. A single test file: `npx vitest run lib/time/today.test.ts`.
 
 ## A ticket run, or a direct change
 
@@ -64,10 +52,7 @@ If a direct change turns out to be larger than one commit's worth of reasoning, 
 
 ## A session starts from a current main
 
-Every diff this repository takes — `npm run gate`, `/teachers-review`, the branch a ticket is cut on — is resolved against `origin/main`, which is a local snapshot left by the last fetch. Keeping it current is the harness's job, not something to remember: a `SessionStart` hook in `.claude/settings.json` runs `.claude/hooks/session-start-fetch.sh` at the start of every session. It does exactly two things and says which of them happened:
-
-- **`git fetch origin`** — this is what makes `origin/main` current, and it is all that anything keyed on the ref needs. Nothing else in the repository fetches: neither the gate nor the review carries a fetch of its own.
-- **A fast-forward of the working tree, only where it is safe and unambiguous** — `HEAD` is `main`, the tree is clean, and `main` is strictly behind `origin/main` and carries no unpushed commits of its own; then `git merge --ff-only`. In every other case the tree is left alone and the hook says how far behind it is. The hook never runs `git pull`: on a feature branch it does nothing useful for `main`, and on a dirty tree it either fails or merges without being asked.
+Every diff this repository takes — `npm run gate`, `/teachers-review`, the branch a ticket is cut on — is resolved against `origin/main`, a local snapshot left by the last fetch. Keeping it current is the harness's job: a `SessionStart` hook (`.claude/hooks/session-start-fetch.sh`) runs `git fetch origin` and, only when `HEAD` is a clean `main` strictly behind `origin/main` with no unpushed commits, fast-forwards it with `--ff-only`; it never runs `git pull`. Nothing else in the repository fetches. Mechanics: `docs/architecture/harness.md`.
 
 **The reading discipline.** A fetch moves the ref; it does not touch the files on disk. So: content whose current value decides something, read before a branch is cut from `origin/main`, is read from `origin/main` and not from disk — `git show origin/main:<path>`. That holds whatever branch the session is sitting on and whether or not the tree is clean. After a branch is cut with `git checkout -b <branch> origin/main` the working tree *is* the fetched `origin/main`, and everything read from then on is read from disk normally.
 
@@ -82,32 +67,14 @@ Every tool call re-sends everything the session has read so far, so the cost of 
 
 ## Code layout
 
-`app/` is the App Router; `components/` holds React and shadcn/ui wrappers; `lib/` is split into `domain/` (pure, DB-free logic — the tested part), `db/` (Drizzle client, `schema/` one file per aggregate, `queries/`), `actions/` (Server Actions), `validation/` (Zod), `auth/` and `time/`. The reasoning is in `docs/architecture/architect-overview.md` §2 — that document, not this one, is the place to change the layout.
+`lib/domain/` is pure and DB-free (the tested part). `lib/actions/` holds the Server Actions — the only writers: `lib/db/queries` stays read-only and a mutation goes to Drizzle directly. The rest of the layout, and why, is in `docs/architecture/architect-overview.md` §2 — that document, not this one, is the place to change it.
 
 Two rules from the architecture that are easy to violate silently:
 
 - **No `new Date()` in domain code.** "Today" comes only from `lib/time/today.ts`, which resolves the date in `Europe/Kyiv` (§8.5). The container runs in UTC; a naive `new Date()` is a day off for three hours every night.
 - **`userId` is the first argument** of every function in `lib/db/queries`. A mutation cannot take it first — a Server Action's signature belongs to `useActionState` — so it calls `requireUser()` before any other work and filters every statement by the result. Either way `userId` is only ever obtained from `requireUser()`, never from form or request input (§8.4).
 
-## Project
-
-"Teachers" is a web app for a single teacher (with an eye toward eventually supporting multiple users/tenants). See `docs/tech-stack.md` for the full stack rationale.
-
-## Tech stack
-
-| Layer | Choice |
-|---|---|
-| Frontend + Backend | Next.js 16, TypeScript (fullstack via Server Actions and Route Handlers — no separate DTO layer, DB model types flow directly into components) |
-| Styling | Tailwind + shadcn/ui |
-| ORM | Drizzle (not Prisma — thinner, closer to EF Core-style SQL; migrations via `drizzle-kit`) |
-| Database | PostgreSQL 16 (Docker) — chosen over SQLite because multi-user support is a planned future step |
-| Auth | better-auth |
-| Validation | Zod (also used as the schema for structured AI output) |
-| Dates | `date-fns` (+ `uk` locale) — no bare `Date` arithmetic in domain code |
-| Tests | Vitest — unit tests for `lib/domain` (`expand`, `parity`) |
-| Printing | `@media print` on a `/print/...` route; server-side PDF deferred until the app must produce a file itself |
-| Reverse proxy | Caddy (automatic TLS) |
-| Deploy | Docker Compose + GitHub Actions → GHCR → `docker compose pull` on the VPS; `drizzle-kit migrate` as an explicit deploy step |
+## Not in the first release
 
 Deliberately **not** in the first release: background jobs (queue table + cron) and AI (`@anthropic-ai/sdk`). When jobs are needed, they run as a separate `worker` service in Compose — never a `node-cron` timer inside the web process.
 
@@ -127,8 +94,7 @@ Language is chosen by **audience**, not by file type. If a teacher could read th
 
 **Architecture (the bridge between the two) — `docs/architecture/*.md`, i.e. `architect-overview.md`, `glossary.md` and the guide `lesson-input-and-import.md`:**
 - written in **Ukrainian prose with English nouns**: the narrative, reasoning and trade-offs are Ukrainian, but every technical entity keeps its English name verbatim — table, type and field names, file paths, layer names, library names, code blocks. Never translate an identifier into Ukrainian; a translated term is exactly where the document loses its link to the code.
-- Rationale: these documents explain *why* the product requirements produce this structure, so they constantly reference the Ukrainian specification.
-- **Exception — `docs/architecture/design/**` and `docs/architecture/decisions/**` are English.** These two subtrees hold the detailed documents from the English list above: `design/` states mechanics (schema notes, golden fixtures, implementation plans), `decisions/` records why a choice was made and what was rejected. They sit under `docs/architecture/` because they belong to the same body of work, not because they follow the same language rule — the language rule follows the audience, and the audience for both is a developer, not a reader of the specification. Note that this puts *reasoning* in English in `decisions/` while `architect-overview.md` reasons in Ukrainian: the overview argues from the product requirements a teacher stated, an ADR argues between technical options only. Ukrainian appears in either subtree only inside data a teacher would read — subject names, class names, demo payloads.
+- **Exception — `docs/architecture/design/**` and `docs/architecture/decisions/**` are English.** These two subtrees hold the detailed documents from the English list above: `design/` states mechanics (schema notes, golden fixtures, implementation plans), `decisions/` records why a choice was made and what was rejected. Note that this puts *reasoning* in English in `decisions/` while `architect-overview.md` reasons in Ukrainian: the overview argues from the product requirements a teacher stated, an ADR argues between technical options only. Ukrainian appears in either subtree only inside data a teacher would read — subject names, class names, demo payloads.
 
 **Never keep the same document in two languages.** Documents are split by **level of detail, not by language**:
 - `docs/architecture/architect-overview.md` (Ukrainian) — decisions, module boundaries, trade-offs, open questions;

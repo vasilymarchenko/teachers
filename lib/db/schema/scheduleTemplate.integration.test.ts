@@ -222,12 +222,28 @@ describe("a second template edit on the same day", () => {
 });
 
 describe("updated_at", () => {
-  it("moves on an update, because Drizzle sets it — the SQL default only covers INSERT", async () => {
+  it("starts equal to created_at, both from the SQL default", async () => {
     const [created] = await db
       .insert(scheduleTemplate)
       .values(version("OWN", "2027-04-19", "2027-05-03"))
       .returning();
+
     expect(created.updatedAt).toEqual(created.createdAt);
+  });
+
+  it("moves on an update, because Drizzle sets it — the SQL default only covers INSERT", async () => {
+    // Inserted in the past: an insert and an update a few microseconds apart
+    // can land in the same millisecond, and then "moved" cannot be told apart
+    // from "not set" in a JavaScript `Date`.
+    const past = new Date("2020-01-01T00:00:00Z");
+    const [created] = await db
+      .insert(scheduleTemplate)
+      .values({
+        ...version("OWN", "2027-04-19", "2027-05-03"),
+        createdAt: past,
+        updatedAt: past,
+      })
+      .returning();
 
     const [updated] = await db
       .update(scheduleTemplate)
