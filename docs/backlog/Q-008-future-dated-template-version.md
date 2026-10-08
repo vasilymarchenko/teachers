@@ -2,7 +2,7 @@
 id: Q-008
 type: question
 title: May a template edit start on a future date, not only today
-status: open
+status: answered
 depends_on: []
 refs:
   - docs/architecture/architect-overview.md §10.8
@@ -22,19 +22,26 @@ and if so, what happens to the version in force between today and that date?
 
 ## Current default
 
-The cut is always `today()`. Import (T-053) does the same: it creates the new
-version from the day the teacher confirms it, and says so on the confirmation
-screen.
+Answered: yes. A new timetable is often known ahead of time, typically one
+that takes over after a break. A template edit may cut on a future date,
+never an earlier one than `today()`, so I1 still forbids only the past. That
+is already true of a `DayOverride` and an `Event`, which may both be entered
+for a future date. The usual start is «після канікул», resolved at write time.
+A planned version is cancelled by overwriting it with the slots of the version
+before it, not by deleting it, so no gap opens and no `validTo` moves forward.
+
+The decision is recorded in `docs/architecture/architect-overview.md` §10.8,
+and the work is T-055. This file is the record that it was asked.
 
 ## Cost of changing later
 
-`planTemplateEdit()` gains a `cutAt` that may be later than `today()` but never
-earlier. I1 holds, because the past is still never edited. The version in force
-is trimmed at the future date instead of at today, and `capToNextVersion()`
-already handles a version that begins later. The cost is one parameter, its
-fixtures in `design/expand-fixtures.md`, and a date field on the confirmation
-screen. The schema does not change.
+The planning domain is cheap: `planTemplateEdit()` already plans against the
+version in force on its cut date, and `capToNextVersion()` already stops a new
+version where a later one starts. What the answer costs is behaviour, and T-055
+carries it: a change made today has to be offered to the planned version too,
+the editor has to show which version it edits, and cancelling needs a rule,
+which is overwriting. The schema does not change.
 
 ## Needed from
 
-The teacher: whether a new timetable is ever known in advance, and how far.
+The teacher: answered. A new timetable after a break is the case that occurs.

@@ -62,7 +62,8 @@ for reading. Order is priority; the ID number is not.
 | [T-050](T-050-extract-write-commands.md) | Extract every write into a command function taking userId first; Server Actions become adapters | todo | T-009, T-010, T-011, T-012, T-043, T-046 |
 | [T-051](T-051-quick-add-events-from-text.md) | Quick add — free text becomes deadlines and info events through a proposal the teacher confirms | todo | T-050, Q-007 |
 | [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051 |
-| [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, Q-008 |
+| [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, T-055 |
+| [T-055](T-055-plan-a-template-version-from-a-future-date.md) | Plan a new template version from a future date — after a break or from a date — and cancel it by overwriting | todo | T-010, T-043, T-046 |
 
 ## Open questions
 
@@ -76,8 +77,8 @@ Each mirrors a section of `docs/architecture/architect-overview.md` §10.
 | [Q-006](Q-006-is-taught-by-me-matching.md) | How `isTaughtByMe` matches a CLASS lesson to an OWN lesson | open | — (default pinned in `design/expand-fixtures.md` §8.6) |
 | [Q-004](Q-004-server-pdf-renderer.md) | Server-side PDF renderer, if one is ever needed | open | — (deferred with the feature) |
 | [Q-007](Q-007-ai-import-scope-and-data.md) | Is AI-assisted import in scope, and may teacher data be sent to an external model | open | T-051 |
-| [Q-008](Q-008-future-dated-template-version.md) | May a template edit start on a future date, not only today | open | T-053 |
 | [Q-002](Q-002-mobile-template-editor.md) | Mobile interaction pattern for the weekly template editor | answered | — (answer in `architect-overview.md` §10.2) |
+| [Q-008](Q-008-future-dated-template-version.md) | May a template edit start on a future date, not only today | answered | — (answer in `architect-overview.md` §10.8) |
 
 ## Dependency shape
 
@@ -138,8 +139,9 @@ it; T-035 hangs off T-034 for that extracted unit, and adds the second entry
 point to it (`ADR-014`). Doing them in any other order writes the loop twice. T-028 hangs off T-008 and
 is not drawn either: it is a defect in the invariant test that ticket's last
 criterion produced, not new work off it.
-No item waits on an open question any more: Q-002, the one that did, is answered
-(`architect-overview.md` §10.2). T-014 is done, so the UI tickets that waited on
+Outside the import track, no item waits on an open question any more: Q-002,
+the one that did, is answered (`architect-overview.md` §10.2). In the import
+track, T-051 waits on Q-007. T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency they
 carried is satisfied. T-011 and T-021, which hang off T-007 alone, are done
 too; T-013 is what remains of the calendar work. T-038 hangs off T-009 and T-014 and
@@ -175,8 +177,11 @@ save it extracts, and is the only one of the four that does not wait on
 Q-007. T-051 hangs off T-050 for those commands and off Q-007 for the decision
 to build it at all. T-052 hangs off T-051 for the proposal pipeline it extends,
 and off T-043 for the per-row both-weeks choice its parity question sets.
-T-053 hangs off T-052 for the template kinds and off Q-008 for the date the
-imported version starts on. An MCP endpoint was considered and deferred
+T-053 hangs off T-052 for the template kinds and off T-055 for the date the
+imported version starts on, «після канікул» being the case a new timetable
+file usually comes with. T-055 answers Q-008 and hangs off T-010 for the
+editor and copy-on-write it extends, and off T-043 and T-046, which change the
+template day save it extends too. An MCP endpoint was considered and deferred
 (ADR-028) and has no ticket. The plain-language walk through the lesson input chain these
 tickets extend is `docs/architecture/lesson-input-and-import.md`.
 

@@ -3,7 +3,7 @@ id: T-053
 type: ticket
 title: Import a timetable from a spreadsheet or a photo as one new template version, with bell times
 status: todo
-depends_on: [T-052, Q-008]
+depends_on: [T-052, T-055]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/lesson-input-and-import.md §7
@@ -11,6 +11,7 @@ refs:
   - docs/specs/specification.md §3.3
   - docs/specs/specification.md §5.1
   - docs/architecture/architect-overview.md §3.2
+  - docs/architecture/architect-overview.md §10.8
 ---
 
 ## Goal
@@ -34,8 +35,11 @@ confirms it as one new template version.
 - [ ] Confirming creates exactly one template version for the view through the
       T-050 commands. Proposed bell times go through the bell schedule command
       in the same transaction.
-- [ ] The start date follows the answer to Q-008. Until it is answered, the
-      version starts at `today()` and the screen says so.
+- [ ] The confirmation screen offers the start choices of T-055 («з
+      сьогодні», «після канікул», «з дати»), proposed from the file or the
+      teacher's text where it names one («з 03.11», «після канікул»), and the
+      version is created through T-055's future cut. A planned version already
+      ahead is handled as T-055 handles it.
 - [ ] The evaluation set gains at least five timetable files, including one
       with merged cells and one with both parity weeks on a single sheet.
 
