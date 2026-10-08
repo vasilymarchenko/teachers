@@ -118,7 +118,7 @@
 
 ## 9. Імпорт (запропоновано, термінів у коді ще немає)
 
-Напрямок — `decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md` і `decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md`. Простою мовою — `lesson-input-and-import.md`. Чи береться в роботу — Q-007.
+Напрямок — `decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md` і `decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md`. Чи береться в роботу — Q-007.
 
 | Українською (продукт) | Планований ідентифікатор | Що це | Спека |
 |---|---|---|---|

@@ -9,7 +9,6 @@ What is built and what is next is tracked in `docs/backlog/README.md`, not here.
 - `docs/architecture/architect-overview.md` — application architecture: data model, layers, trade-offs (§9) and open questions (§10)
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
 - `docs/architecture/decisions/` — ADRs: one file per significant decision, English, dated and immutable; they record why, which alternatives were rejected and at what cost, while `architect-overview.md` states what is true **now**. When to write one, the conventions and the template: `docs/architecture/decisions/README.md`
-- `docs/architecture/lesson-input-and-import.md` — a plain-Ukrainian guide: the data model, template versions, `expand()` and the lesson input chain as built, then the proposed import (ADR-028, ADR-029); it restates and links, and its sources win where they differ
 - `docs/architecture/harness.md` — map of the development harness: the skills, agents, hook, gate, CI and `.gate/` state, who calls whom and which file owns which fact
 - `docs/backlog/` — the work tracker (there is no external tracker): `T-NNN` tickets and `Q-NNN` open questions, index in `README.md`, conventions in `CLAUDE.md`. A ticket states what to do and when it is done, and references the architecture document rather than restating it
 
@@ -88,7 +87,7 @@ Language is chosen by **audience**, not by file type. If a teacher could read th
 - the backlog — `docs/backlog/**`, and the agent tooling — `.claude/**`;
 - detailed design documents, ADRs, implementation plans, `docs/tech-stack.md`, `README.md`.
 
-**Architecture (the bridge between the two) — `docs/architecture/*.md`, i.e. `architect-overview.md`, `glossary.md` and the guide `lesson-input-and-import.md`:**
+**Architecture (the bridge between the two) — `docs/architecture/*.md`, i.e. `architect-overview.md` and `glossary.md`:**
 - written in **Ukrainian prose with English nouns**: the narrative, reasoning and trade-offs are Ukrainian, but every technical entity keeps its English name verbatim — table, type and field names, file paths, layer names, library names, code blocks. Never translate an identifier into Ukrainian; a translated term is exactly where the document loses its link to the code.
 - **Exception — `docs/architecture/design/**` and `docs/architecture/decisions/**` are English.** These two subtrees hold the detailed documents from the English list above: `design/` states mechanics (schema notes, golden fixtures, implementation plans), `decisions/` records why a choice was made and what was rejected. Note that this puts *reasoning* in English in `decisions/` while `architect-overview.md` reasons in Ukrainian: the overview argues from the product requirements a teacher stated, an ADR argues between technical options only. Ukrainian appears in either subtree only inside data a teacher would read — subject names, class names, demo payloads.
 

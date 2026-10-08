@@ -6,7 +6,6 @@ status: todo
 depends_on: [T-043, T-051, T-058, T-059]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
-  - docs/architecture/lesson-input-and-import.md §7
   - docs/architecture/architect-overview.md §3.2
   - docs/architecture/architect-overview.md §3.4
   - docs/architecture/decisions/ADR-006-template-day-is-the-save-unit.md

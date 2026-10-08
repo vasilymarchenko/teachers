@@ -10,7 +10,6 @@ refs:
   - docs/architecture/architect-overview.md §8.1
   - docs/architecture/decisions/ADR-006-template-day-is-the-save-unit.md
   - docs/architecture/decisions/ADR-025-both-parity-weeks-is-decided-per-lesson-row.md
-  - docs/architecture/lesson-input-and-import.md §5
 ---
 
 ## Goal
@@ -40,7 +39,5 @@ the series. The teacher sees no difference.
       handle. Every write is a command.
 - [ ] `architect-overview.md` §2, §8.2 and §8.4 and the root `CLAUDE.md` drop
       the note T-056 left that the move is incomplete.
-      `lesson-input-and-import.md` §5, §6 and §7.2 describe the write path
-      with the commands in place.
 
 ## Notes

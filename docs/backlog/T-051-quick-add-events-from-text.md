@@ -7,7 +7,6 @@ depends_on: [T-056, Q-007]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md
-  - docs/architecture/lesson-input-and-import.md §7
   - docs/specs/specification.md §6.3
   - docs/specs/specification.md §10
   - docs/architecture/architect-overview.md §8.1
@@ -69,7 +68,5 @@ not touch the template.
       with a script that runs it on demand. Neither the gate nor CI runs it.
 - [ ] `architect-overview.md` §7 states what import is now, and ADR-029 moves
       to `accepted`.
-- [ ] `lesson-input-and-import.md` §7 describes the proposal as built, not
-      as proposed.
 
 ## Notes

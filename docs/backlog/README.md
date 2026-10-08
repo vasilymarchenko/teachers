@@ -192,8 +192,7 @@ template commands, and off T-055 for the date the imported version starts on,
 «після канікул» being the case a new timetable file usually comes with. T-055
 answers Q-008 and hangs off T-059, whose template commands it extends with a
 future cut. An MCP endpoint was considered and deferred
-(ADR-028) and has no ticket. The plain-language walk through the lesson input chain these
-tickets extend is `docs/architecture/lesson-input-and-import.md`.
+(ADR-028) and has no ticket.
 
 ## Coverage
 

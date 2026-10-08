@@ -6,7 +6,6 @@ status: todo
 depends_on: [T-052, T-055, T-057, T-059]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
-  - docs/architecture/lesson-input-and-import.md §7
   - docs/specs/specification.md §10
   - docs/specs/specification.md §3.3
   - docs/specs/specification.md §5.1

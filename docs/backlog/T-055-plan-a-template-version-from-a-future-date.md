@@ -11,7 +11,6 @@ refs:
   - docs/architecture/design/expand-fixtures.md §3.8
   - docs/architecture/decisions/ADR-006-template-day-is-the-save-unit.md
   - docs/specs/specification.md §5.2
-  - docs/architecture/lesson-input-and-import.md §3
 ---
 
 ## Goal
@@ -56,6 +55,5 @@ overview §10.8 (Q-008).
       overwrites instead of deleting. `architect-overview.md` §3.2 states I1
       as it now holds, and `glossary.md` §3 states the planned version as
       built.
-- [ ] `lesson-input-and-import.md` §3 describes the planned version as built.
 
 ## Notes
