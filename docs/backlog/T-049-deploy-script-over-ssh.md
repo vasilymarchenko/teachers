@@ -27,16 +27,20 @@ ADR-027.
       and `migrate` at that tag (`--profile tools`); reads the commit from the
       `web` image's `org.opencontainers.image.revision` label and checks the
       server's copy of the repository out at it; runs `migrate`, then `up -d`;
-      checks that the site answers over HTTPS. Any failed step stops it with a
-      non-zero exit and a message naming the step.
+      checks that the site answers at the server's health-check URL. Any failed
+      step stops it with a non-zero exit and a message naming the step.
 - [ ] Before `migrate` it takes a `pg_dump` of the database into a backup
       directory, and does not migrate if the dump failed.
 - [ ] The deployed tag is persisted, so a bare `docker compose -f
       docker-compose.prod.yml up -d` run afterwards keeps it rather than
       falling back to `latest`.
 - [ ] Every run appends one line to a log on the server — time, tag, revision,
-      result — and on success prints the tag that was running before, which is
-      what a rollback passes back in.
+      result — and on success prints the `sha-<short-sha>` tag of the revision
+      that was running before, read from that image's
+      `org.opencontainers.image.revision` label rather than from the tag it was
+      started under, so the printed value is one the PROD check below accepts
+      even when the previous deploy ran `latest`. That value is what a rollback
+      passes back in.
 - [ ] Bash has read the whole script before the checkout step runs, so checking
       out a revision with a different version of the script does not change what
       the running script does. Demonstrated by a deploy across a commit that
@@ -52,12 +56,19 @@ ADR-027.
       script with `latest` from a directory that is not the development working
       tree, under its own Compose project name, so the dev Postgres from
       `docker-compose.yml` and the DEV stack share no container or volume.
+- [ ] The health-check URL is a variable in each server's `.env`, documented in
+      `.env.example`, and defaults to `https://${CADDY_DOMAIN}`. README states
+      what DEV's `.env` sets for it and for `CADDY_DOMAIN`, and which host ports
+      the DEV stack binds, so the check passes on DEV without a DEV-only branch
+      in the script.
 - [ ] README's "Deploying to the VPS" describes both servers: first deploy, a
       deploy (`ssh <prod> …/deploy.sh sha-…`), a rollback (the same command
       with an older tag, plus the hand-run down step for a schema change), and
       installing the DEV timer. The manual three-command sequence is no longer
       the documented procedure, and `docker-compose.prod.yml`'s header comment
-      points at the script instead of repeating it.
+      points at the script instead of repeating it. `.env.example`'s
+      `IMAGE_TAG` comment says the script sets that value, and no longer tells
+      the operator to pin a tag there by hand for a rollout or a rollback.
 - [ ] Demonstrated on DEV: a merge to `main` is running on DEV within one timer
       interval, with no command typed.
 
