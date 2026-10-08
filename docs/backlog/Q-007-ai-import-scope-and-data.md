@@ -8,13 +8,13 @@ refs:
   - docs/architecture/architect-overview.md §10.7
   - docs/specs/specification.md §10
   - docs/specs/specification.md §11
-  - docs/architecture/decisions/ADR-028-the-model-proposes-and-deterministic-code-writes.md
+  - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
 ---
 
 ## Question
 
 Specification §10 describes import as a future direction, and §11 says the
-release has no AI features. ADR-028 proposes import through a language model:
+release has no AI features. ADR-029 proposes import through a language model:
 free text, a spreadsheet or a photo becomes a proposal the teacher confirms.
 Two things have to be decided before any of it is built:
 
@@ -28,13 +28,13 @@ Two things have to be decided before any of it is built:
 ## Current default
 
 No AI and no import: specification §11. Nothing in the code calls a model.
-T-049 does not depend on this answer. T-050–T-053 do.
+T-050 does not depend on this answer. T-051–T-054 do.
 
 ## Cost of changing later
 
 Low while nothing is built. Once import exists, narrowing the data it may
 send means a filter on the input and a change to the evaluation set, not to
-the commands (ADR-027) or the proposal schema.
+the commands (ADR-028) or the proposal schema.
 
 ## Needed from
 

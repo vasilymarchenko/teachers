@@ -9,7 +9,7 @@ What is built and what is next is tracked in `docs/backlog/README.md`, not here.
 - `docs/architecture/architect-overview.md` — application architecture: data model, layers, trade-offs (§9) and open questions (§10)
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
 - `docs/architecture/decisions/` — ADRs: one file per significant decision, English, dated and immutable; they record why, which alternatives were rejected and at what cost, while `architect-overview.md` states what is true **now**. When to write one, the conventions and the template: `docs/architecture/decisions/README.md`
-- `docs/architecture/lesson-input-and-import.md` — a plain-Ukrainian guide: the data model, template versions, `expand()` and the lesson input chain as built, then the proposed import (ADR-027, ADR-028); it restates and links, and its sources win where they differ
+- `docs/architecture/lesson-input-and-import.md` — a plain-Ukrainian guide: the data model, template versions, `expand()` and the lesson input chain as built, then the proposed import (ADR-028, ADR-029); it restates and links, and its sources win where they differ
 - `docs/architecture/harness.md` — map of the development harness: the skills, agents, hook, gate, CI and `.gate/` state, who calls whom and which file owns which fact
 - `docs/backlog/` — the work tracker (there is no external tracker): `T-NNN` tickets and `Q-NNN` open questions, index in `README.md`, conventions in `CLAUDE.md`. A ticket states what to do and when it is done, and references the architecture document rather than restating it
 

@@ -1,7 +1,7 @@
 # Глосарій: продуктовий термін → ідентифікатор у коді
 
 **Версія:** 1.11
-**Дата:** 7 жовтня 2026 р. (ADR-027, ADR-028: заплановані терміни імпорту — `ImportProposal`, `DateExpression`; T-043: «в обох тижнях» — `bothWeeks`; T-045: мій клас — `homeroomClassName`, `isInMyClass`)
+**Дата:** 7 жовтня 2026 р. (ADR-028, ADR-029: заплановані терміни імпорту — `ImportProposal`, `DateExpression`; T-043: «в обох тижнях» — `bothWeeks`; T-045: мій клас — `homeroomClassName`, `isInMyClass`)
 
 Це шов між українською продуктовою мовою (`docs/specs/specification.md`, UI) і англійськими іменами в коді. Правило одне: **новий доменний термін спершу з'являється тут, потім у схемі БД, домені та документах.** Якщо терміна немає в цій таблиці — його ще не існує, і вигадувати йому ім'я на місці не можна.
 
@@ -115,7 +115,7 @@
 
 ## 9. Імпорт (запропоновано, термінів у коді ще немає)
 
-Напрямок — `decisions/ADR-027-writes-are-commands-and-transports-are-adapters.md` і `decisions/ADR-028-the-model-proposes-and-deterministic-code-writes.md`. Простою мовою — `lesson-input-and-import.md`. Чи береться в роботу — Q-007.
+Напрямок — `decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md` і `decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md`. Простою мовою — `lesson-input-and-import.md`. Чи береться в роботу — Q-007.
 
 | Українською (продукт) | Планований ідентифікатор | Що це | Спека |
 |---|---|---|---|

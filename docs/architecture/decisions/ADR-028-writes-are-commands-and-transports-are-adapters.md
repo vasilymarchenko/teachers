@@ -1,9 +1,9 @@
 ---
-id: ADR-027
+id: ADR-028
 title: Every write is a command function taking userId first; Server Actions, import and MCP are adapters over it
 status: proposed
 date: 2026-10-07
-ticket: T-049
+ticket: T-050
 ---
 
 ## Context
@@ -105,9 +105,9 @@ Option 3.
   (every UPDATE checks the rows it matched) and the §8.4 check in
   `lib/auth/queryDiscipline.test.ts` have to scan `lib/commands` as well.
 - Overview §8.4 and the root `CLAUDE.md` say a mutation cannot take `userId`
-  first. That stops being true of the commands, and is restated by T-049.
-- One more directory in the layout of overview §2. It is updated by T-049.
-- The commands are a contract other tickets (T-050–T-053) are written against.
+  first. That stops being true of the commands, and is restated by T-050.
+- One more directory in the layout of overview §2. It is updated by T-050.
+- The commands are a contract other tickets (T-051–T-054) are written against.
   Changing a command's input now costs every adapter, not one form.
 - Revisit if a second deployment of the commands is needed, for example a
   separate `worker` service. The commands then move with `lib/domain` into

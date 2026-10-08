@@ -22,7 +22,7 @@ and if so, what happens to the version in force between today and that date?
 
 ## Current default
 
-The cut is always `today()`. Import (T-052) does the same: it creates the new
+The cut is always `today()`. Import (T-053) does the same: it creates the new
 version from the day the teacher confirms it, and says so on the confirmation
 screen.
 

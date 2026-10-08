@@ -1,11 +1,11 @@
 ---
-id: T-052
+id: T-053
 type: ticket
 title: Import a timetable from a spreadsheet or a photo as one new template version, with bell times
 status: todo
-depends_on: [T-051, Q-008]
+depends_on: [T-052, Q-008]
 refs:
-  - docs/architecture/decisions/ADR-028-the-model-proposes-and-deterministic-code-writes.md
+  - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/lesson-input-and-import.md §7
   - docs/specs/specification.md §10
   - docs/specs/specification.md §3.3
@@ -32,7 +32,7 @@ confirms it as one new template version.
       template editor, with the cells that differ from the version in force
       marked.
 - [ ] Confirming creates exactly one template version for the view through the
-      T-049 commands. Proposed bell times go through the bell schedule command
+      T-050 commands. Proposed bell times go through the bell schedule command
       in the same transaction.
 - [ ] The start date follows the answer to Q-008. Until it is answered, the
       version starts at `today()` and the screen says so.

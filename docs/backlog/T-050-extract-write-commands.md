@@ -1,11 +1,11 @@
 ---
-id: T-049
+id: T-050
 type: ticket
 title: Extract every write into a command function taking userId first; Server Actions become adapters
 status: todo
 depends_on: [T-009, T-010, T-011, T-012, T-043, T-046]
 refs:
-  - docs/architecture/decisions/ADR-027-writes-are-commands-and-transports-are-adapters.md
+  - docs/architecture/decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md
   - docs/architecture/architect-overview.md §2
   - docs/architecture/architect-overview.md §3.2
   - docs/architecture/architect-overview.md §8.1
@@ -18,7 +18,7 @@ refs:
 ## Goal
 
 Every write the application makes runs through a command function in
-`lib/commands`, `(userId, input, options?) → result`, as ADR-027 states. The
+`lib/commands`, `(userId, input, options?) → result`, as ADR-028 states. The
 Server Actions in `lib/actions` keep their signatures and become adapters:
 `requireUser()`, read `FormData`, call the command, map its result onto
 `FormState`, `revalidatePath()`. The teacher sees no difference.
@@ -54,7 +54,7 @@ Server Actions in `lib/actions` keep their signatures and become adapters:
       it now holds: a command takes `userId` first, and only its adapter
       obtains it, from `requireUser()`.
 - [ ] `architect-overview.md` §2 shows `lib/commands/` in the layout, and
-      `lib/actions` is described as the form adapter. ADR-027 moves to
+      `lib/actions` is described as the form adapter. ADR-028 moves to
       `accepted`.
 - [ ] `lesson-input-and-import.md` §5, §6 and §7.2 describe the write path
       with the commands in place.

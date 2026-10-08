@@ -1,12 +1,12 @@
 ---
-id: T-053
+id: T-054
 type: ticket
 title: MCP endpoint — an AI client enters and reads calendar data through the commands, signed in as the teacher
 status: todo
-depends_on: [T-049, T-050, Q-007]
+depends_on: [T-050, T-051, Q-007]
 refs:
-  - docs/architecture/decisions/ADR-027-writes-are-commands-and-transports-are-adapters.md
-  - docs/architecture/decisions/ADR-028-the-model-proposes-and-deterministic-code-writes.md
+  - docs/architecture/decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md
+  - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/lesson-input-and-import.md §8
   - docs/architecture/architect-overview.md §8.3
   - docs/architecture/architect-overview.md §8.4
@@ -17,7 +17,7 @@ refs:
 The teacher connects their own AI assistant to the application and asks it,
 in their own words, to enter a deadline, a lesson or a day override, or to
 read what is on a given day. The application serves an MCP endpoint from a
-Route Handler in the same Next.js app. Its tools call the T-049 commands and
+Route Handler in the same Next.js app. Its tools call the T-050 commands and
 the `lib/db/queries` reads directly, with `userId` taken from a verified token.
 
 ## Acceptance criteria
@@ -25,7 +25,7 @@ the `lib/db/queries` reads directly, with `userId` taken from a verified token.
 - [ ] The endpoint authenticates with OAuth as the MCP specification requires,
       issued by better-auth, and resolves `userId` from the token alone. A tool
       argument named like a user id is rejected by the schema.
-- [ ] Write tools mirror the closed set of kinds in the T-050/T-051 proposal
+- [ ] Write tools mirror the closed set of kinds in the T-051/T-052 proposal
       schema, take the same payloads and date expressions, and default to
       `dryRun`. The client must call again with `dryRun: false` to write.
 - [ ] Read tools return the resolved days of a date range (`expand()` through

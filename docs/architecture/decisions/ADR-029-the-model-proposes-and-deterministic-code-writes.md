@@ -1,9 +1,9 @@
 ---
-id: ADR-028
+id: ADR-029
 title: In import, a model proposes typed changes and deterministic code resolves and writes them; dates arrive as symbols
 status: proposed
 date: 2026-10-07
-ticket: T-050
+ticket: T-051
 ---
 
 ## Context
@@ -20,7 +20,7 @@ turns on.
 The write paths already have their rules. Boundaries are entered as symbols and
 resolved at write time (overview §8.1). «Today» comes only from
 `lib/time/today.ts` in `Europe/Kyiv` (§8.5). The template is cut at `today()`
-and never edited in the past (§3.2). After ADR-027, these rules live in command
+and never edited in the past (§3.2). After ADR-028, these rules live in command
 functions that any caller can use.
 
 ## Options
@@ -71,7 +71,7 @@ Option 2.
 - Nothing is written before the teacher confirms. The confirmed proposal comes
   back to the server as data and is parsed again from scratch. The server
   does not trust what it sent out earlier. It is then applied through the
-  ADR-027 commands, in one transaction.
+  ADR-028 commands, in one transaction.
 - The proposal is not stored. It lives in the request and on the confirmation
   screen. A table for drafts appears only with asynchronous processing (a
   `worker`, `docs/tech-stack.md`).
@@ -83,7 +83,7 @@ Option 2.
 ## Consequences
 
 - A misreading costs the teacher one correction on the confirmation screen,
-  never a wrong row. The same holds for an AI client over MCP (ADR-027): there
+  never a wrong row. The same holds for an AI client over MCP (ADR-028): there
   the confirmation happens in the client's own conversation, and the commands
   offer a `dryRun` preview for it to show.
 - Relative dates are tested like every other date in the domain, with fixed
