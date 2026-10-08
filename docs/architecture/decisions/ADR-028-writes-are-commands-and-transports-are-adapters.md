@@ -57,8 +57,8 @@ result`, and make every caller an adapter over the commands.** The Server
 Action keeps its signature and becomes `requireUser()` → read `FormData` →
 command → `FormState`. The import screen calls the commands directly. An MCP
 endpoint mounted in the same Next.js application calls them directly too. The
-cost is one refactor across `lib/actions`, done once, with no change in
-behaviour.
+cost is one refactor across `lib/actions` and `lib/validation`, done once, with
+no change in behaviour.
 
 ## Decision
 
@@ -66,17 +66,47 @@ Option 3.
 
 - A command is a plain async function in `lib/commands/`, one file per
   aggregate, next to the `lib/actions` file it serves. Its first parameter is
-  `userId` and its second is an already-typed input: the output type of the
-  same Zod schema the form uses. It never reads `FormData`, never calls
+  `userId` and its second is an already-typed input, described by the
+  command's own input schema (below). It never reads `FormData`, never calls
   `requireUser()` (its caller does), and never calls `revalidatePath()` (that
   is a concern of the page cache, which belongs to the Server Action).
-- A command validates its input itself with the same schema, because callers
-  other than a form arrive with unvalidated data. A form caller pays for a
-  second parse of an already-parsed object, which is negligible.
+- Each write has two Zod schemas in `lib/validation`, and the first is new:
+  - The **command input schema** describes the typed value the command takes:
+    a number as a number, an absent value as absent, a template day as
+    `{ entries: [{ lessonNumber, payload? }] }`. It carries every rule about
+    the data itself: ranges, the fields a view requires, start times that
+    grow, a date range that is not backwards. It contains no `transform`,
+    `preprocess` or `coerce`, so parsing it is idempotent (what it outputs, it
+    accepts again) and `z.toJSONSchema()` can convert it.
+  - The **form schema** stays the one schema per form of ADR-005. It reads the
+    form's strings (`""` for an empty field, a number typed as text, one field
+    per row), turns them into the command input, and ends in `.pipe()` into
+    the command input schema. It keeps only what is about the form: parsing
+    strings, what a blank row means, and the `*_FIELD` name map.
+- One schema per write would not do, in either direction. The form schemas
+  are form-shaped, and their output is not their input. Measured on
+  `bellScheduleInput`, `deadlineInput` and `templateDayInputFor()` on the date
+  of this ADR: the output of a valid parse fails a second parse with the same
+  schema (`lessonMinutes` comes out a number where the schema expects text; an
+  empty `note` comes out absent where it expects a string; a template row
+  comes out as `{ lessonNumber, payload }` where it expects flat fields), and
+  `z.toJSONSchema()` refuses all three with «Transforms cannot be represented
+  in JSON Schema». The other direction, a command that takes the form schema's
+  *input*, would make every caller that is not a form speak form strings:
+  `""` for absent, numbers as text, field names that belong to the UI. The
+  model of ADR-029 and an MCP client would be the first two.
+- A command validates its input with its command input schema, because
+  callers other than a form arrive with unvalidated data. A form caller pays
+  for a second parse of an already-parsed object, which is negligible, and
+  which the idempotency above makes safe.
 - A command returns either success or a refusal. A refusal has a
   machine-readable `code`, an optional `field`, and the Ukrainian `message` the
-  form already shows. It does not return `FormState`; the Server Action maps
-  the refusal onto `FormState`.
+  form already shows. The `field` is a path in the command input
+  (`bells.3.timeFrom`, `entries.0.payload.subject`), not a form field name. The
+  command does not return `FormState`; the Server Action maps the refusal onto
+  `FormState` and the path onto the form's field name. That mapping is the job
+  `bellFieldErrors()` and `templateDayFieldErrors()` already do, and a path it
+  cannot map is still shown (overview §8.2: no refusal disappears).
 - A command accepts an optional database handle, so that several commands can
   run inside one caller's transaction. Without a handle it opens its own.
 - The commands that support a preview (template edits, at first) take
@@ -106,6 +136,15 @@ Option 3.
   `lib/auth/queryDiscipline.test.ts` have to scan `lib/commands` as well.
 - Overview §8.4 and the root `CLAUDE.md` say a mutation cannot take `userId`
   first. That stops being true of the commands, and is restated by T-050.
+- Overview §8.2 says one Zod schema per form. Each form keeps its one schema,
+  but that schema now ends in the command's, and the rules about the data move
+  out of it. This is the larger half of the refactor: every form schema in
+  `lib/validation` is split, and its tests move with the rules they test.
+  T-050 restates §8.2.
+- A convention test holds the command input schemas to the property the
+  callers depend on: `z.toJSONSchema()` converts each one, and the output of a
+  valid parse parses again to the same value. A `transform` added to a command
+  input schema later fails it.
 - One more directory in the layout of overview §2. It is updated by T-050.
 - The commands are a contract other tickets (T-051–T-054) are written against.
   Changing a command's input now costs every adapter, not one form.

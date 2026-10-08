@@ -27,8 +27,9 @@ from which date and for which parity weeks, before anything is written.
 ## Acceptance criteria
 
 - [ ] The proposal schema gains the template day and day override kinds. Their
-      payloads are those of the template day form and the day override form,
-      for the view the teacher has selected.
+      payloads are the template day and day override command input schemas of
+      T-050, for the view the teacher has selected, with the override's date
+      widened to accept a date expression.
 - [ ] The model receives the teacher's subjects, classes, lesson numbers and
       bell times (`getLessonSuggestions()`, `getBellSchedule()`). A subject or
       class that matches an existing one modulo case and common abbreviations is

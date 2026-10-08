@@ -56,7 +56,12 @@ Option 2.
   never forced into a kind.
 - The proposal schema is written in Zod in `lib/validation`, and it is also the
   structured-output schema given to the model (the role `docs/tech-stack.md`
-  gives Zod). A proposed change's payload is the same schema its form uses.
+  gives Zod). A proposed change's payload is the command input schema of the
+  command its kind maps to (ADR-028), with one widening: a date field accepts
+  a date expression as well as a date. The resolver replaces each expression
+  with a date, and the result is parsed with the command input schema itself.
+  A payload cannot be a form schema: a form schema transforms strings, and
+  `z.toJSONSchema()` cannot convert a transform (ADR-028).
 - The model never produces a concrete date it had to compute. A date it reads
   verbatim from the input («12.10») is passed through. Anything relative
   («до п'ятниці», «щопонеділка», «до канікул») is a date expression, a small
