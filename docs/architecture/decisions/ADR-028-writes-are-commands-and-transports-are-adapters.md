@@ -1,6 +1,6 @@
 ---
 id: ADR-028
-title: Every write is a command function taking userId first; Server Actions, import and MCP are adapters over it
+title: Every write is a command function taking userId first; Server Actions and the import screen are adapters over it
 status: proposed
 date: 2026-10-07
 ticket: T-050
@@ -17,15 +17,14 @@ _prevState, formData)`, and the copy-on-write machinery it calls,
 `applyTemplateEdit()`, takes `formData` too, only so that a refusal can echo the
 submitted values back into the form.
 
-Two callers that are not forms are now in view (specification §10, overview §7):
+A caller that is not a form is now in view (specification §10, overview §7):
+an import screen, where a model turns free text, a spreadsheet or a photo into
+proposed changes that the teacher confirms. A second one was considered, a
+tool interface for AI clients (MCP) through which the teacher's own assistant
+would read and write the calendar; the Decision defers it and says why.
 
-- an import screen, where a model turns free text, a spreadsheet or a photo
-  into proposed changes that the teacher confirms;
-- a tool interface for AI clients (MCP), where the teacher asks their own
-  assistant to enter something into the calendar.
-
-Neither has a `FormData`, a `_prevState` or a form to echo values into. Both
-need the same rules a form gets: `userId` only from the session or a token
+The import screen has no `FormData`, no `_prevState` and no form to echo values
+into. It needs the same rules a form gets: `userId` only from the session
 (overview §8.4), boundaries resolved at write time (§8.1), the template cut
 always at `today()` (§3.2 I1), and the database constraints as the last guard.
 The import screen also needs one transaction across several writes, so that a
@@ -44,8 +43,7 @@ endpoint whose id changes with every build, so nothing outside the app can call
 it. It cannot take part in a caller's transaction, and its answer is shaped for
 a form.
 
-**2. A REST API in Route Handlers, with the import screen and an MCP server as
-its clients.** It gives one public contract. But it puts HTTP, serialisation
+**2. A REST API in Route Handlers, with the import screen as its client.** It gives one public contract. But it puts HTTP, serialisation
 and a second authentication path between the app and its own database for
 every caller, including the in-process import screen. And the logic would
 still have to be pulled out of the Server Actions first, because the Route
@@ -55,8 +53,7 @@ nobody has asked for yet.
 **3. Pull each write's body out into a command function `(userId, input) →
 result`, and make every caller an adapter over the commands.** The Server
 Action keeps its signature and becomes `requireUser()` → read `FormData` →
-command → `FormState`. The import screen calls the commands directly. An MCP
-endpoint mounted in the same Next.js application calls them directly too. The
+command → `FormState`. The import screen calls the commands directly. The
 cost is one refactor across `lib/actions`, done once, with no change in
 behaviour.
 
@@ -96,7 +93,7 @@ Option 3.
   the command takes and the form schema pipes into. It gives the command a
   typed signature and the model exact types, at the cost of splitting every
   schema in `lib/validation` and moving its rules and tests. Every caller in
-  view (a form, the import screen, an MCP client, a test) arrives with raw
+  view (a form, the import screen, a test) arrives with raw
   values anyway, so the typed signature buys little.
 - A command returns either success or a refusal. A refusal has a
   machine-readable `code`, an optional `field`, and the Ukrainian `message` the
@@ -110,17 +107,25 @@ Option 3.
 - The commands that support a preview (template edits, at first) take
   `{ dryRun: true }` and return the plan they would carry out, without writing
   anything.
-- The tool interface for AI clients is an MCP endpoint served by a Route
-  Handler in the same application, calling the commands and the
-  `lib/db/queries` reads directly. Its write tools default to `dryRun` and
-  take an idempotency key, because an AI client retries on failure and is
-  expected to show the teacher the preview first. There is no REST layer
-  underneath it. A REST
-  API is added only when a consumer appears that MCP does not serve, and it
-  calls the same commands.
+- No MCP endpoint and no REST API are built now. Either, when it comes, is one
+  more adapter over the commands. MCP was considered and deferred for two
+  reasons, recorded so that the question is not reopened blind:
+  - **Reach.** Checked in October 2026, of the three main consumer assistants
+    only Claude lets a free account add a custom MCP server, and only one of
+    them. ChatGPT needs a paid plan for it, and Gemini's custom apps are
+    limited to accounts in the US. Most of the teachers this application
+    serves could not connect it.
+  - **Trust.** Over MCP the teacher confirms in the assistant's own
+    conversation, which the server cannot see. A write tool that defaults to
+    `dryRun` is a convention the client may skip, so the guarantee of ADR-029,
+    that nothing is written the teacher has not seen, would not hold. The
+    token carries all of the teacher's rights, including against instructions
+    injected into whatever the assistant reads.
+  If MCP is taken up again, it starts read-only. Writes over it need their own
+  ADR choosing a confirmation the server enforces, for example a draft the
+  teacher confirms in the application.
 - Rules that are about where `userId` comes from do not change: it comes from
-  `requireUser()` in a Server Action or a page, and from the verified token in
-  the MCP endpoint, and never from an input body.
+  `requireUser()` in a Server Action or a page, never from an input body.
 
 ## Consequences
 
@@ -144,7 +149,7 @@ Option 3.
   converts every schema a command parses. A schema construct the input side
   cannot represent fails it before the model ever sees the schema.
 - One more directory in the layout of overview §2. It is updated by T-050.
-- The commands are a contract other tickets (T-051–T-054) are written against.
+- The commands are a contract other tickets (T-051–T-053) are written against.
   Changing a command's input now costs every adapter, not one form.
 - Revisit if a second deployment of the commands is needed, for example a
   separate `worker` service. The commands then move with `lib/domain` into

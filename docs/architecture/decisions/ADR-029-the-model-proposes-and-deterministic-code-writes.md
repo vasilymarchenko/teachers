@@ -89,9 +89,10 @@ Option 2.
 ## Consequences
 
 - A misreading costs the teacher one correction on the confirmation screen,
-  never a wrong row. The same holds for an AI client over MCP (ADR-028): there
-  the confirmation happens in the client's own conversation, and the commands
-  offer a `dryRun` preview for it to show.
+  never a wrong row. The guarantee holds because the confirmation screen is
+  the application's own. It is the reason an MCP endpoint is deferred
+  (ADR-028): there the confirmation would happen in the assistant's
+  conversation, where the server cannot see it.
 - Relative dates are tested like every other date in the domain, with fixed
   instants, and are never wrong by the UTC/Kyiv offset.
 - The closed set of kinds is the feature's scope. Students and birthdays are

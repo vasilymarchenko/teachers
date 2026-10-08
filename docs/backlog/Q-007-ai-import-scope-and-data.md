@@ -28,7 +28,7 @@ Two things have to be decided before any of it is built:
 ## Current default
 
 No AI and no import: specification §11. Nothing in the code calls a model.
-T-050 does not depend on this answer. T-051–T-054 do.
+T-050 does not depend on this answer. T-051–T-053 do.
 
 ## Cost of changing later
 

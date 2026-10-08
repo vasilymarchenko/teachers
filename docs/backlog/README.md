@@ -63,7 +63,6 @@ for reading. Order is priority; the ID number is not.
 | [T-051](T-051-quick-add-events-from-text.md) | Quick add — free text becomes deadlines and info events through a proposal the teacher confirms | todo | T-050, Q-007 |
 | [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051 |
 | [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, Q-008 |
-| [T-054](T-054-mcp-endpoint.md) | MCP endpoint — an AI client enters and reads calendar data through the commands, signed in as the teacher | todo | T-050, T-051, Q-007 |
 
 ## Open questions
 
@@ -76,7 +75,7 @@ Each mirrors a section of `docs/architecture/architect-overview.md` §10.
 | [Q-005](Q-005-student-contacts.md) | Student contact structure — one contact or several with roles | open | — (second phase, no ticket yet) |
 | [Q-006](Q-006-is-taught-by-me-matching.md) | How `isTaughtByMe` matches a CLASS lesson to an OWN lesson | open | — (default pinned in `design/expand-fixtures.md` §8.6) |
 | [Q-004](Q-004-server-pdf-renderer.md) | Server-side PDF renderer, if one is ever needed | open | — (deferred with the feature) |
-| [Q-007](Q-007-ai-import-scope-and-data.md) | Is AI-assisted import in scope, and may teacher data be sent to an external model | open | T-051, T-054 |
+| [Q-007](Q-007-ai-import-scope-and-data.md) | Is AI-assisted import in scope, and may teacher data be sent to an external model | open | T-051 |
 | [Q-008](Q-008-future-dated-template-version.md) | May a template edit start on a future date, not only today | open | T-053 |
 | [Q-002](Q-002-mobile-template-editor.md) | Mobile interaction pattern for the weekly template editor | answered | — (answer in `architect-overview.md` §10.2) |
 
@@ -169,17 +168,16 @@ for the comparison its toggles are left out of. None of the three is drawn.
 T-049 hangs off T-015 and is not drawn: it replaces the deploy procedure that
 ticket documented with a script, for the two servers ADR-027 names; nothing in
 the diagram waits on it.
-T-050–T-054 are the import track (specification §10, ADR-028, ADR-029) and
+T-050–T-053 are the import track (specification §10, ADR-028, ADR-029) and
 are not drawn. T-050 hangs off T-009, T-010, T-011 and T-012 for the writes it
 moves into commands, and off T-043 and T-046, which change the template day
-save it extracts, and is the only one of the five that does not wait on
+save it extracts, and is the only one of the four that does not wait on
 Q-007. T-051 hangs off T-050 for those commands and off Q-007 for the decision
 to build it at all. T-052 hangs off T-051 for the proposal pipeline it extends,
 and off T-043 for the per-row both-weeks choice its parity question sets.
 T-053 hangs off T-052 for the template kinds and off Q-008 for the date the
-imported version starts on. T-054 hangs off T-050 for the commands its tools
-call, off T-051 for the proposal kinds and date expressions its tools mirror,
-and off Q-007. The plain-language walk through the lesson input chain these
+imported version starts on. An MCP endpoint was considered and deferred
+(ADR-028) and has no ticket. The plain-language walk through the lesson input chain these
 tickets extend is `docs/architecture/lesson-input-and-import.md`.
 
 ## Coverage
@@ -193,7 +191,7 @@ is the deployment path checking itself, which is why it hangs off T-015 rather
 than off a ticket a review found something in. Second-phase work (class list and birthdays §9)
 has no tickets by design; `architect-overview.md` §7 records the extension
 points it will use. Import (§10) and AI are third-phase work that now has
-tickets, T-050–T-054, of which all but T-050 wait on Q-007 — the decision to
+tickets, T-050–T-053, of which all but T-050 wait on Q-007 — the decision to
 bring them into scope. T-039 is outside the specification too: it is
 what the person running the deployment uses to give a teacher an account, not a
 screen a teacher sees.
