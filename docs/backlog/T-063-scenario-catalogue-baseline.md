@@ -42,10 +42,20 @@ will be layered over.
 - [x] `docs/architecture/harness.md` and the document table in
       `docs/architecture/decisions/README.md` include the skill and the
       catalogue.
-- [ ] A first `/teachers-scenarios` run on `main` writes `docs/scenarios/`:
+- [x] A first `/teachers-scenarios` run on `main` writes `docs/scenarios/`:
       every page a teacher reaches and every write a page offers appear in some
       scenario's `trace`, every scenario carries a verification label, and
       its disagreements and open questions have been put to the user.
-- [ ] `npm run gate` passes.
+- [x] `npm run gate` passes.
 
 ## Notes
+
+- First baseline run, 2026-10-09, against `main` at 73d5023: 31 scenarios in
+  six areas, all walked in a browser on the demo data against a local
+  Postgres (Docker was not available). One question was put to the user —
+  the calendar notice for a date outside the academic year — and answered
+  as intended. Five disagreements with the specification are listed in the
+  catalogue's README.
+- `docs/scenarios/CLAUDE.md` gained one rule during the run: a scenario whose
+  main path was walked but some steps were not keeps `у браузері <date>` and
+  marks each step not walked in place.

@@ -93,6 +93,10 @@ which dates, which views.
   - `лише в документах` — taken from the specification or the demo scenario
     with the code not settling it. It goes with an entry in «Відкриті питання».
 
+  When the main path was walked and some steps were not, the label is
+  `у браузері <date>` and each step not walked ends with «(у браузері не
+  пройдено)».
+
 ## Ids
 
 `S-NNN`, taken from `next_id` in the README, assigned once and never reused. A
