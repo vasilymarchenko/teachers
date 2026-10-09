@@ -64,14 +64,19 @@ overview §10.8 (Q-008).
 - [ ] A planned version (one whose `validFrom` is after `today()`) is edited
       through the same day save. A change that starts on a date D, while a
       planned version starts on S, has an outcome that depends only on where
-      D falls. It is the same for a day save and for a new timetable
-      (overview §10.8):
+      D falls and, before S, on where the change's own boundary falls. It is
+      the same for a day save and for a new timetable (overview §10.8):
       - D after S: the change edits the planned version from D, as any
         version is edited.
       - D equal to S: the change replaces the planned version, and the screen
         says so before saving.
-      - D before S: the change stops at S, and the screen says so before
-        saving. The teacher may carry it into the planned version. That
+      - D before S, with the change's own `validTo` (its boundary resolved on
+        D) on or before S: `capToNextVersion()` does not cap it, the change
+        does not touch the planned version, and the screen neither warns nor
+        offers a carry.
+      - D before S, with the change's own `validTo` after S:
+        `capToNextVersion()` stops the change at S, and the screen says so
+        before saving. The teacher may carry it into the planned version. That
         overwrites the same scope there: the same weekday and parity weeks
         for a day save, the whole week for a new timetable. The overwrite runs
         in the same transaction and deletes no version. No change is merged
@@ -115,8 +120,11 @@ overview §10.8 (Q-008).
       planned from a later date than a planned one, which trims it. They also
       cover a day saved before a planned version and carried into it, once
       where the planned day equals the version in force and once where it
-      differs (the replaced rows are listed). Last, a new timetable before a
-      planned version, carried and not carried.
+      differs (the replaced rows are listed). They cover a day saved before a
+      planned version whose own boundary ends before the planned start, and
+      one whose boundary ends exactly on it: neither is capped, and no carry
+      is offered. Last, a new timetable before a planned version, carried and
+      not carried.
       Each is a unit test of the planning functions.
 - [ ] An ADR records that the cut may be in the future, and why a planned
       version has no cancel action, with the two rejected rules of overview

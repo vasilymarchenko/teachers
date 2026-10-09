@@ -68,11 +68,15 @@ from which date and for which parity weeks, before anything is written.
       back with its symbol and is checked as T-051 checks a date.
 - [ ] When a planned version lies ahead, the confirmation screen applies
       T-055's rule for a change that starts before it (overview §10.8). Each
-      template day it changes is a day-save scope. The screen says that the
-      change stops at the planned start, offers to carry it, and lists the
-      planned rows a carry would replace. A test asserts that a lesson
+      template day it changes is a day-save scope. Where the change's own
+      boundary ends after the planned start, the screen says that the change
+      stops there, offers to carry it, and lists the planned rows a carry
+      would replace. Where it ends on or before the planned start, the screen
+      says nothing about the planned version. A test asserts that a lesson
       confirmed with the carry is in the calendar on the planned version's
-      start date, and one confirmed without it is not.
+      start date, and one confirmed without it is not. Another asserts that
+      no carry is offered for a change whose boundary ends before the planned
+      start.
 - [ ] The preview's fingerprint is checked at confirmation as T-051 checks
       it. Tests save a template day in another request between preview and
       confirmation, and let midnight pass between them. Each asserts that

@@ -51,8 +51,10 @@ confirms it as one new template version.
       version is created through T-055's future cut. A planned version already
       ahead is handled by T-055's rule for a change against a planned version
       (overview §10.8). The scope is the whole week, and D is the start the
-      teacher chose: before the planned start the import stops there unless
-      carried, on it the import replaces it, and after it the import trims it.
+      teacher chose. Before the planned start, an import whose own boundary
+      ends after it stops there unless carried, and one whose boundary ends
+      on or before it does not touch it. On the planned start the import
+      replaces it, and after it the import trims it.
       The start date comes back with its symbol and is checked as T-051
       checks a date.
 - [ ] The preview's fingerprint is checked at confirmation as T-051 checks
