@@ -65,7 +65,7 @@ for reading. Order is priority; the ID number is not.
 | [T-057](T-057-commands-year-frame-and-bells.md) | Commands 2/4 — the year frame and the bell schedule | todo | T-056 |
 | [T-058](T-058-commands-day-overrides.md) | Commands 3/4 — day overrides | todo | T-056 |
 | [T-059](T-059-commands-template.md) | Commands 4/4 — the template, previewable in one transaction, and no write left in lib/actions | todo | T-057, T-058, T-060 |
-| [T-055](T-055-plan-a-template-version-from-a-future-date.md) | Plan a new template version from a future date — after a break or from a date — and cancel it by overwriting | todo | T-059 |
+| [T-055](T-055-plan-a-template-version-from-a-future-date.md) | Plan a new template version from a future date — after a break or from a date — changed like any other version, with no cancel | todo | T-059 |
 | [T-051](T-051-quick-add-events-from-text.md) | Quick add — free text becomes deadlines and info events through a proposal the teacher confirms | todo | T-056, Q-007 |
 | [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051, T-055, T-058, T-059 |
 | [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, T-055, T-057, T-059 |

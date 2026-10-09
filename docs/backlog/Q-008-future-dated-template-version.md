@@ -27,8 +27,10 @@ that takes over after a break. A template edit may cut on a future date,
 never an earlier one than `today()`, so I1 still forbids only the past. That
 is already true of a `DayOverride` and an `Event`, which may both be entered
 for a future date. The usual start is «після канікул», resolved at write time.
-A planned version is cancelled by overwriting it with the slots of the version
-before it, not by deleting it, so no gap opens and no `validTo` moves forward.
+A planned version has no cancel action. It is changed like any other version:
+its days through the day save, its range by planning another version from a
+date. No version is deleted and no `validTo` moves forward. A cancellation
+would have to know what the planning changed, which no row records.
 
 The decision is recorded in `docs/architecture/architect-overview.md` §10.8,
 and the work is T-055. This file is the record that it was asked.
@@ -39,8 +41,9 @@ The planning domain is cheap: `planTemplateEdit()` already plans against the
 version in force on its cut date, and `capToNextVersion()` already stops a new
 version where a later one starts. What the answer costs is behaviour, and T-055
 carries it: a change made today has to be offered to the planned version too,
-the editor has to show which version it edits, and cancelling needs a rule,
-which is overwriting. The schema does not change.
+and the editor has to show which version it edits. A change of mind costs the
+teacher re-entering lessons, because there is nothing to cancel. The schema
+does not change.
 
 ## Needed from
 

@@ -1,7 +1,7 @@
 ---
 id: T-055
 type: ticket
-title: Plan a new template version from a future date — after a break or from a date — and cancel it by overwriting
+title: Plan a new template version from a future date — after a break or from a date — changed like any other version, with no cancel
 status: todo
 depends_on: [T-059]
 refs:
@@ -20,8 +20,9 @@ A teacher who knows that a new timetable takes over after the autumn break can
 enter it now. The template editor offers «новий розклад з…» with two choices,
 «після канікул» and «з дати», and the version it creates starts on that date
 instead of today. The version in force is trimmed there, so the past and the
-days until then are untouched. A planned version can be cancelled, and a
-change made today can be carried into it. The decision and its reasons are in
+days until then are untouched. A change made today can be carried into the
+planned version. A planned version has no cancel action: it is changed like
+any other version. The decision and its reasons are in
 overview §10.8 (Q-008).
 
 ## Acceptance criteria
@@ -62,15 +63,13 @@ overview §10.8 (Q-008).
       planned version lies ahead asks «застосувати й до розкладу з <дата>?»,
       and on «так» applies the same change to the planned version's slots in
       the same transaction.
-- [ ] «Скасувати запланований розклад» replaces the planned version with a
-      copy of the slots of the version before it, over the planned version's
-      own range. No row is deleted outside that replace, no gap opens, and no
-      `validTo` moves forward. Where the planned version ran to the end the
-      trimmed version had, or later, the calendar after cancelling equals the
-      calendar before planning. Where a gap follows the planned version
-      (it was given an earlier end, «до дати Х»), cancelling restores only the
-      planned range, and the confirmation of cancelling names the gap with its
-      dates.
+- [ ] There is no «скасувати запланований розклад». A planned version is
+      changed the way any version is changed. Its days change through the day
+      save. Its range changes by planning another version from a date, and a
+      version planned from the same date replaces it (`replace`). No version
+      is deleted and no `validTo` moves forward (fixtures §3.8), so a change
+      of mind costs the teacher re-entering the lessons. The decision and why
+      the alternatives were rejected are in overview §10.8.
 - [ ] The strip of versions marks a planned version as planned, with its start
       date, and the trim warning of overview §3.2 I2 names the planned date.
 - [ ] `design/expand-fixtures.md` gains the cases: a cut on a future date, a
@@ -78,14 +77,15 @@ overview §10.8 (Q-008).
       (its `validTo` is the end of that semester), a cut on the first day
       after a break, «після канікул» chosen during that
       break, a second cut on the same planned date (replace), a change applied
-      to both versions, a cancellation, and a cancellation of a planned version
-      followed by a gap.
+      to both versions, and a version planned from a later date than a
+      planned one, which trims it.
       Each is a unit test of the planning functions.
-- [ ] An ADR records that the cut may be in the future and why cancelling
-      overwrites instead of deleting. `architect-overview.md` §3.2 states I1
+- [ ] An ADR records that the cut may be in the future, and why a planned
+      version has no cancel action, with the two rejected rules of overview
+      §10.8. `architect-overview.md` §3.2 states I1
       as it now holds, and `glossary.md` §3 states the planned version as
       built. `specification.md` §5.2 states that a new timetable may start on a
-      later date, «після канікул» or «з дати», and that a planned one can be
-      cancelled.
+      later date, «після канікул» or «з дати», and that a planned one is
+      changed like the current one, not cancelled.
 
 ## Notes
