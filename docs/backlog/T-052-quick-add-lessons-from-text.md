@@ -3,11 +3,12 @@ id: T-052
 type: ticket
 title: Quick add — free text becomes template lessons and day overrides, with a preview of the new version
 status: todo
-depends_on: [T-043, T-051, T-058, T-059]
+depends_on: [T-043, T-051, T-055, T-058, T-059]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/architect-overview.md §3.2
   - docs/architecture/architect-overview.md §3.4
+  - docs/architecture/architect-overview.md §10.8
   - docs/architecture/decisions/ADR-006-template-day-is-the-save-unit.md
   - docs/architecture/decisions/ADR-025-both-parity-weeks-is-decided-per-lesson-row.md
   - docs/specs/specification.md §5.1
@@ -37,10 +38,17 @@ from which date and for which parity weeks, before anything is written.
       лише в чисельнику?»), not a default. The teacher's answer sets the
       per-row both-weeks choice of ADR-025.
 - [ ] All template changes of one confirmation are applied as one template
-      version, through the T-059 commands in one transaction. A dry run of the
-      same commands produces the preview shown on the confirmation screen.
+      version, through the T-059 commands in one transaction. The preview on
+      the confirmation screen is the same commands run through the preview
+      helper of T-056, so it shows what the write will leave.
 - [ ] The preview names the cut date (`today()`) and, where the version in
       force is trimmed, the warning of overview §3.2 I2.
+- [ ] When a planned version lies ahead (overview §10.8), the confirmation
+      screen asks what T-055's day save asks («застосувати й до розкладу з
+      <дата>?»), and on «так» the same change goes into the planned version
+      in the same transaction. A test asserts that a lesson confirmed with
+      «так» is in the calendar on the planned version's start date, and one
+      confirmed with «ні» is not.
 - [ ] A day override proposal resolves its date with the T-051 date
       expressions and is applied through the day override command.
 - [ ] The evaluation set gains at least 15 lesson and override cases.

@@ -59,15 +59,17 @@ for reading. Order is priority; the ID number is not.
 | [T-030](T-030-one-migrator-smoke-definition.md) | One migrator smoke test, called by both CI and the gate | todo | T-029 |
 | [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | done | T-029 |
 | [T-032](T-032-gate-counts-under-report.md) | The gate can under-report — a missing origin/main, a dirty tree, an unresolvable opening head | todo | T-029 |
-| [T-050](T-050-characterization-tests-for-write-actions.md) | Commands 0/4 — characterization tests for every write Server Action | todo | T-009, T-010, T-011, T-012 |
+| [T-050](T-050-characterization-tests-for-write-actions.md) | Commands 0/4 — characterization tests for the write Server Actions outside the template | todo | T-009, T-010, T-011, T-012 |
+| [T-060](T-060-characterization-tests-for-template-actions.md) | Commands 0/4 — characterization tests for the template write Server Actions, on the save T-043 leaves | todo | T-043, T-050 |
 | [T-056](T-056-commands-pattern-and-events.md) | Commands 1/4 — the command pattern, its convention tests, and the event writes | todo | T-050 |
 | [T-057](T-057-commands-year-frame-and-bells.md) | Commands 2/4 — the year frame and the bell schedule | todo | T-056 |
 | [T-058](T-058-commands-day-overrides.md) | Commands 3/4 — day overrides | todo | T-056 |
-| [T-059](T-059-commands-template.md) | Commands 4/4 — the template, with a dry run, and no write left in lib/actions | todo | T-056, T-043 |
+| [T-059](T-059-commands-template.md) | Commands 4/4 — the template, previewable in one transaction, and no write left in lib/actions | todo | T-056, T-060 |
 | [T-051](T-051-quick-add-events-from-text.md) | Quick add — free text becomes deadlines and info events through a proposal the teacher confirms | todo | T-056, Q-007 |
-| [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051, T-058, T-059 |
+| [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051, T-055, T-058, T-059 |
 | [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, T-055, T-057, T-059 |
 | [T-055](T-055-plan-a-template-version-from-a-future-date.md) | Plan a new template version from a future date — after a break or from a date — and cancel it by overwriting | todo | T-059 |
+| [T-061](T-061-import-non-teaching-periods.md) | Import non-teaching periods — a list of holidays and breaks from text or a file becomes year rows through a proposal | todo | T-051, T-057 |
 
 ## Open questions
 
@@ -174,24 +176,29 @@ for the comparison its toggles are left out of. None of the three is drawn.
 T-049 hangs off T-015 and is not drawn: it replaces the deploy procedure that
 ticket documented with a script, for the two servers ADR-027 names; nothing in
 the diagram waits on it.
-T-050, T-056–T-059 and T-051–T-053 are the import track (specification §10,
-ADR-028, ADR-029) and are not drawn. The first five are the command refactor
-of ADR-028, run as a series: T-050 pins down with integration tests what every
-write Server Action does now, and hangs off T-009, T-010, T-011 and T-012 for
-the actions it tests. T-056 hangs off T-050 and sets the command pattern on the
-event writes. T-057 and T-058 hang off T-056 and move the year frame with the
-bells, and the day overrides. T-059 hangs off T-056 too, and off T-043, which
-changes the template day save it moves; it ends the series with a test that no
-write is left in `lib/actions`. None of the five waits on Q-007. T-051 hangs off
+T-050, T-060, T-056–T-059, T-051–T-053 and T-061 are the import track
+(specification §10, ADR-028, ADR-029) and are not drawn. The first six are the
+command refactor of ADR-028, run as a series: T-050 pins down with integration
+tests what every write Server Action outside the template does now, and hangs
+off T-009, T-010, T-011 and T-012 for the actions it tests. T-060 does the same
+for the three template actions and hangs off T-050 for its test helper and off
+T-043, which changes the template day save, so that those tests are written
+once and against the save that moves. T-056 hangs off T-050 and sets the
+command pattern on the event writes. T-057 and T-058 hang off T-056 and move
+the year frame with the bells, and the day overrides. T-059 hangs off T-056
+too, and off T-060 for the tests it must pass; it ends the series with a test
+that no write is left in `lib/actions`. None of the six waits on Q-007. T-051 hangs off
 T-056 for the event commands and off Q-007 for the decision to build it at
 all. T-052 hangs off T-051 for the proposal pipeline it extends, off T-058 and
 T-059 for the override and template commands, and off T-043 for the per-row
-both-weeks choice its parity question sets. T-053 hangs off T-052 for the
+both-weeks choice its parity question sets, and off T-055 for the question it
+asks when a planned version lies ahead. T-053 hangs off T-052 for the
 template kinds, off T-057 for the bell schedule command, off T-059 for the
 template commands, and off T-055 for the date the imported version starts on,
 «після канікул» being the case a new timetable file usually comes with. T-055
 answers Q-008 and hangs off T-059, whose template commands it extends with a
-future cut. An MCP endpoint was considered and deferred
+future cut. T-061 hangs off T-051 for the proposal pipeline and off T-057 for
+the non-teaching period command. An MCP endpoint was considered and deferred
 (ADR-028) and has no ticket.
 
 ## Coverage
@@ -205,7 +212,7 @@ is the deployment path checking itself, which is why it hangs off T-015 rather
 than off a ticket a review found something in. Second-phase work (class list and birthdays §9)
 has no tickets by design; `architect-overview.md` §7 records the extension
 points it will use. Import (§10) and AI are third-phase work that now has
-tickets, T-050–T-053 and T-056–T-059, of which T-051–T-053 wait on Q-007 — the
+tickets, T-050–T-053 and T-056–T-061, of which T-051–T-053 and T-061 wait on Q-007 — the
 decision to bring them into scope; the command refactor and T-055 do not. T-039 is outside the specification too: it is
 what the person running the deployment uses to give a teacher an account, not a
 screen a teacher sees.

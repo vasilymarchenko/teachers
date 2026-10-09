@@ -19,8 +19,9 @@ turns on.
 
 The write paths already have their rules. Boundaries are entered as symbols and
 resolved at write time (overview §8.1). «Today» comes only from
-`lib/time/today.ts` in `Europe/Kyiv` (§8.5). The template is cut at `today()`
-and never edited in the past (§3.2). After ADR-028, these rules live in command
+`lib/time/today.ts` in `Europe/Kyiv` (§8.5). The template is never cut before
+`today()`, so the past is never edited (§3.2; overview §10.8 allows a cut on a
+later date). After ADR-028, these rules live in command
 functions that any caller can use.
 
 ## Options
@@ -50,7 +51,9 @@ Option 2.
 - The model's whole output is an import proposal: a list of proposed changes,
   each one of a closed set of kinds that map one-to-one onto commands (a
   deadline, an info event, the lessons of one template day, a day override, a
-  non-teaching period, bell times). It also carries a list of questions for
+  non-teaching period, bell times). Each kind is built by a ticket: T-051 the
+  events, T-052 the template day and the override, T-053 the bell times, T-061
+  the non-teaching period. It also carries a list of questions for
   anything ambiguous, and a list of fragments the model did not understand.
   Anything outside the closed set lands in the «not understood» list and is
   never forced into a kind.
@@ -63,11 +66,18 @@ Option 2.
   converted, because the schemas transform strings (ADR-028). The resolver
   replaces each expression with a date, and the command parses the result with
   the write's schema, as it parses a form's.
-- The model never produces a concrete date it had to compute. A date it reads
-  verbatim from the input («12.10») is passed through. Anything relative
-  («до п'ятниці», «щопонеділка», «до канікул») is a date expression, a small
-  closed union, resolved by a pure function in `lib/domain` against `today()`
-  and the year's rows. Recurrence boundaries reuse `boundaryKind` as it is.
+- The model never produces a concrete date it had to compute. A full date it
+  reads verbatim, year included («12.10.2026»), is passed through. Anything
+  else is a date expression, a small closed union, resolved by a pure function
+  in `lib/domain` against `today()` and the year's rows: the relative ones
+  («до п'ятниці», «щопонеділка», «до канікул») and a day and month without a
+  year («12.10»), whose year is the domain's to set, not the model's. A day and
+  month resolves to that date inside the first academic year that has not
+  ended on `today()`. Recurrence boundaries reuse `boundaryKind` as it is.
+- An expression that resolves to nothing (no academic year set up, no break
+  ahead, a day and month outside the year) becomes a question to the teacher,
+  never a guess and never a silently dropped change. It is the signal
+  `resolveBoundary()` already gives with `undefined`: ask for an explicit date.
 - The model gets the teacher's context with the input: subjects, classes and
   teachers already entered (`getLessonSuggestions()`), the bell schedule and
   lesson numbers in use, and the current date and parity. With these it
@@ -82,8 +92,10 @@ Option 2.
   screen showed, from a date expression or from a boundary symbol
   («до кінця семестру», «після канікул»), comes back as the pair: the symbol,
   and the date the teacher saw. The server resolves the symbol again at write
-  time and compares. If the two agree, it writes, and the symbol is kept for
-  display as overview §8.1 keeps `boundaryKind`. If they differ, because
+  time and compares. If the two agree, it writes. Where the row has a
+  `boundaryKind`, the symbol is kept there for display, as overview §8.1 keeps
+  it. A deadline's «до п'ятниці» and a start «після канікул» have no such
+  field, and only their date is stored. If they differ, because
   midnight passed or the year's breaks were edited meanwhile, it writes
   nothing and shows the proposal again with the new date. Re-resolving alone
   could write a date the teacher never saw, and sending the date alone would

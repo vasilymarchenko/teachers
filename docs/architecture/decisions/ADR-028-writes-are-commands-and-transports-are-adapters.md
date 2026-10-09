@@ -25,8 +25,9 @@ would read and write the calendar; the Decision defers it and says why.
 
 The import screen has no `FormData`, no `_prevState` and no form to echo values
 into. It needs the same rules a form gets: `userId` only from the session
-(overview §8.4), boundaries resolved at write time (§8.1), the template cut
-always at `today()` (§3.2 I1), and the database constraints as the last guard.
+(overview §8.4), boundaries resolved at write time (§8.1), the template never
+cut before `today()` (§3.2 I1; overview §10.8 allows a cut on a later date), and
+the database constraints as the last guard.
 The import screen also needs one transaction across several writes, so that a
 timetable read from a spreadsheet becomes one template version, not six.
 
@@ -102,10 +103,22 @@ Option 3.
   Action maps the refusal onto it, through `bellFieldErrors()`,
   `templateDayFieldErrors()` and the other mappings it already has.
 - A command accepts an optional database handle, so that several commands can
-  run inside one caller's transaction. Without a handle it opens its own.
-- The commands that support a preview (template edits, at first) take
-  `{ dryRun: true }` and return the plan they would carry out, without writing
-  anything.
+  run inside one caller's transaction. Without a handle it opens its own. The
+  handle carries the command's **reads** as well as its writes: every
+  `lib/db/queries` function a command calls takes the handle as an optional last
+  parameter (`userId` stays first). A command that read through `getDb()` would
+  read on another connection and not see what an earlier command in the same
+  transaction wrote. The template day save is where that bites: two day saves
+  in one transaction must plan the second against the version the first
+  created (a `replace`), not against the version committed before both.
+- A preview is the same commands run in a transaction that the caller rolls
+  back, with the resulting state read through the same handle before the
+  rollback. No command has a separate dry-run mode. A preview of several
+  commands then composes exactly as their write does, and it meets the same
+  refusals, the database constraints included. A per-command dry run was
+  rejected: each one plans against the database as committed, so the second
+  of two would preview a trim and a new version where the write does a
+  `replace`, and the preview would show a result the write never produces.
 - No MCP endpoint and no REST API are built now. Either, when it comes, is one
   more adapter over the commands. MCP was considered and deferred for two
   reasons, recorded so that the question is not reopened blind:
@@ -115,8 +128,8 @@ Option 3.
     limited to accounts in the US. Most of the teachers this application
     serves could not connect it.
   - **Trust.** Over MCP the teacher confirms in the assistant's own
-    conversation, which the server cannot see. A write tool that defaults to
-    `dryRun` is a convention the client may skip, so the guarantee of ADR-029,
+    conversation, which the server cannot see. A write tool that previews
+    by default is a convention the client may skip, so the guarantee of ADR-029,
     that nothing is written the teacher has not seen, would not hold. The
     token carries all of the teacher's rights, including against instructions
     injected into whatever the assistant reads.
@@ -136,6 +149,8 @@ Option 3.
   static checks that scan for writes move with them: the T-022 convention test
   (every UPDATE checks the rows it matched) and the §8.4 check in
   `lib/auth/queryDiscipline.test.ts` have to scan `lib/commands` as well.
+- The `lib/db/queries` functions a command calls gain an optional handle as
+  their last parameter. The pages keep calling them without one.
 - Overview §8.4 and the root `CLAUDE.md` say a mutation cannot take `userId`
   first. That stops being true of the commands, and is restated by T-056.
 - Overview §8.2 says the schema is parsed only in the Server Action. It is
@@ -148,12 +163,13 @@ Option 3.
   converts every schema a command parses. A schema construct the input side
   cannot represent fails it before the model ever sees the schema.
 - One more directory in the layout of overview §2. It is updated by T-056.
-- The refactor runs as a series, not as one change. T-050 first pins down
-  with integration tests what each of the 27 write Server Actions does,
-  since none had a test, so "no change in behaviour" can be checked. Then
-  T-056 sets the pattern on the event writes, T-057 and T-058 move the year
-  frame, the bells and the day overrides, and T-059 moves the template after
-  T-043 has changed its save. T-059 also adds a test that no file in
+- The refactor runs as a series, not as one change. Integration tests first
+  pin down what each of the 27 write Server Actions does, since none had a
+  test, so "no change in behaviour" can be checked: T-050 for the 24 outside
+  the template, and T-060 for the three template ones once T-043 has changed
+  their save, so that they are written once and against the save that moves.
+  Then T-056 sets the pattern on the event writes, T-057 and T-058 move the
+  year frame, the bells and the day overrides, and T-059 moves the template. T-059 also adds a test that no file in
   `lib/actions` writes to the database. The two styles live side by side
   only while the series runs, and the test stops them from doing so after
   it.

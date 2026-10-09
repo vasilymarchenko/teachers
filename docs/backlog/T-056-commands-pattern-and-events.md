@@ -31,9 +31,15 @@ sees no difference.
       (ADR-028). The event Server Actions no longer parse a schema.
 - [ ] A refusal carries `code`, an optional `field` that is the issue's path in
       the raw input, and the Ukrainian `message` the form shows today.
-- [ ] A command accepts an optional database handle and, with one, writes
-      inside the caller's transaction. An integration test runs two event
-      commands in one transaction and rolls it back.
+- [ ] A command accepts an optional database handle and, with one, both reads
+      and writes inside the caller's transaction: every `lib/db/queries`
+      function it calls takes the handle as an optional last parameter
+      (ADR-028). An integration test runs two event commands in one
+      transaction, the second reading what the first wrote, and rolls it back.
+- [ ] A preview helper runs a caller's commands in a transaction, reads the
+      resulting state through the same handle, and rolls back (ADR-028). An
+      integration test asserts that the preview of two event commands equals
+      what their write leaves, and that the preview leaves no row.
 - [ ] Convention tests over `lib/commands/**`, written here so that every later
       slice is held to them:
       - no command reads `FormData`, calls `requireUser()` or calls

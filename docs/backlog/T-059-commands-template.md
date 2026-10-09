@@ -1,9 +1,9 @@
 ---
 id: T-059
 type: ticket
-title: Commands 4/4 — the template, with a dry run, and no write left in lib/actions
+title: Commands 4/4 — the template, previewable in one transaction, and no write left in lib/actions
 status: todo
-depends_on: [T-056, T-043]
+depends_on: [T-056, T-060]
 refs:
   - docs/architecture/decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md
   - docs/architecture/architect-overview.md §3.2
@@ -15,9 +15,11 @@ refs:
 ## Goal
 
 The last slice of ADR-028. The template writes (the day save, copy parity, the
-boundary) move into commands, after T-043 has changed the day save, so that
-the save moves once and in its final form. `applyTemplateEdit()` stops taking
-`FormData`. The commands gain the dry run the import screens preview with.
+boundary) move into commands, after T-043 has changed the day save and T-060
+has pinned it down, so that the save moves once and in its final form.
+`applyTemplateEdit()` stops taking `FormData`, and its reads go through the
+caller's handle, so that several template commands compose in one transaction
+and in the preview the import screens show (ADR-028).
 The slice closes the series: after it no write is left in `lib/actions`, and
 a test keeps it that way, so the two styles do not live side by side past
 the series. The teacher sees no difference.
@@ -28,12 +30,14 @@ the series. The teacher sees no difference.
       and the boundary, in the shape and under the convention tests of T-056.
       The copy-on-write planning stays in `lib/domain`, and the cut is still
       read from `lib/time/today.ts`.
-- [ ] The three commands accept `{ dryRun: true }` and return the
-      `TemplateEditPlan` and the resulting slots without writing. A unit test
-      covers trim, replace and create.
-- [ ] An integration test runs two template commands in one caller's
-      transaction and rolls it back.
-- [ ] T-050's tests for these actions pass unmodified.
+- [ ] The template commands read the version in force and the next version's
+      start through the caller's handle. An integration test saves two days of
+      one view in one transaction and asserts that the result is one new
+      version (the second save a `replace` of the version the first created),
+      not an overlap refused by I3.
+- [ ] The preview helper of T-056 over the same two day saves returns the
+      versions and slots their write leaves, and leaves no row.
+- [ ] T-060's tests for these actions pass unmodified.
 - [ ] A convention test asserts that no file in `lib/actions` writes to the
       database: no `insert`, `update`, `delete` or `transaction` on a Drizzle
       handle. Every write is a command.

@@ -20,16 +20,19 @@ Two things have to be decided before any of it is built:
 
 1. Does import with a model move into scope, and does the specification change
    §10 and §11 to say so?
-2. Which data may leave the server for an external model? A timetable,
-   deadlines and event titles carry little risk. A class list (names of
-   minors, birthdays, parents' phone numbers) is personal data. Its transfer
-   needs a basis and probably the teacher's explicit consent on screen.
+2. Which data may leave the server for an external model? Deadlines and
+   event titles carry little risk. A timetable is personal data too, if less
+   sensitive: in the `CLASS` view it names other teachers (`teacherName`,
+   which ADR-029 sends the model with `getLessonSuggestions()`), and a photo
+   of one may carry further names. A class list (names of minors, birthdays,
+   parents' phone numbers) is personal data of minors. Its transfer needs a
+   basis and probably the teacher's explicit consent on screen.
 
 ## Current default
 
 No AI and no import: specification §11. Nothing in the code calls a model.
 T-050 and T-056–T-059 (the command refactor) and T-055 do not depend on
-this answer. T-051–T-053 do.
+this answer. T-051–T-053 and T-061 do.
 
 ## Cost of changing later
 

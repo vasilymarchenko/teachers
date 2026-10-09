@@ -40,8 +40,13 @@ not touch the template.
 - [ ] Relative dates arrive as date expressions and are resolved by a pure
       function in `lib/domain` against `today()`. Unit tests with fixed
       instants cover «сьогодні», «завтра», a named weekday on that weekday
-      (which resolves to today, ADR-029) and on the day after it, and a Kyiv
-      night after midnight that is still the previous day in UTC.
+      (which resolves to today, ADR-029) and on the day after it, a day and
+      month without a year on either side of 1 January within one academic
+      year, and a Kyiv night after midnight that is still the previous day in
+      UTC.
+- [ ] An expression that resolves to nothing (no academic year set up, no
+      break ahead, a day and month outside the year) is shown as a question
+      asking for the date, and is not written (ADR-029).
 - [ ] The model is called from one module that is the only importer of
       `@anthropic-ai/sdk`. The API key comes from the environment, and its
       absence hides the input rather than failing a page. Calls are limited per
