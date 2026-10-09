@@ -59,9 +59,15 @@ not touch the template.
       a parse failure is shown as «не вдалося розібрати», never as a partial
       write.
 - [ ] The confirmation screen is built from the preview of the command below
-      and lists each proposed change with the resolved date in words. Each one can be unticked, and «Виправити» opens the
-      existing event form pre-filled. «Додати вибране» sends the confirmed list
-      back.
+      and lists each proposed change with the resolved date in words. Each one
+      can be unticked. «Виправити» opens the change's own fields in place in
+      the list (title, date, note, recurrence), with the inputs questions use.
+      It does not open the event form and saves nothing by itself. An edited
+      date is sent back as an explicit date, without a symbol. Every edit
+      refreshes the preview, so the screen and its fingerprint always show the
+      list as edited. «Додати вибране» sends the confirmed list back. A test
+      edits a change's date and title, confirms, and asserts that exactly one
+      event is written, with the edited values.
 - [ ] Applying a confirmed proposal is a command in `lib/commands`
       (ADR-028, ADR-029). It parses the confirmed list from scratch, resolves
       its date expressions again and checks them as below, and runs the T-056
