@@ -11,6 +11,7 @@ refs:
   - docs/specs/specification.md §5.1
   - docs/architecture/architect-overview.md §3.2
   - docs/architecture/architect-overview.md §10.8
+  - docs/architecture/architect-overview.md §9
 ---
 
 ## Goal
@@ -32,8 +33,16 @@ confirms it as one new template version.
       template editor, with the cells that differ from the version in force
       marked.
 - [ ] Confirming creates exactly one template version for the view through the
-      T-059 commands. Proposed bell times go through the T-057 bell schedule command
-      in the same transaction.
+      T-059 commands.
+- [ ] Bell times from the file are written only when the version starts
+      today. They then go through the T-057 bell schedule command in the same
+      transaction. When the version starts later, they are not written,
+      because `BellSchedule` has no start date (overview §9). The confirmation
+      screen then lists the lesson numbers whose times differ from the
+      teacher's, old and new side by side, and says to change them on the
+      bell schedule screen once the new timetable is in force. A test asserts
+      that a confirmation with a future start leaves `BellSchedule` unchanged.
+      T-062 replaces this criterion once the bell schedule has a start date.
 - [ ] The confirmation screen offers the start choices of T-055 («з
       сьогодні», «після канікул», «з дати»), proposed from the file or the
       teacher's text where it names one («з 03.11», «після канікул»), and the

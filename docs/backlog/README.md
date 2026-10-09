@@ -70,6 +70,7 @@ for reading. Order is priority; the ID number is not.
 | [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051, T-055, T-058, T-059 |
 | [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, T-055, T-057, T-059 |
 | [T-061](T-061-import-non-teaching-periods.md) | Import non-teaching periods — a list of holidays and breaks from text or a file becomes year rows through a proposal | todo | T-051, T-057 |
+| [T-062](T-062-bell-schedule-from-a-date.md) | Bell schedule from a date — a set of bell times takes effect on its start date, and past lessons keep their times | todo | T-057 |
 
 ## Open questions
 
@@ -202,6 +203,12 @@ answers Q-008 and hangs off T-059, whose template commands it extends with a
 future cut. T-061 hangs off T-051 for the proposal pipeline and off T-057 for
 the non-teaching period command. An MCP endpoint was considered and deferred
 (ADR-028) and has no ticket.
+T-062 is not part of the import track and is not drawn. It takes the reaction
+overview §9 records for «`BellSchedule` без дати початку дії», and hangs off
+T-057 for the bell schedule command it gives a start date, so that the bells
+write moves into a command once and gains its date afterwards. T-053 does not
+wait on it: until T-062 is done, an import with a future start only lists the
+bell times that differ.
 
 **Order of the import track.** The table lists the track in the order it is
 meant to be worked, with the unrelated tickets between its rows keeping their
