@@ -52,6 +52,24 @@ confirms it as one new template version.
       one of» question for the whole proposal: «в обох тижнях», «лише в
       чисельнику» or «лише в знаменнику», as T-052 asks it for one day. A
       file with both weeks, on one sheet or two, raises none.
+- [ ] The file's bell times become the raw input of the T-057 bell schedule
+      command: a start for each of the ten lesson numbers and one
+      `lessonMinutes` for all of them (`bellScheduleInput`), built as follows.
+      - A lesson number the file has a time for takes its start from the file.
+        A lesson number the file has no time for keeps the teacher's current
+        start, so the import never deletes a bell row.
+      - Where the file gives start–end pairs of one length, that length is
+        `lessonMinutes`. Where it gives starts only, the teacher's current
+        length stays.
+      - Where the file's lessons differ in length, which the schedule cannot
+        store (overview §9, «Кінець уроку зберігається, тривалість — лише
+        поле форми»), a «choose one of» question on the bell change offers
+        each length the file has. The preview marks the lessons whose end
+        moves. A length that makes lessons overlap is refused by the
+        command, and the refusal shows on the bell change (ADR-029).
+      - Tests cover: start–end pairs of one length; starts only; two lengths,
+        answered each way, one of which overlaps and is refused; and a file
+        without a lesson 0 the teacher has, whose bell row is kept.
 - [ ] Bell times from the file are written only when the version starts
       today. They then go through the T-057 bell schedule command in the same
       transaction. When the version starts later, they are not written,
