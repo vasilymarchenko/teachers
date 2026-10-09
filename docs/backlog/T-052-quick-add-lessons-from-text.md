@@ -43,12 +43,13 @@ from which date and for which parity weeks, before anything is written.
       helper of T-056, so it shows what the write will leave.
 - [ ] The preview names the cut date (`today()`) and, where the version in
       force is trimmed, the warning of overview §3.2 I2.
-- [ ] When a planned version lies ahead (overview §10.8), the confirmation
-      screen asks what T-055's day save asks («застосувати й до розкладу з
-      <дата>?»), and on «так» the same change goes into the planned version
-      in the same transaction. A test asserts that a lesson confirmed with
-      «так» is in the calendar on the planned version's start date, and one
-      confirmed with «ні» is not.
+- [ ] When a planned version lies ahead, the confirmation screen applies
+      T-055's rule for a change that starts before it (overview §10.8). Each
+      template day it changes is a day-save scope. The screen says that the
+      change stops at the planned start, offers to carry it, and lists the
+      planned rows a carry would replace. A test asserts that a lesson
+      confirmed with the carry is in the calendar on the planned version's
+      start date, and one confirmed without it is not.
 - [ ] A day override proposal resolves its date with the T-051 date
       expressions and is applied through the day override command.
 - [ ] The evaluation set gains at least 15 lesson and override cases.

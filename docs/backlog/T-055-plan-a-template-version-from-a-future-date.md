@@ -20,8 +20,9 @@ A teacher who knows that a new timetable takes over after the autumn break can
 enter it now. The template editor offers «новий розклад з…» with two choices,
 «після канікул» and «з дати», and the version it creates starts on that date
 instead of today. The version in force is trimmed there, so the past and the
-days until then are untouched. A change made today can be carried into the
-planned version. A planned version has no cancel action: it is changed like
+days until then are untouched. A change that starts before a planned version
+never stops at it silently, and the teacher can carry it into the planned
+version. A planned version has no cancel action: it is changed like
 any other version. The decision and its reasons are in
 overview §10.8 (Q-008).
 
@@ -59,10 +60,26 @@ overview §10.8 (Q-008).
       otherwise it writes nothing and shows the form again with the new date,
       as ADR-029 does for import.
 - [ ] A planned version (one whose `validFrom` is after `today()`) is edited
-      through the same day save. Saving a day of the version in force while a
-      planned version lies ahead asks «застосувати й до розкладу з <дата>?»,
-      and on «так» applies the same change to the planned version's slots in
-      the same transaction.
+      through the same day save. A change that starts on a date D, while a
+      planned version starts on S, has an outcome that depends only on where
+      D falls. It is the same for a day save and for a new timetable
+      (overview §10.8):
+      - D after S: the change edits the planned version from D, as any
+        version is edited.
+      - D equal to S: the change replaces the planned version, and the screen
+        says so before saving.
+      - D before S: the change stops at S, and the screen says so before
+        saving. The teacher may carry it into the planned version. That
+        overwrites the same scope there: the same weekday and parity weeks
+        for a day save, the whole week for a new timetable. The overwrite runs
+        in the same transaction and deletes no version. No change is merged
+        lesson by lesson.
+      - Before a carried change is saved, the screen lists the lesson rows
+        the overwrite replaces where the planned version differed from the
+        version in force, so that nothing planned is lost unseen. Where there
+        are none, the screen only asks.
+      - With more than one planned version ahead, each is named with its start
+        date and handled the same way.
 - [ ] There is no «скасувати запланований розклад». A planned version is
       changed the way any version is changed. Its days change through the day
       save. Its range changes by planning another version from a date, and a
@@ -76,9 +93,12 @@ overview §10.8 (Q-008).
       cut on a future date in the next semester with the default boundary
       (its `validTo` is the end of that semester), a cut on the first day
       after a break, «після канікул» chosen during that
-      break, a second cut on the same planned date (replace), a change applied
-      to both versions, and a version planned from a later date than a
-      planned one, which trims it.
+      break, a second cut on the same planned date (replace), and a version
+      planned from a later date than a planned one, which trims it. They also
+      cover a day saved before a planned version and carried into it, once
+      where the planned day equals the version in force and once where it
+      differs (the replaced rows are listed). Last, a new timetable before a
+      planned version, carried and not carried.
       Each is a unit test of the planning functions.
 - [ ] An ADR records that the cut may be in the future, and why a planned
       version has no cancel action, with the two rejected rules of overview

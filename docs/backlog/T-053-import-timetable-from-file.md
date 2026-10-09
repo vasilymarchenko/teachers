@@ -47,8 +47,12 @@ confirms it as one new template version.
       сьогодні», «після канікул», «з дати»), proposed from the file or the
       teacher's text where it names one («з 03.11», «після канікул»), and the
       version is created through T-055's future cut. A planned version already
-      ahead is handled as T-055 handles it. The start date comes back with its
-      symbol and is checked as T-051 checks a date.
+      ahead is handled by T-055's rule for a change against a planned version
+      (overview §10.8). The scope is the whole week, and D is the start the
+      teacher chose: before the planned start the import stops there unless
+      carried, on it the import replaces it, and after it the import trims it.
+      The start date comes back with its symbol and is checked as T-051
+      checks a date.
 - [ ] The evaluation set gains at least five timetable files, including one
       with merged cells and one with both parity weeks on a single sheet.
 
