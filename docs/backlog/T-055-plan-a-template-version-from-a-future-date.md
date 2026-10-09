@@ -31,6 +31,22 @@ overview §10.8 (Q-008).
       earlier than `today()`, which is still read from `lib/time/today.ts`.
       The check runs at write time, so a form opened yesterday cannot cut into
       the past after midnight.
+- [ ] Today one date, `cutAt = today(now)`, serves every step of a template
+      edit. With a future cut it splits in two, and each step names the date
+      it uses:
+      - `today(now)` is used for the guard that the cut is not in the past, and
+        for resolving «після канікул»;
+      - everything else is planned on the cut. This covers the version in force
+        (`getTemplateVersionInForce()`) and the next version's start
+        (`getNextTemplateVersionStart()`). It covers the boundary frame and the
+        reference date of `resolveBoundary()` (`getBoundaryFrame()`,
+        `ruleValidFrom(yearStart, cut)`), and the boundary inherited from the
+        version in force. It covers the slots the new version starts from, the
+        check that `validTo` is after the cut, and the trim in
+        `planTemplateEdit()`.
+      This way a version planned in another semester gets the default
+      «до кінця семестру» of *that* semester, never one that ends before it
+      starts.
 - [ ] «Після канікул» resolves at write time to the first day after the
       nearest break that has not ended on `today()` (its `dateTo` is on or
       after `today()`), so that chosen during a break it means the day after
@@ -58,7 +74,9 @@ overview §10.8 (Q-008).
 - [ ] The strip of versions marks a planned version as planned, with its start
       date, and the trim warning of overview §3.2 I2 names the planned date.
 - [ ] `design/expand-fixtures.md` gains the cases: a cut on a future date, a
-      cut on the first day after a break, «після канікул» chosen during that
+      cut on a future date in the next semester with the default boundary
+      (its `validTo` is the end of that semester), a cut on the first day
+      after a break, «після канікул» chosen during that
       break, a second cut on the same planned date (replace), a change applied
       to both versions, a cancellation, and a cancellation of a planned version
       followed by a gap.
