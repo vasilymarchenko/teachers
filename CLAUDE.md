@@ -73,10 +73,6 @@ Two rules from the architecture that are easy to violate silently:
 - **No `new Date()` in domain code.** "Today" comes only from `lib/time/today.ts`, which resolves the date in `Europe/Kyiv` (§8.5). The container runs in UTC; a naive `new Date()` is a day off for three hours every night.
 - **`userId` is the first argument** of every function in `lib/db/queries`. A mutation cannot take it first — a Server Action's signature belongs to `useActionState` — so it calls `requireUser()` before any other work and filters every statement by the result. Either way `userId` is only ever obtained from `requireUser()`, never from form or request input (§8.4).
 
-## Not in the first release
-
-Deliberately **not** in the first release: background jobs (queue table + cron) and AI (`@anthropic-ai/sdk`). When jobs are needed, they run as a separate `worker` service in Compose — never a `node-cron` timer inside the web process.
-
 ## Language requirements
 
 Language is chosen by **audience**, not by file type. If a teacher could read the text — Ukrainian; if only a developer will — English.

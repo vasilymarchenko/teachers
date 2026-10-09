@@ -38,5 +38,5 @@ These are real future needs, but nothing in the MVP uses them, and listing them 
 |Layer|When it comes back|
 |---|---|
 |Background jobs (queue table + cron)|With the first feature that actually needs one — notifications (spec §6.3) or import (§10). When it does: a **separate `worker` service** in Compose (same image, different command), never a `node-cron` timer inside the web process — that one fires twice in dev and once per replica in production. Job pickup via `SELECT … FOR UPDATE SKIP LOCKED` or an advisory lock.|
-|AI (`@anthropic-ai/sdk`, tool use for structured output)|Third queue (spec §2) — not discussed yet. Zod is already in the stack and doubles as the structured-output schema when the time comes.|
+|AI (`@anthropic-ai/sdk`, tool use for structured output)|Third queue (spec §2). Proposed for import by ADR-029, with the write schemas doubling as the structured-output schema; whether it comes in at all is Q-007.|
 |Redis / BullMQ|Only if the queue table stops being enough — i.e. not on this project's horizon.|
