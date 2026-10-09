@@ -32,8 +32,17 @@ This is the non-teaching period kind of ADR-029's closed set.
       ticked ones through the T-057 command, run by T-051's command for a
       confirmed proposal in one transaction. A refusal on any item writes
       nothing and names that item.
-- [ ] A period outside the academic year in force raises T-051's «a date
-      is needed» on its dates, and is not written until it is answered.
+- [ ] The list belongs to one academic year as a whole (ADR-029). By default
+      that is the current one: the first that has not ended on `today()`.
+      The confirmation screen asks it once for the whole proposal, as a
+      «choose one of» over the academic years set up. Days and months without
+      a year resolve within the chosen year, including those before
+      `today()`. A period whose dates do not fall in the chosen year raises
+      T-051's «a date is needed» on its dates, and is not written until it is
+      answered. Tests cover a list of this year's holidays entered in
+      September that includes 1 September (written in this year), and a
+      list for next year entered in May with next year set up and chosen
+      (written in next year).
 - [ ] The evaluation set gains at least five lists, one of them a file.
 
 ## Notes

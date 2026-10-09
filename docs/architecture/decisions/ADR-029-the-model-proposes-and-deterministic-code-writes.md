@@ -61,8 +61,10 @@ Option 2.
   with a date, or «choose one of», answered from a closed list of options
   that the field's schema defines. The model may ask only these, and so may
   the domain: an expression that resolves to nothing raises «a date is
-  needed» on its field. The confirmation screen shows a question as an input
-  on its change. A change with an unanswered question cannot be added until
+  needed» on its field. One question points at the whole proposal instead
+  of one change: the academic year of a list of non-teaching periods
+  (T-061), which is «choose one of» over the years set up. The confirmation
+  screen shows a question as an input on its change. A change with an unanswered question cannot be added until
   it is answered or unticked. The answer becomes the field's value and is
   parsed by the command like any other. The model asks no free questions.
   What it cannot place in a change goes to «not understood», quoted, and the
@@ -81,9 +83,24 @@ Option 2.
   else is a date expression, a small closed union, resolved by a pure function
   in `lib/domain` against `today()` and the year's rows: the relative ones
   («до п'ятниці», «щопонеділка», «до канікул») and a day and month without a
-  year («12.10»), whose year is the domain's to set, not the model's. A day and
-  month resolves to that date inside the first academic year that has not
-  ended on `today()`. Recurrence boundaries reuse `boundaryKind` as it is.
+  year («12.10»), whose year is the domain's to set, not the model's.
+  Recurrence boundaries reuse `boundaryKind` as it is.
+- A day and month is resolved by default within the current academic year:
+  the first one that has not ended on `today()`. It spans two calendar years,
+  so a day and month falls in it at most once. Where that does not give a
+  date the teacher plausibly meant, the domain asks instead of guessing.
+  - A single change (a deadline, an info event, a day override, a
+    timetable's start) gets the date inside the current academic year. If
+    that date falls outside the year, it raises «a date is needed». If the
+    date is before `today()`, it raises «choose one of»: that date, or the
+    same day a year later. «12.10» said in May is therefore asked about, not
+    put in last October.
+  - A list of non-teaching periods (T-061) belongs to one academic year as a
+    whole. By default that is the current one, and its dates may lie before
+    `today()`: a list of this year's holidays entered in September includes
+    1 September. The confirmation screen offers the other academic years
+    already set up for the whole list. A date that does not fall in the
+    chosen year raises «a date is needed».
 - An expression that resolves to nothing (no academic year set up, no break
   ahead, a day and month outside the year) raises «a date is needed» on its
   change, never a guess and never a silently dropped change. It is the signal

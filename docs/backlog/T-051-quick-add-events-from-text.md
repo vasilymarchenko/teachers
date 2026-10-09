@@ -42,10 +42,13 @@ not touch the template.
 - [ ] Relative dates arrive as date expressions and are resolved by a pure
       function in `lib/domain` against `today()`. Unit tests with fixed
       instants cover «сьогодні», «завтра», a named weekday on that weekday
-      (which resolves to today, ADR-029) and on the day after it, a day and
-      month without a year on either side of 1 January within one academic
-      year, and a Kyiv night after midnight that is still the previous day in
-      UTC.
+      (which resolves to today, ADR-029) and on the day after it, and a Kyiv
+      night after midnight that is still the previous day in UTC. A day and
+      month without a year resolves within the current academic year as
+      ADR-029 states for a single change. Its tests cover dates on either side
+      of 1 January, «12.10» said in September (this October), «12.10» said in
+      May («choose one of» last October or next), and a day and month the
+      academic year does not contain («a date is needed»).
 - [ ] An expression that resolves to nothing (no academic year set up, no
       break ahead, a day and month outside the year) raises «a date is
       needed» on its field (ADR-029). A test asserts that «щочетверга нарада
