@@ -113,7 +113,18 @@ overview §10.8 (Q-008).
         for each planned version, each with its start date. A planned
         version's tab sets D to its start, so a save there edits it (the
         «D equal to S» case above).
-      - «Новий розклад з…» sets D to the chosen date.
+      - The tab of the version in force carries no D in the URL. Its saves
+        cut at `today()` read at write time, as the editor does now. A form
+        opened before midnight and saved after it saves from the new day,
+        and is not refused.
+      - A planned version's tab carries D, and its saves cut at the later of
+        D and `today()` read at write time. Once the planned start has come,
+        the version is in force, and a save edits it from today. This is the
+        only outcome left, since the days before today cannot change.
+      - «Новий розклад з…» sets D to the chosen date. A date the teacher
+        chose that has passed by the time of the save is refused with a
+        message and the form is shown again, as the first criterion states.
+        The cut does not move silently.
       - The heading always says which version is being edited, for example
         «Ви редагуєте розклад, що почне діяти 02.11».
       - An integration test opens a planned version's tab, changes a Monday,
@@ -121,6 +132,14 @@ overview §10.8 (Q-008).
         The change shows in the calendar from the planned start, the planned
         version's other days are as they were, its range is unchanged, and
         the version in force today is unchanged.
+      - Integration tests with the system time fixed (as in T-060) cover
+        three saves across midnight:
+        - the tab of the version in force, opened at 23:58 and saved at
+          00:01, saves from the new day;
+        - a planned version's tab, saved on its start date, saves from that
+          date;
+        - «Новий розклад з…» with the date chosen at 23:58 as today, saved
+          at 00:01, is refused and writes nothing.
 - [ ] The strip of versions marks a planned version as planned, with its start
       date, and the trim warning of overview §3.2 I2 names the planned date.
 - [ ] `design/expand-fixtures.md` gains the cases: a cut on a future date, a
