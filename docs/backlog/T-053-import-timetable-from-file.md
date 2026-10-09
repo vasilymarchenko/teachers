@@ -76,21 +76,33 @@ confirms it as one new template version.
       because `BellSchedule` has no start date (overview §9). The confirmation
       screen then lists the lesson numbers whose times differ from the
       teacher's, old and new side by side, and says to change them on the
-      bell schedule screen once the new timetable is in force. A test asserts
-      that a confirmation with a future start leaves `BellSchedule` unchanged.
+      bell schedule screen once the new timetable is in force. The bell part
+      is then shown only: it is not a change of the proposal, it is not in
+      the preview, and it raises no question and no refusal, so lessons of
+      different lengths in the file never block «Додати». A test asserts
+      that a confirmation with a future start, from a file with two lesson
+      lengths, is enabled without a bell answer and leaves `BellSchedule`
+      unchanged.
       T-062 replaces this criterion once the bell schedule has a start date.
-- [ ] The confirmation screen offers the start choices of T-055 («з
-      сьогодні», «після канікул», «з дати»), proposed from the file or the
-      teacher's text where it names one («з 03.11», «після канікул»), and the
-      version is created through T-055's future cut. A planned version already
-      ahead is handled by T-055's rule for a change against a planned version
-      (overview §10.8). The scope is the import's scope above, and D is the start the
-      teacher chose. Before the planned start, an import whose own boundary
-      ends after it stops there unless carried, and one whose boundary ends
-      on or before it does not touch it. On the planned start the import
-      replaces it, and after it the import trims it.
-      «З сьогодні» is `today()` at write time. The other start choices
-      resolve against the proposal's anchor date (ADR-029).
+- [ ] The start is one «choose one of» question for the whole proposal
+      (ADR-029) over T-055's start choices («з сьогодні», «після канікул»,
+      «з дати»), and its answer sets `target.from` on every template day
+      change of the file. Where the file or the teacher's text names a start
+      («з 03.11», «після канікул»), that choice is proposed. Where neither
+      does, «з сьогодні» is shown already chosen, the one default ADR-029
+      allows here. «З сьогодні» sends no `from` and is `today()` at write
+      time. The other choices resolve against the proposal's anchor date and
+      are sent as `{ date, whenPassed: "refuse" }`. The version is created
+      through T-055's future cut.
+- [ ] A planned version already ahead is handled by T-055's rule for a
+      change against a planned version (overview §10.8). The scope is the
+      import's scope above, and D is the start the teacher chose. Before the
+      planned start, an import whose own boundary ends after it raises
+      ADR-029's carry question once for the whole proposal, and its answer
+      sets `target.carryInto` on every template day change of the file. One
+      whose boundary ends on or before the planned start does not touch it
+      and asks nothing. On the planned start the import replaces it, and
+      after it the import trims it.
 - [ ] The preview's fingerprint is checked at confirmation as T-051 checks
       it. A test changes the template in another request between preview and
       confirmation. Another, for a version that starts today, changes the bell

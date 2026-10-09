@@ -52,27 +52,40 @@ from which date and for which parity weeks, before anything is written.
       sets the change's `target.parity` together with the per-row both-weeks
       choice of ADR-025.
 - [ ] The preview marks each existing lesson a change replaces, with the old
-      lesson and the new side by side, as a conflict of ADR-029 the teacher
-      may answer with a clarification.
-- [ ] All template changes of one confirmation are applied as one template
-      version, through the T-059 commands, run by T-051's command for a
-      confirmed proposal. The preview on the confirmation screen is that same
-      command in the rollback ending of the T-056 helper, so it shows what the
-      write will leave.
-- [ ] The preview names the date the change starts on and, where the version
-      in force is trimmed, the warning of overview §3.2 I2. By default the
-      date is `today()`. Where the text names a start («з 13.10 по понеділках
-      …», «після канікул»), the confirmation screen offers T-055's start
-      choices («з сьогодні», «після канікул», «з дати»), as T-053 does. The
-      change is made through T-055's future cut. «З сьогодні» is `today()`
-      at write time. «Після канікул» and a date resolve against the
-      proposal's anchor date (ADR-029).
+      lesson and the new side by side, as a warning of ADR-029. A warning
+      keeps nothing open: a change that is otherwise complete is frozen, and
+      the teacher changes it through «Виправити» or unticks it. A test runs a
+      clarification round over a warned change with the model stub returning
+      it altered, and asserts that it is unchanged.
+- [ ] Template changes of one confirmation are applied through the T-059
+      commands, run by T-051's command for a confirmed proposal, in order of
+      their start. The changes of one view with one start make one template
+      version. A different start or a different view makes another, and a
+      later start begins from the slots the earlier one left. Tests confirm
+      two changes of one view and one start (one new version), and two with
+      different starts (two versions, the later one also holding the
+      earlier change's lesson). The preview on the confirmation screen is
+      that same command in the rollback ending of the T-056 helper, so it
+      shows what the write will leave.
+- [ ] Each template day change carries its start in `target.from` (T-055).
+      The confirmation screen shows it on the change as a «choose one of»
+      over T-055's start choices («з сьогодні», «після канікул», «з дати»).
+      Where the text names a start («з 13.10 по понеділках …», «після
+      канікул»), that choice is proposed. Where it names none, «з сьогодні»
+      is shown already chosen, the one default ADR-029 allows here, and the
+      teacher may change it. «З сьогодні» sends no `from` and is `today()` at
+      write time. «Після канікул» and a date resolve against the proposal's
+      anchor date and are sent as `{ date, whenPassed: "refuse" }`. The
+      preview names the resolved start and, where the version in force is
+      trimmed, the warning of overview §3.2 I2.
 - [ ] When a planned version lies ahead, the confirmation screen applies
       T-055's rule for a change that starts before it (overview §10.8). Each
       template day it changes is a day-save scope. Where the change's own
-      boundary ends after the planned start, the screen says that the change
-      stops there, offers to carry it, and lists the planned rows a carry
-      would replace. Where it ends on or before the planned start, the screen
+      boundary ends after the planned start, the preview raises ADR-029's
+      carry question on the change («лише до S» or «і в розклад з S»), which
+      sets `target.carryInto`, and lists the planned rows a carry would
+      replace: only the lesson numbers the change names. Where it ends on or
+      before the planned start, the screen
       says nothing about the planned version. A test asserts that a lesson
       confirmed with the carry is in the calendar on the planned version's
       start date, and one confirmed without it is not. Another asserts that

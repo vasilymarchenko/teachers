@@ -87,13 +87,17 @@ overview §10.8 (Q-008).
       - D before S, with the change's own `validTo` after S:
         `capToNextVersion()` stops the change at S, and the screen says so
         before saving. The teacher may carry it into the planned version. That
-        overwrites the same scope there: the same weekday and parity weeks
-        for a day save, the whole week for a new timetable. The overwrite runs
-        in the same transaction, as a save on the planned version's start
-        date (the «D equal to S» case). No change is merged lesson by
-        lesson.
-      - Before a carried change is saved, the screen lists the lesson rows
-        the overwrite replaces where the planned version differed from the
+        overwrites the change's own scope there: the lesson numbers the day
+        save's `entries` name, on the same weekday and parity weeks, and the
+        whole week for a new timetable. The editor sends an entry for every
+        row of the day, so its carry overwrites the whole day. A day save
+        that names one lesson overwrites only that lesson in the planned
+        version and leaves its other planned lessons as they are. The
+        overwrite runs in the same transaction, as a save on the planned
+        version's start date (the «D equal to S» case). No change is merged
+        lesson by lesson.
+      - Before a carried change is saved, the screen lists, among the rows
+        the carry writes, those where the planned version differed from the
         version in force, so that nothing planned is lost unseen. Where there
         are none, the screen only asks.
       - With more than one planned version ahead, the change meets only the
@@ -101,6 +105,31 @@ overview §10.8 (Q-008).
         one. Each later planned version is named with its start date and
         offered the same carry on its own, with its own list of the rows it
         would replace. A carry into one never writes into another.
+- [ ] The day save's target (T-059's `{ view, weekday, parity }`) gains two
+      fields, parsed by its target schema. The command, not its adapter,
+      applies them:
+      - `from`, where the save starts. Absent, the save cuts at `today()`
+        read at write time. Present, it is `{ date, whenPassed }`: the save
+        cuts at `date`, and when `date` is before `today()` at write time,
+        `whenPassed: "refuse"` refuses the save (`field: "target.from"`) and
+        `whenPassed: "today"` cuts at `today()` instead.
+      - `carryInto`, the start dates of the planned versions the save is
+        carried into, empty when absent. For each, the same command saves the
+        same `entries` with `from` set to that start, in the same
+        transaction. A date that is not the start of a planned version the
+        save is capped at (the nearest, or a later one as above) refuses the
+        whole save with `field: "target.carryInto"` and writes nothing.
+      Each caller maps onto these fields. The tab of the version in force
+      sends no `from`. A planned version's tab sends
+      `{ date: D, whenPassed: "today" }`. «Новий розклад з…» sends
+      `{ date, whenPassed: "refuse" }`. Import sends no `from` for «з
+      сьогодні» and `{ date, whenPassed: "refuse" }` for «після канікул» and
+      a date (T-052, T-053). The editor's answer to the carry question fills
+      `carryInto`. A save with a carry is therefore one command call, and the
+      Server Action opens no transaction (T-059). Integration tests save a
+      day with a carry and assert that both versions change in one
+      transaction, and save one whose `carryInto` names a date that is no
+      longer a planned start and assert that nothing is written.
 - [ ] There is no «скасувати запланований розклад». A planned version is
       changed the way any version is changed. Its days change through the day
       save. Its range changes by planning another version from a date, and a
@@ -112,8 +141,8 @@ overview §10.8 (Q-008).
 - [ ] The editor edits the version in force on a date D, which the URL
       carries as it carries the view, the parity week and the day. D
       defaults to today, which is the editor as it is now. The editor reads
-      and saves the version in force on D, and its saves start on D. D is
-      never before today, so a version that has ended stays listed and read
+      and saves the version in force on D, and its saves start on D. No save
+      cuts before today, so a version that has ended stays listed and read
       only.
       - Above the grid there is a tab for the version in force today and one
         for each planned version, each with its start date. A planned

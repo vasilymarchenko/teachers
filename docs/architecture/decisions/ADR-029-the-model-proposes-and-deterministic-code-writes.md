@@ -70,7 +70,10 @@ Option 2.
   - for a timetable file that does not tell the parity weeks apart, which
     weeks it is for (T-053);
   - for a timetable file, what happens to lessons the file does not show
-    (T-053).
+    (T-053);
+  - for a timetable file, the date it starts on, and whether it is carried
+    into a planned version ahead (T-053). Each sets that field on every
+    template day change of the file.
 
   The confirmation
   screen shows a question as an input on its change. A change with an unanswered question cannot be added until
@@ -92,7 +95,23 @@ Option 2.
   import may sit on a page with no view, no day and no date. A target field
   the input does not settle becomes a question: «choose one of» for the view
   or the parity weeks, «a date is needed» for a date. It never becomes a
-  default.
+  default, with two exceptions named here and nowhere else. Each is shown as
+  a question already answered, which the teacher sees and may change, and
+  never as a value the screen does not show:
+  - the start of a template day change (`target.from`, T-055) whose input
+    names none is «з сьогодні». Asking for it on every «по понеділках 2-й
+    урок» would make quick add slower than the editor;
+  - the academic year of a list of non-teaching periods (T-061) is the
+    current one, below.
+- A template day change also has a target field the input cannot settle,
+  since only the preview knows it: `target.carryInto`, the planned versions
+  the change is carried into (T-055, overview §10.8). Where the preview
+  finds the change capped at a planned version's start, deterministic code
+  raises a «choose one of» on the change: «лише до S» or «і в розклад з S»,
+  with the planned lessons the carry would replace listed. It is the one
+  question a preview raises, and it does not take the change out of the
+  preview: the change is previewed without the carry, which is what shows
+  the cap, and an answer that carries it refreshes the preview.
 - A proposed template day names only the lessons the input talks about, and
   the save covers exactly those (ADR-028). «По понеділках 2-й урок математики»
   changes the second lesson and leaves the rest of Monday as it is. A removal
@@ -113,12 +132,17 @@ Option 2.
      a field the change needs and the input did not settle. It becomes a
      question, or a fragment in «not understood». A conflict is what the
      preview finds (ADR-028): a refusal of a command, or a warning it
-     carries, such as a version trimmed, a planned version ahead, or an
-     existing lesson the change replaces.
+     carries, such as a version trimmed or an existing lesson the change
+     replaces. A warning is shown on its change and keeps nothing open: it
+     is the teacher's to read, not a gap. A planned version ahead is not a
+     warning but the carry question above.
   3. A gap with a closed answer (a date, a choice from a list) is answered on
-     the screen, with no further model call. Anything else, «not understood»
-     or a conflict the teacher wants to put differently, is answered with a
-     clarification typed in the teacher's own words.
+     the screen, with no further model call. «Not understood» and a refused
+     change are answered with a clarification typed in the teacher's own
+     words. A warned change the teacher wants put differently is changed
+     through «Виправити» or unticked. A clarification may add a new change
+     in its place («ні, постав це 4-м уроком»), but does not alter the
+     warned one.
   4. A clarification starts the next round. The model receives the current
      proposal and the clarification. It returns changes only for the open
      items (an unanswered question, a fragment in «not understood», a change
@@ -126,7 +150,8 @@ Option 2.
      Each change carries an id that the server gives it in the round that
      creates it, and the model answers an open item by that id.
   5. A change that is complete is frozen: every field is settled, no question
-     is open, and its preview does not refuse. The server takes it from the
+     is open, and its preview does not refuse. A warning does not stop a
+     change from being complete. The server takes it from the
      previous round verbatim and ignores whatever the model returns for it.
      This guards against the model's non-determinism. A clarification about
      one item cannot quietly alter another the teacher has already checked.
@@ -173,7 +198,8 @@ Option 2.
     it raises «a date is needed». If it is before the anchor date, it raises
     «choose one of»: that date, or the same day a year later.
   - A list of non-teaching periods (T-061) belongs to one academic year as a
-    whole. By default that is the current one, and its dates may lie before
+    whole. By default that is the current one on the anchor date (one of the
+    two exceptions to «never a default» above), and its dates may lie before
     the anchor date: a list of this year's holidays entered in September includes
     1 September. The confirmation screen offers the other academic years
     already set up for the whole list. A date that does not fall in the
@@ -197,7 +223,9 @@ Option 2.
   preview on a confirmation screen is the same command with the rollback
   ending.
 - The preview runs only the changes that are **ready**: ticked, with no open
-  question, and not in «not understood». The screen shows every other
+  question other than the carry question, and not in «not understood». A
+  change whose carry question is open is previewed, but is not yet ready to
+  add. The screen shows every other
   change from the proposal itself, with its question inputs. A ready change
   whose command refuses in the preview shows the refusal next to it, and the
   rest of the preview stands (ADR-028). «Додати» is enabled only when every

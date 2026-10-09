@@ -78,6 +78,11 @@ Option 3.
   - A caller fills the target in its own way. The Server Action fills it from
     its bound arguments, so no form changes. The import screen fills it from
     the proposal (ADR-029). Nothing in the command assumes that a page exists.
+  - The target also carries what a page decides around a write rather than
+    in its fields. For the template day save that is the date the save starts
+    on and the planned versions the teacher carries it into (T-055,
+    overview §10.8). A save with a carry is then one command with one input,
+    not two saves an adapter runs in a transaction of its own.
 
   A command never reads `FormData`, never calls `requireUser()` (its caller
   does), and never calls `revalidatePath()` (that is a concern of the page
@@ -161,10 +166,15 @@ Option 3.
   - Inside the transaction the helper reads all of the teacher's rows twice,
     before the commands run and after them, from every table with a `userId`
     column. The diff is every row added, every row changed (before and
-    after) and every row removed, in a fixed order. The generated id or
-    timestamp of a new row is replaced by its place in the order of
-    creation, so the same commands on the same state give the same
-    fingerprint.
+    after) and every row removed, in a fixed order. The generated id of a
+    new row is replaced by its place in the order of creation. The
+    bookkeeping columns `createdAt` and `updatedAt` are left out of every
+    row, new or changed: they record when a statement ran, not what it
+    wrote, and `updatedAt` takes a new `now()` on every update
+    (`lib/db/schema/columns.ts`). Without that, a write that updates a row,
+    such as the trim of the version in force, would hash differently at
+    preview and at commit and be refused every time. So the same commands
+    on the same state give the same fingerprint at any instant.
   - A write may carry the fingerprint of the preview the teacher saw. The
     helper then computes it again in the same transaction before committing.
     If the two differ, it rolls back and returns a refusal that carries the

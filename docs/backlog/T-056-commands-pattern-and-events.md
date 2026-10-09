@@ -56,9 +56,14 @@ sees no difference.
       ending accepts an expected fingerprint (ADR-028). The helper reads the
       teacher's rows of every table with a `userId` column before and after
       the commands, and a convention test asserts that it covers every such
-      table. Integration tests show five things:
+      table, and leaves `createdAt` and `updatedAt` out of every row.
+      Integration tests show six things:
       - The same state previewed twice gives the same fingerprint, so no
         generated id or timestamp enters it.
+      - A command that **updates** an existing row (an event's title), previewed
+        and then committed at instants a minute apart (`vi.setSystemTime()`),
+        gets the same fingerprint both times and writes. A test of creates
+        alone cannot show this, since only an update moves `updatedAt`.
       - A commit whose expected fingerprint matches writes.
       - A commit after another request has changed a row the commands touch
         rolls back and returns the new preview.

@@ -26,7 +26,9 @@ Answered: yes. A new timetable is often known ahead of time, typically one
 that takes over after a break. A template edit may cut on a future date,
 never an earlier one than `today()`, so I1 still forbids only the past. That
 is already true of a `DayOverride` and an `Event`, which may both be entered
-for a future date. The usual start is «після канікул», resolved at write time.
+for a future date. The usual start is «після канікул», resolved when the
+form shows it. The date shown is what is written, and it is checked at write
+time against `today()`.
 A planned version has no cancel action. It is changed like any other version:
 its days through the day save, its range by planning another version from a
 date. No version that has started is deleted, and no `validTo` moves forward. A

@@ -55,9 +55,10 @@ not touch the template.
       that date or a year later), and the same with no academic year set up.
       A full date with its year before the anchor date raises «a date is
       needed», pre-filled with it, and one after it is taken as written.
-- [ ] An expression that resolves to nothing (no academic year set up, no
-      break ahead, a day and month outside the year) raises «a date is
-      needed» on its field (ADR-029). A test asserts that «щочетверга нарада
+- [ ] An expression that resolves to nothing (no academic year set up for
+      «до кінця семестру», no break ahead for «до канікул») raises «a date is
+      needed» on its field (ADR-029). A day and month never resolves to
+      nothing for an event, since it needs no academic year. A test asserts that «щочетверга нарада
       до канікул» with no break ahead stays in the list with a date input on
       its boundary, is not added while that input is empty, and is added with
       the date the teacher enters.
@@ -114,7 +115,9 @@ not touch the template.
       of». A change with an unanswered question is marked and is not added
       until it is answered or unticked. The answer is sent back as the
       field's value and parsed by the command like any other value. This
-      ticket builds both kinds of question and uses «a date is needed».
+      ticket builds both kinds of question and uses both: «a date is needed»
+      for an expression that resolves to nothing and for a full date before
+      the anchor date, and «choose one of» for a day and month before it.
 - [ ] `notUnderstood` is shown above the list as the quoted fragments. Nothing
       in it is written.
 - [ ] Below the list, «Уточнити» takes a clarification in the teacher's own
