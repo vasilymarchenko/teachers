@@ -23,7 +23,11 @@ The teacher sees no difference.
       update, delete), semesters (create, update, delete), non-teaching
       periods (create, update, delete), weekday rules (create, update,
       delete), parity anchors (create, delete) and the bell schedule (save),
-      in the shape and under the convention tests of T-056.
+      in the shape and under the convention tests of T-056. Their target holds
+      the ids the Server Actions now receive bound: the academic year's id
+      for a create under a year, and the row's id (with its year's, where the
+      action takes both) for an update or a delete. The bell schedule has an
+      empty target.
 - [ ] The rules these writes resolve at write time stay where they are
       resolved now: a weekday rule still starts at `ruleValidFrom()`
       (ADR-004), and every boundary still resolves when it is written

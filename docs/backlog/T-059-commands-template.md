@@ -29,7 +29,14 @@ the series. The teacher sees no difference.
 - [ ] `lib/commands` holds the commands for the template day save, copy parity
       and the boundary, in the shape and under the convention tests of T-056.
       The copy-on-write planning stays in `lib/domain`, and the cut is still
-      read from `lib/time/today.ts`.
+      read from `lib/time/today.ts`. The day save's target is
+      `{ view, weekday, parity }`, copy parity's `{ view, from }`, and the
+      boundary's `{ view }`, each parsed by a target schema added to
+      `lib/validation`.
+- [ ] The day save command takes no `lessonNumbers`. It covers exactly the
+      lesson numbers `data.entries` names (ADR-028). T-060's tests show that
+      the editor's saves are unchanged by this. A unit test saves one entry
+      into a day that has others, and asserts that the others are kept.
 - [ ] The template commands read the version in force and the next version's
       start through the caller's handle. An integration test saves two days of
       one view in one transaction and asserts that the result is one new

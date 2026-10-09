@@ -28,12 +28,14 @@ not touch the template.
 - [ ] `glossary.md` §9 states `ImportProposal` and `DateExpression` as they
       are built, and no longer as planned.
 - [ ] The proposal schema (Zod, `lib/validation`) has the deadline and info
-      event kinds, whose payloads are the raw inputs of the deadline and info
-      event commands of T-056 (`z.input` of `deadlineInput` and
-      `infoEventInput`) with each date field widened to accept a date
-      expression, plus `questions` and `notUnderstood`. A question points at
-      one change and one field, and is of the kind «a date is needed» or
-      «choose one of» (ADR-029). The model's
+      event kinds, whose payloads are the inputs `{ target, data }` of the
+      deadline and info event commands of T-056 (`data` is `z.input` of
+      `deadlineInput` and `infoEventInput`, and creating has an empty target),
+      with each date field widened to accept a date expression, plus
+      `questions` and `notUnderstood`. Each change carries an id the server
+      gives it. A question points at one change, and is of the kind «a date is
+      needed» (one date field) or «choose one of» (each option sets one or more
+      fields) (ADR-029). The model's
       structured-output schema is `z.toJSONSchema(…, { io: "input" })` of the
       proposal schema, and a test asserts that it converts.
 - [ ] After the date expressions are resolved, each proposed change is passed
@@ -98,8 +100,21 @@ not touch the template.
       until it is answered or unticked. The answer is sent back as the
       field's value and parsed by the command like any other value. This
       ticket builds both kinds of question and uses «a date is needed».
-- [ ] `notUnderstood` is shown above the list as the quoted fragments with
-      «уточніть і надішліть ще раз». Nothing in it is written.
+- [ ] `notUnderstood` is shown above the list as the quoted fragments. Nothing
+      in it is written.
+- [ ] Below the list, «Уточнити» takes a clarification in the teacher's own
+      words and starts the next round of ADR-029. The model receives the
+      current proposal and the clarification. It returns changes only for the
+      open items (an unanswered question, a fragment in `notUnderstood`, a
+      change whose preview refused), addressed by their ids, plus any new
+      change. A complete change is frozen: the server keeps it from the
+      previous round verbatim and ignores what the model returns for it. The
+      round refreshes the preview and its fingerprint. A test with the model
+      stubbed starts from one complete deadline and one fragment in
+      `notUnderstood`, and runs a clarification round in which the stub also
+      returns an altered copy of the complete deadline. It asserts that the
+      complete deadline is unchanged, that the fragment became a change, and
+      that `notUnderstood` is empty.
 - [ ] Unit tests cover the pipeline with the model call stubbed. An evaluation
       set of at least 20 «input → expected proposal» pairs lives in the repo
       with a script that runs it on demand. Neither the gate nor CI runs it.

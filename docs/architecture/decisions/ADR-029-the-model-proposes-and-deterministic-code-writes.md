@@ -56,10 +56,12 @@ Option 2.
   the non-teaching period. It also carries questions and a list of fragments
   the model did not understand. Anything outside the closed set lands in the
   «not understood» list and is never forced into a kind.
-- A question is not free text. Each one points at one proposed change and
-  one field of it, and is of one of two kinds: «a date is needed», answered
-  with a date, or «choose one of», answered from a closed list of options
-  that the field's schema defines. The model may ask only these, and so may
+- A question is not free text. Each one points at one proposed change, and
+  is of one of two kinds. «A date is needed» points at one date field and is
+  answered with a date. «Choose one of» is answered from a closed list of
+  options. Each option sets one or more fields of the change, for example «лише
+  в чисельнику», which sets `target.parity` and the row's both-weeks choice
+  together. The model may ask only these, and so may
   the domain: an expression that resolves to nothing raises «a date is
   needed» on its field. One question points at the whole proposal instead
   of one change: the academic year of a list of non-teaching periods
@@ -67,17 +69,58 @@ Option 2.
   screen shows a question as an input on its change. A change with an unanswered question cannot be added until
   it is answered or unticked. The answer becomes the field's value and is
   parsed by the command like any other. The model asks no free questions.
-  What it cannot place in a change goes to «not understood», quoted, and the
-  teacher clarifies it in the text and sends it again.
+  What it cannot place in a change goes to «not understood», quoted.
 - The proposal schema is written in Zod in `lib/validation`, and it is also the
   structured-output schema given to the model (the role `docs/tech-stack.md`
-  gives Zod). A proposed change's payload is the raw input of the command its
-  kind maps to (ADR-028), `z.input` of that write's schema, with one widening:
-  a date field accepts a date expression as well as a date. The model receives
-  it as `z.toJSONSchema(…, { io: "input" })`; the output side cannot be
-  converted, because the schemas transform strings (ADR-028). The resolver
-  replaces each expression with a date, and the command parses the result with
-  the write's schema, as it parses a form's.
+  gives Zod). A proposed change's payload is the input of the command its kind
+  maps to (ADR-028), `{ target, data }`, each as the raw input of its schema,
+  with one widening: a date field accepts a date expression as well as a date.
+  The model receives it as `z.toJSONSchema(…, { io: "input" })`; the output
+  side cannot be converted, because the schemas transform strings (ADR-028).
+  The resolver replaces each expression with a date, and the command parses
+  the result with the write's schemas, as it parses a form's.
+- The model proposes the target as well as the data: the weekday and the
+  parity weeks of a template day, an override's date and lesson number, and
+  the view. Nothing in a target comes from the page the input sits on, because
+  import may sit on a page with no view, no day and no date. A target field
+  the input does not settle becomes a question: «choose one of» for the view
+  or the parity weeks, «a date is needed» for a date. It never becomes a
+  default.
+- A proposed template day names only the lessons the input talks about, and
+  the save covers exactly those (ADR-028). «По понеділках 2-й урок математики»
+  changes the second lesson and leaves the rest of Monday as it is. A removal
+  is an entry with an empty lesson, and the confirmation screen shows it as a
+  removal.
+- Import is a loop of rounds, not one call. Each round goes the same way:
+  1. The model turns the input into a proposal.
+  2. Deterministic code checks it and finds two kinds of problem. A gap is
+     a field the change needs and the input did not settle. It becomes a
+     question, or a fragment in «not understood». A conflict is what the
+     preview finds (ADR-028): a refusal of a command, or a warning it
+     carries, such as a version trimmed, a planned version ahead, or an
+     existing lesson the change replaces.
+  3. A gap with a closed answer (a date, a choice from a list) is answered on
+     the screen, with no further model call. Anything else, «not understood»
+     or a conflict the teacher wants to put differently, is answered with a
+     clarification typed in the teacher's own words.
+  4. A clarification starts the next round. The model receives the current
+     proposal and the clarification. It returns changes only for the open
+     items (an unanswered question, a fragment in «not understood», a change
+     whose preview refused), plus any new change the clarification adds.
+     Each change carries an id that the server gives it in the round that
+     creates it, and the model answers an open item by that id.
+  5. A change that is complete is frozen: every field is settled, no question
+     is open, and its preview does not refuse. The server takes it from the
+     previous round verbatim and ignores whatever the model returns for it.
+     This guards against the model's non-determinism. A clarification about
+     one item cannot quietly alter another the teacher has already checked.
+     The teacher changes a frozen change only by hand, through «Виправити» in
+     place, or unticks it.
+
+  The proposal is not stored between rounds. It travels back with each
+  request and is parsed again from scratch, as at confirmation. Every round
+  refreshes the preview and its fingerprint. Confirmation, below, is the same
+  at whatever round it comes.
 - The model never produces a concrete date it had to compute. A full date it
   reads verbatim, year included («12.10.2026»), is passed through. Anything
   else is a date expression, a small closed union, resolved by a pure function

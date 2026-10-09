@@ -22,8 +22,10 @@ This is the non-teaching period kind of ADR-029's closed set.
 ## Acceptance criteria
 
 - [ ] The proposal schema gains the non-teaching period kind. Its payload is the
-      raw input of the non-teaching period command of T-057, with each date
-      widened to accept a date expression.
+      input `{ target, data }` of the non-teaching period create command of
+      T-057, with each date widened to accept a date expression. Its
+      `target.academicYearId` is set for every change in the list by the
+      answer to the year question below, never by the model.
 - [ ] A spreadsheet is read on the server into a text grid with cell addresses,
       within limits on file size and cells, by the one reader T-053 also uses,
       whichever of the two tickets builds it first.

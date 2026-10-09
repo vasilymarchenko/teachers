@@ -63,19 +63,40 @@ Option 3.
 
 - A command is a plain async function in `lib/commands/`, one file per
   aggregate, next to the `lib/actions` file it serves. Its first parameter is
-  `userId` and its second is the **raw input** of the write's existing Zod
-  schema, `z.input<typeof schema>`: the plain values `readDeadline()`,
-  `readTemplateDay()` and the other readers already build from `FormData`
-  (`{ lessonMinutes: "45", bells: [...] }`, `{ title, dateFrom, note: "" }`).
-  It never reads `FormData`, never calls `requireUser()` (its caller does), and
-  never calls `revalidatePath()` (that is a concern of the page cache, which
-  belongs to the Server Action).
+  `userId` and its second is `{ target, data }`:
+  - `data` is the **raw input** of the write's existing Zod schema,
+    `z.input<typeof schema>`: the plain values `readDeadline()`,
+    `readTemplateDay()` and the other readers already build from `FormData`
+    (`{ lessonMinutes: "45", bells: [...] }`, `{ title, dateFrom, note: "" }`).
+  - `target` says where the write goes. Today a Server Action receives this as
+    arguments its page binds, outside the schema: `view`, `parity` and
+    `weekday` for a template day, `{ date, view, lessonNumber }` for a day
+    override (`lib/actions/dayOverride.ts`), and `eventId` for an update. Each
+    write that has such arguments gets a small target schema in
+    `lib/validation`, which the command parses together with `data`. A write
+    with no such arguments, such as creating a deadline, has an empty target.
+  - A caller fills the target in its own way. The Server Action fills it from
+    its bound arguments, so no form changes. The import screen fills it from
+    the proposal (ADR-029). Nothing in the command assumes that a page exists.
+
+  A command never reads `FormData`, never calls `requireUser()` (its caller
+  does), and never calls `revalidatePath()` (that is a concern of the page
+  cache, which belongs to the Server Action).
+- The template day save covers exactly the lesson numbers that `data.entries`
+  names. Today the action takes a separate `lessonNumbers` argument, and
+  `replaceDaySlots()` replaces every row it lists. The command drops that
+  argument. For the form nothing changes, because `readTemplateDay()` already
+  builds one entry per row the editor shows, empty ones included, so the two
+  sets are the same. For any other caller the scope is visible in the input
+  itself: an entry replaces its row, an entry with an empty lesson clears it,
+  and a row with no entry is left as it is.
 - The command is the only place the schema is parsed, once. The Server Action
-  stops parsing: it reads `FormData` into the raw input and passes it on. This
+  stops parsing: it reads `FormData` into `data` and its bound arguments into `target`, and passes them on. This
   is ADR-005's rule, one place where a schema is parsed, with the place moved
   from the Server Action into the command. A schema that depends on a parameter
-  (`templateDayInputFor(view)`) is chosen by the command from that parameter in
-  its input. The schemas in `lib/validation` do not change.
+  (`templateDayInputFor(view)`) is chosen by the command from `target.view`.
+  The existing schemas in `lib/validation` do not change. The target schemas
+  are added next to them.
 - Why the raw input and not the parsed one. The schemas transform the form's
   strings, so their output is not their input. Measured on
   `bellScheduleInput`, `deadlineInput` and `templateDayInputFor()` on the date
@@ -97,9 +118,11 @@ Option 3.
   values anyway, so the typed signature buys little.
 - A command returns either success or a refusal. A refusal has a
   machine-readable `code`, an optional `field`, and the Ukrainian `message` the
-  form already shows. The `field` is the issue's path in the raw input
+  form already shows. The `field` is the issue's path in `data`
   (`bells.3.timeFrom`, `entries.0.subject`), the same path the form's error
-  mapping reads today. The command does not return `FormState`; the Server
+  mapping reads today. An issue in the target has no form field to land on.
+  Its `field` is `target.<name>`, and the form shows it as a message about the
+  submission as a whole. The command does not return `FormState`; the Server
   Action maps the refusal onto it, through `bellFieldErrors()`,
   `templateDayFieldErrors()` and the other mappings it already has.
 - A command accepts an optional database handle, so that several commands can

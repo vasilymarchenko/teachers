@@ -22,7 +22,9 @@ teacher sees no difference.
 
 - [ ] `lib/commands` holds the commands for saving a day override, clearing a
       lesson and removing an override, in the shape and under the convention
-      tests of T-056.
+      tests of T-056. Their target is `{ date, view, lessonNumber }`, the slot
+      the Server Actions now receive bound, parsed by a target schema added to
+      `lib/validation`.
 - [ ] T-050's tests for these actions pass unmodified.
 
 ## Notes

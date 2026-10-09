@@ -26,11 +26,15 @@ sees no difference.
 
 - [ ] `lib/commands/events.ts` holds the commands for creating and updating a
       deadline and an info event, marking an event done, and deleting one.
-      Each takes `userId` first and the raw input of the write's existing Zod
-      schema (`z.input<typeof schema>`) second, and parses it with that schema
-      (ADR-028). The event Server Actions no longer parse a schema.
-- [ ] A refusal carries `code`, an optional `field` that is the issue's path in
-      the raw input, and the Ukrainian `message` the form shows today.
+      Each takes `userId` first and `{ target, data }` second (ADR-028).
+      `data` is the raw input of the write's existing Zod schema
+      (`z.input<typeof schema>`). `target` is `{ eventId }` for an update, the
+      done mark and a delete, parsed by a target schema added to
+      `lib/validation`, and empty for a create. The event Server Actions fill
+      `target` from their bound `eventId` and no longer parse a schema.
+- [ ] A refusal carries `code`, an optional `field`, and the Ukrainian
+      `message` the form shows today. `field` is the issue's path in `data`,
+      or `target.<name>` for an issue in the target.
 - [ ] A command accepts an optional database handle and, with one, both reads
       and writes inside the caller's transaction: every `lib/db/queries`
       function it calls takes the handle as an optional last parameter
@@ -56,7 +60,7 @@ sees no difference.
       - no command reads `FormData`, calls `requireUser()` or calls
         `revalidatePath()`;
       - `z.toJSONSchema(schema, { io: "input" })` converts every schema a
-        command parses;
+        command parses, target schemas included;
       - the T-022 test (every UPDATE checks the rows it matched) and the §8.4
         check in `lib/auth/queryDiscipline.test.ts` cover `lib/commands`, and
         the §8.4 check asserts that every exported command takes `userId`
