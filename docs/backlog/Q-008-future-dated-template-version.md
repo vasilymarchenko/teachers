@@ -29,7 +29,10 @@ is already true of a `DayOverride` and an `Event`, which may both be entered
 for a future date. The usual start is «після канікул», resolved at write time.
 A planned version has no cancel action. It is changed like any other version:
 its days through the day save, its range by planning another version from a
-date. No version is deleted and no `validTo` moves forward. A cancellation
+date. No version that has started is deleted, and no `validTo` moves forward. A
+planned version itself has no past, so a change on its start date replaces it
+through the existing `replace` path, carrying over what the change leaves
+alone. A cancellation
 would have to know what the planning changed, which no row records.
 
 The decision is recorded in `docs/architecture/architect-overview.md` §10.8,

@@ -9,6 +9,7 @@ refs:
   - docs/architecture/architect-overview.md §3.2
   - docs/architecture/architect-overview.md §8.1
   - docs/architecture/design/expand-fixtures.md §3.8
+  - docs/architecture/design/T-005-schedule-domain.md
   - docs/architecture/decisions/ADR-006-template-day-is-the-save-unit.md
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/specs/specification.md §5.2
@@ -68,8 +69,13 @@ overview §10.8 (Q-008).
       the same for a day save and for a new timetable (overview §10.8):
       - D after S: the change edits the planned version from D, as any
         version is edited.
-      - D equal to S: the change replaces the planned version, and the screen
-        says so before saving.
+      - D equal to S: the change goes through the `replace` path of
+        `planTemplateEdit()`. The planned version has no past, so its row is
+        replaced by one that starts from the same slots with the change
+        applied. A day save here is an ordinary edit of the planned version,
+        as the second edit of a day is today, and the screen asks nothing. A
+        new timetable from S replaces the planned version as a whole, and the
+        screen says so before saving.
       - D before S, with the change's own `validTo` (its boundary resolved on
         D) on or before S: `capToNextVersion()` does not cap it, the change
         does not touch the planned version, and the screen neither warns nor
@@ -79,8 +85,9 @@ overview §10.8 (Q-008).
         before saving. The teacher may carry it into the planned version. That
         overwrites the same scope there: the same weekday and parity weeks
         for a day save, the whole week for a new timetable. The overwrite runs
-        in the same transaction and deletes no version. No change is merged
-        lesson by lesson.
+        in the same transaction, as a save on the planned version's start
+        date (the «D equal to S» case). No change is merged lesson by
+        lesson.
       - Before a carried change is saved, the screen lists the lesson rows
         the overwrite replaces where the planned version differed from the
         version in force, so that nothing planned is lost unseen. Where there
@@ -91,7 +98,8 @@ overview §10.8 (Q-008).
       changed the way any version is changed. Its days change through the day
       save. Its range changes by planning another version from a date, and a
       version planned from the same date replaces it (`replace`). No version
-      is deleted and no `validTo` moves forward (fixtures §3.8), so a change
+      that has started is deleted, and no `validTo` moves forward
+      (`planTemplateEdit()`, `design/T-005-schedule-domain.md`), so a change
       of mind costs the teacher re-entering the lessons. The decision and why
       the alternatives were rejected are in overview §10.8.
 - [ ] The editor edits the version in force on a date D, which the URL
@@ -108,8 +116,10 @@ overview §10.8 (Q-008).
       - The heading always says which version is being edited, for example
         «Ви редагуєте розклад, що почне діяти 02.11».
       - An integration test opens a planned version's tab, changes a Monday,
-        and saves. The change shows in the calendar from the planned start,
-        and the version in force today is unchanged.
+        and saves. No warning that the planned version is replaced is shown.
+        The change shows in the calendar from the planned start, the planned
+        version's other days are as they were, its range is unchanged, and
+        the version in force today is unchanged.
 - [ ] The strip of versions marks a planned version as planned, with its start
       date, and the trim warning of overview §3.2 I2 names the planned date.
 - [ ] `design/expand-fixtures.md` gains the cases: a cut on a future date, a
