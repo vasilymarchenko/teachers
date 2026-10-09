@@ -48,13 +48,20 @@ sees no difference.
       rollback ending, the state it returns equals what the commit leaves,
       and no row is left. When the second command refuses, nothing is left
       in either ending.
-- [ ] The rollback ending returns a description of the outcome and its
-      fingerprint, and the commit ending accepts an expected fingerprint
-      (ADR-028). Integration tests show four things. The same state previewed
-      twice gives the same fingerprint, so no generated id or timestamp
-      enters it. A commit whose expected fingerprint matches writes. A commit
-      after another write has changed the outcome rolls back and returns the
-      new preview. A commit with no expected fingerprint writes as before.
+- [ ] The rollback ending returns the state the caller reads for its screen
+      and the fingerprint of the diff the commands made, and the commit
+      ending accepts an expected fingerprint (ADR-028). The helper reads the
+      teacher's rows of every table with a `userId` column before and after
+      the commands, and a convention test asserts that it covers every such
+      table. Integration tests show five things:
+      - The same state previewed twice gives the same fingerprint, so no
+        generated id or timestamp enters it.
+      - A commit whose expected fingerprint matches writes.
+      - A commit after another request has changed a row the commands touch
+        rolls back and returns the new preview.
+      - A commit after another request has changed a row the commands do not
+        touch, such as another event marked done, writes.
+      - A commit with no expected fingerprint writes as before.
 - [ ] Convention tests over `lib/commands/**`, written here so that every later
       slice is held to them:
       - no command reads `FormData`, calls `requireUser()` or calls

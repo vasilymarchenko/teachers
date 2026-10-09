@@ -124,23 +124,32 @@ Option 2.
 - The model never produces a concrete date it had to compute. A full date it
   reads verbatim, year included («12.10.2026»), is passed through. Anything
   else is a date expression, a small closed union, resolved by a pure function
-  in `lib/domain` against `today()` and the year's rows: the relative ones
+  in `lib/domain` against the proposal's anchor date (below) and the year's
+  rows: the relative ones
   («до п'ятниці», «щопонеділка», «до канікул») and a day and month without a
   year («12.10»), whose year is the domain's to set, not the model's.
   Recurrence boundaries reuse `boundaryKind` as it is.
+- Every proposal carries an **anchor date**: `today()` at the moment the
+  teacher sent its first input. In every round, each date expression of the
+  proposal resolves against the anchor date, never against the time of a
+  later request. «Завтра» written at 23:55 on 9 October means 10 October,
+  and still does when the teacher confirms at 00:05. To a person, tomorrow
+  begins after the night, not at midnight. The anchor travels with the
+  proposal and, like the rest of it, is not stored. A new proposal, started
+  by sending text from an empty input, gets a new anchor.
 - A day and month is resolved by default within the current academic year:
-  the first one that has not ended on `today()`. It spans two calendar years,
+  the first one that has not ended on the anchor date. It spans two calendar years,
   so a day and month falls in it at most once. Where that does not give a
   date the teacher plausibly meant, the domain asks instead of guessing.
   - A single change (a deadline, an info event, a day override, a
     timetable's start) gets the date inside the current academic year. If
     that date falls outside the year, it raises «a date is needed». If the
-    date is before `today()`, it raises «choose one of»: that date, or the
+    date is before the anchor date, it raises «choose one of»: that date, or the
     same day a year later. «12.10» said in May is therefore asked about, not
     put in last October.
   - A list of non-teaching periods (T-061) belongs to one academic year as a
     whole. By default that is the current one, and its dates may lie before
-    `today()`: a list of this year's holidays entered in September includes
+    the anchor date: a list of this year's holidays entered in September includes
     1 September. The confirmation screen offers the other academic years
     already set up for the whole list. A date that does not fall in the
     chosen year raises «a date is needed».
@@ -150,7 +159,7 @@ Option 2.
   `resolveBoundary()` already gives with `undefined`: ask for an explicit date.
 - The model gets the teacher's context with the input: subjects, classes and
   teachers already entered (`getLessonSuggestions()`), the bell schedule and
-  lesson numbers in use, and the current date and parity. With these it
+  lesson numbers in use, and the anchor date and its parity. With these it
   normalises names and avoids guessing. A choice it cannot make from the input
   (both parity weeks or one, which lesson numbering) becomes a «choose one
   of» question, not a default.
@@ -158,29 +167,32 @@ Option 2.
   back to the server as data and is parsed again from scratch. The server
   does not trust what it sent out earlier. Applying a confirmed proposal is
   itself a command in `lib/commands` (ADR-028). It parses the proposal,
-  resolves its date expressions again and compares them with the dates
-  shown, then runs the command of each change, all in one transaction. The
+  resolves its date expressions again against the anchor date, then runs
+  the command of each change, all in one transaction. The
   preview on a confirmation screen is the same command with the rollback
   ending.
-- A resolved date travels back with its symbol. Each date the confirmation
-  screen showed, from a date expression or from a boundary symbol
-  («до кінця семестру», «після канікул»), comes back as the pair: the symbol,
-  and the date the teacher saw. The server resolves the symbol again at write
-  time and compares. If the two agree, it writes. Where the row has a
-  `boundaryKind`, the symbol is kept there for display, as overview §8.1 keeps
-  it. A deadline's «до п'ятниці» and a start «після канікул» have no such
-  field, and only their date is stored. If they differ, because
-  midnight passed or the year's breaks were edited meanwhile, it writes
-  nothing and shows the proposal again with the new date. Re-resolving alone
-  could write a date the teacher never saw, and sending the date alone would
-  lose the symbol the screen shows.
-- The confirmed proposal also carries the fingerprint of the preview the
+- A date expression travels with the proposal as an expression, and the
+  screen shows the date it resolves to. Re-resolving it against the same
+  anchor date gives the same date, so the passing of time changes nothing.
+  Only the year's rows can change it: breaks or semesters edited between
+  preview and confirmation. The outcome then differs, and the fingerprint
+  below catches it. Where the row has a `boundaryKind`, the symbol is kept
+  there for display, as overview §8.1 keeps it. A deadline's «до п'ятниці»
+  and a start «після канікул» have no such field, and only their date is
+  stored. A date the teacher edits by hand is an explicit date.
+- The anchor date decides what an expression means, not what may be
+  written. Each command checks a resolved date against the real `today()`
+  at write time, as it checks a date typed into a form. The template is
+  never cut before `today()` (overview §3.2 I1). A timetable's start «з
+  сьогодні» is not an expression but `today()` at write time. After
+  midnight the cut moves to the new day, the outcome differs, and the
+  fingerprint shows the new preview.
+- The confirmed proposal carries the fingerprint of the preview the
   confirmation screen showed (ADR-028). A write whose outcome differs from it
-  writes nothing and shows the new preview. The date pair stays. The symbol
-  is the input that says what to write. The fingerprint is the net under
-  everything else the preview depended on.
+  writes nothing and shows the new preview. The fingerprint is the one net
+  for whatever changed between preview and confirmation.
 - A named weekday said on that weekday («до п'ятниці» on a Friday) resolves to
-  today. The teacher sees the date on the confirmation screen and corrects it
+  the anchor date. The teacher sees the date on the confirmation screen and corrects it
   there if next week was meant.
 - The proposal is not stored. It lives in the request and on the confirmation
   screen. A table for drafts appears only with asynchronous processing (a

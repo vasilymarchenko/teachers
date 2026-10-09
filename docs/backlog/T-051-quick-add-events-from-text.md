@@ -45,7 +45,8 @@ not touch the template.
       function in `lib/domain` against `today()`. Unit tests with fixed
       instants cover «сьогодні», «завтра», a named weekday on that weekday
       (which resolves to today, ADR-029) and on the day after it, and a Kyiv
-      night after midnight that is still the previous day in UTC. A day and
+      night after midnight that is still the previous day in UTC. Each is
+      resolved against an anchor date taken from such an instant. A day and
       month without a year resolves within the current academic year as
       ADR-029 states for a single change. Its tests cover dates on either side
       of 1 January, «12.10» said in September (this October), «12.10» said in
@@ -87,13 +88,13 @@ not touch the template.
       preview with «поки ви дивилися, дані змінилися — перегляньте ще раз». A
       test confirms with the fingerprint of a different preview, and asserts
       that nothing is written and that the new preview is returned.
-- [ ] Each date on the confirmation screen comes back as its symbol and the
-      date shown. The server resolves the symbol again and writes only if the
-      two agree. Otherwise it writes nothing and shows the proposal again with
-      the new date. A test confirms at 00:05 a proposal of «завтра» resolved
-      at 23:55 the day before, and asserts that nothing is written and the
-      new date is shown. «До п'ятниці» would not do: said Thursday 23:55 and
-      re-resolved Friday 00:05, it gives the same Friday both times.
+- [ ] The proposal carries its anchor date, `today()` when the teacher sent
+      the first input, and every date expression resolves against it in
+      every round and at confirmation (ADR-029). A test sends «завтра» at
+      23:55, confirms at 00:05, and asserts that the event is written on the
+      day after the anchor date. Another test edits the year's breaks between
+      the preview and the confirmation of «щочетверга нарада до канікул». It
+      asserts that nothing is written and that the new preview is shown.
 - [ ] A question is shown as an input on the change it points at: a date
       input for «a date is needed», one button per option for «choose one
       of». A change with an unanswered question is marked and is not added

@@ -139,16 +139,43 @@ Option 3.
   resulting state has been read through the same handle. A write is the
   commit ending. A preview is the rollback ending of the same call. No
   command has a separate dry-run mode.
-- A preview returns the outcome it shows as a description: the versions with
-  their ranges, the lessons by day and the events, in a fixed order and
-  without generated ids or timestamps. It also returns a fingerprint of that
-  description. A write may carry the fingerprint of the preview the teacher
-  saw. The helper then builds the same description from the same transaction
-  before committing. If the fingerprints differ, it rolls back and returns a
-  refusal that carries the new preview. The check does not enumerate what
-  may have changed in between: midnight, a template edited in another window,
-  breaks or bells edited meanwhile. It catches any of them, because each one
-  changes the outcome. A preview of several
+- A preview returns two things. The first is what the screen shows. The
+  caller builds it from the state the transaction reads before its rollback,
+  and the helper puts no rule on it. The second is a fingerprint of the
+  outcome, which is a hash of the **diff** the commands made:
+  - Inside the transaction the helper reads all of the teacher's rows twice,
+    before the commands run and after them, from every table with a `userId`
+    column. The diff is every row added, every row changed (before and
+    after) and every row removed, in a fixed order. The generated id or
+    timestamp of a new row is replaced by its place in the order of
+    creation, so the same commands on the same state give the same
+    fingerprint.
+  - A write may carry the fingerprint of the preview the teacher saw. The
+    helper then computes it again in the same transaction before committing.
+    If the two differ, it rolls back and returns a refusal that carries the
+    new preview.
+  - The fingerprint covers what the write does, not what the screen shows.
+    Midnight moves a template cut. A template edited in another window
+    changes which version is trimmed. Bells edited meanwhile change the
+    "before" of a bell write that is part of the import. Each of these
+    changes the diff. An edit the write does not touch, such as a deadline
+    marked done in another tab, leaves the diff as it was and refuses
+    nothing. Neither does a change only to what the screen shows for
+    reference, such as the times of lessons a template write leaves alone:
+    the write is still the one the teacher confirmed.
+  - It is generic. No command and no kind of change builds a description of
+    its own, so a new table or a new kind is covered without further work.
+    A convention test asserts that the snapshot reads every table with a
+    `userId` column. A teacher's rows number in the hundreds, so reading
+    them twice per preview costs little.
+  - Rejected: a fingerprint of what the screen shows (the versions, the
+    lessons by day, the events). It needs a description per kind of change,
+    and a range for "the lessons by day" that nothing defines, and a kind
+    left out is silently unguarded. Also rejected: a fingerprint of the
+    teacher's whole state. It refuses a confirmation over any unrelated edit
+    in another tab.
+
+  A preview of several
   commands then composes exactly as their write does, and it meets the same
   refusals, the database constraints included. A per-command dry run was
   rejected: each one plans against the database as committed, so the second

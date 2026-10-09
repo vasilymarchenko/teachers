@@ -55,8 +55,8 @@ confirms it as one new template version.
       ends after it stops there unless carried, and one whose boundary ends
       on or before it does not touch it. On the planned start the import
       replaces it, and after it the import trims it.
-      The start date comes back with its symbol and is checked as T-051
-      checks a date.
+      «З сьогодні» is `today()` at write time. The other start choices
+      resolve against the proposal's anchor date (ADR-029).
 - [ ] The preview's fingerprint is checked at confirmation as T-051 checks
       it. A test changes the template in another request between preview and
       confirmation. Another, for a version that starts today, changes the bell

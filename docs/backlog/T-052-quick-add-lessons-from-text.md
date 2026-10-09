@@ -64,8 +64,9 @@ from which date and for which parity weeks, before anything is written.
       date is `today()`. Where the text names a start («з 13.10 по понеділках
       …», «після канікул»), the confirmation screen offers T-055's start
       choices («з сьогодні», «після канікул», «з дати»), as T-053 does. The
-      change is made through T-055's future cut, and its start date comes
-      back with its symbol and is checked as T-051 checks a date.
+      change is made through T-055's future cut. «З сьогодні» is `today()`
+      at write time. «Після канікул» and a date resolve against the
+      proposal's anchor date (ADR-029).
 - [ ] When a planned version lies ahead, the confirmation screen applies
       T-055's rule for a change that starts before it (overview §10.8). Each
       template day it changes is a day-save scope. Where the change's own

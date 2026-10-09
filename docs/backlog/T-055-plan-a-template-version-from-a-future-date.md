@@ -50,7 +50,7 @@ overview §10.8 (Q-008).
       This way a version planned in another semester gets the default
       «до кінця семестру» of *that* semester, never one that ends before it
       starts.
-- [ ] «Після канікул» resolves at write time to the first day after the
+- [ ] «Після канікул» resolves, when the form shows it, to the first day after the
       nearest break that has not ended on `today()` (its `dateTo` is on or
       after `today()`). Only `NonTeachingPeriod.kind = BREAK` counts, never a
       public holiday or another non-teaching period, as for `NEXT_BREAK`. This
@@ -58,10 +58,11 @@ overview §10.8 (Q-008).
       that break. The symbol is not stored: the screen shows the resolved
       date. A break that ends after the year has no such day, and the choice
       is refused with a message, not a version outside the year.
-- [ ] The form sends the start symbol together with the date it showed. The
-      server resolves the symbol again and writes only if the two agree;
-      otherwise it writes nothing and shows the form again with the new date,
-      as ADR-029 does for import.
+- [ ] The form sends the date it showed for «після канікул», and the server
+      checks it at write time as it checks «з дати»: never before `today()`.
+      Breaks edited between the form and the save do not move it, as a
+      boundary resolved at write time does not move (overview §8.1). «З
+      сьогодні» is `today()` at write time, as now.
 - [ ] A planned version (one whose `validFrom` is after `today()`) is edited
       through the same day save. A change that starts on a date D, while a
       planned version starts on S, has an outcome that depends only on where
