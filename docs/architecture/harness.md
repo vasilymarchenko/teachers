@@ -1,7 +1,7 @@
 # Harness розробки
 
-**Дата:** 1 жовтня 2026 р.
-**Статус:** описує harness на `main` після `T-037`. Документ — карта: хто кого викликає, хто володіє яким фактом і яким шляхом іде зміна.
+**Дата:** 9 жовтня 2026 р.
+**Статус:** описує harness на `main` після `T-063`. Документ — карта: хто кого викликає, хто володіє яким фактом і яким шляхом іде зміна.
 
 Цей документ не додає нових рішень і не повторює правил. Чому harness саме такий — у ADR (`ADR-001`, `ADR-002`, `ADR-007`, `ADR-012`, `ADR-014`–`ADR-017`). Механіка gate і файлів у `.gate/` — у `docs/architecture/design/T-029-gate-and-loop.md`. Самі правила — у файлах, на які тут стоять посилання. Якщо тут і в тих файлах написано різне, правий той файл, а цей документ треба виправити.
 
@@ -24,6 +24,7 @@
 | Скіл | `.claude/skills/teachers-ticket/SKILL.md` | повний цикл тікета, фази 1–7 |
 | Скіл | `.claude/skills/teachers-fix-loop/SKILL.md` | обмежений цикл review → fix |
 | Скіл | `.claude/skills/teachers-review/SKILL.md` | рев'ю проти документів, тільки читає |
+| Скіл | `.claude/skills/teachers-scenarios/SKILL.md` | будує й оновлює каталог сценаріїв `docs/scenarios/`, у цикл не входить |
 | Скіл | `.claude/skills/vam-handoff/SKILL.md` | загальний handoff розмови, у цикл не входить |
 | Субагент | `.claude/agents/teachers-review-round.md` | межа контексту одного раунду fix-loop |
 | Субагент | `.claude/agents/teachers-review-contract.md` | прохід «diff ↔ тікет ↔ документи» |
@@ -32,6 +33,7 @@
 | CI | `.github/workflows/ci.yml` | авторитетний gate на кожен push (`ADR-007`) |
 | Стан поза контекстом | `.gate/` (git-ignored) | `run.json`, `findings.json`, `ledger.jsonl`, `last-run.json` |
 | Документи-стандарт | `docs/architecture/**`, `docs/specs/**`, `docs/tech-stack.md` | те, проти чого рев'ю міряє зміну |
+| Каталог сценаріїв | `docs/scenarios/**` | що вчитель може зробити зараз (`ADR-030`); конвенції — `docs/scenarios/CLAUDE.md` |
 
 Зовнішні скіли, які harness викликає, але не визначає: `/code-review` (загальна коректність) і вбудовані субагенти `Plan` та general-purpose.
 
@@ -294,6 +296,7 @@ Diff, у якому є хоч один файл з кодом, — це `code`, 
 
 - **`npm run cost`** (`scripts/cost/transcript-cost.ts`) — читає transcript сесії і показує кількість викликів, розмір контексту і розподіл токенів по фазах. Інструмент для рішень про форму циклу, а не частина циклу.
 - **Правила дешевих викликів** — кореневий `CLAUDE.md`, «Two habits that keep a call small»: незалежні виклики в одному повідомленні, великий вивід — у файл і читати звуженим.
+- **`/teachers-scenarios`** — будує й оновлює `docs/scenarios/`: каталог того, що вчитель може зробити в застосунку зараз (`ADR-030`). Джерела — специфікація, `docs/demo-scenario.md` і шари фіч з `docs/features/`; де вони розходяться, вирішує код. Питає користувача лише там, де код не вирішує або незрозуміло, чого вчитель мав би отримати. Рев'ю на каталог поки не спирається.
 - **`vam-handoff`** — стискає розмову в handoff-документ для нової сесії. Загальний скіл, не знає про `.gate/`. Для `teachers-ticket` роль handoff виконує `.gate/run.json` і `--resume`.
 
 ---
@@ -310,6 +313,7 @@ Diff, у якому є хоч один файл з кодом, — це `code`, 
 | цикл, dispositions, вихід | `teachers-fix-loop` |
 | умови merge | `teachers-review`, фаза 7 |
 | конвенції backlog | `docs/backlog/CLAUDE.md` |
+| конвенції каталогу сценаріїв | `docs/scenarios/CLAUDE.md` |
 | архітектурні правила | `architect-overview.md`, ADR, `CLAUDE.md` |
 | версія Node | `.nvmrc` |
 

@@ -4,7 +4,9 @@
 
 What is built and what is next is tracked in `docs/backlog/README.md`, not here. The planning documents are:
 
-- `docs/specs/specification.md` — product specification (Ukrainian), the primary document
+- `docs/specs/specification.md` — the product specification (Ukrainian): the idea the product started from. It is kept as that and not updated as features arrive (ADR-030)
+- `docs/scenarios/` — what a teacher can do in the application now and what they see at each step, as a catalogue of scenarios; conventions in its `CLAUDE.md`, built and refreshed by `/teachers-scenarios`
+- `docs/features/` — one directory per feature: its idea and its scenarios, a layer over `docs/scenarios/` that is folded into it when the feature is done
 - `docs/tech-stack.md` — stack and its rationale
 - `docs/architecture/architect-overview.md` — application architecture: data model, layers, trade-offs (§9) and open questions (§10)
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
@@ -83,7 +85,7 @@ Language is chosen by **audience**, not by file type. If a teacher could read th
 
 **Ukrainian (product level — the teacher reads it):**
 - all UI text, user-facing error messages, notifications, seed/demo data;
-- product specifications — `docs/specs/**`;
+- product specifications — `docs/specs/**`; the scenario catalogue — `docs/scenarios/**` (its `CLAUDE.md` excepted, which is for the agent); feature descriptions — `docs/features/**`;
 - must be understandable to a Ukrainian-speaking teacher with no technical background: no untranslated technical jargon, no code identifiers in the prose.
 
 **English (technical level — only developers read it):**
