@@ -34,9 +34,10 @@ from which date and for which parity weeks, before anything is written.
       bell times (`getLessonSuggestions()`, `getBellSchedule()`). A subject or
       class that matches an existing one modulo case and common abbreviations is
       proposed as the existing value.
-- [ ] «По понеділках» without a parity becomes a question («в обох тижнях чи
-      лише в чисельнику?»), not a default. The teacher's answer sets the
-      per-row both-weeks choice of ADR-025.
+- [ ] «По понеділках» without a parity becomes a «choose one of» question of
+      T-051 on the template day change, with the options «в обох тижнях»,
+      «лише в чисельнику» and «лише в знаменнику», not a default. The
+      teacher's answer sets the per-row both-weeks choice of ADR-025.
 - [ ] All template changes of one confirmation are applied as one template
       version, through the T-059 commands, run by T-051's command for a
       confirmed proposal. The preview on the confirmation screen is that same

@@ -32,7 +32,8 @@ This is the non-teaching period kind of ADR-029's closed set.
       ticked ones through the T-057 command, run by T-051's command for a
       confirmed proposal in one transaction. A refusal on any item writes
       nothing and names that item.
-- [ ] A period outside the academic year in force is a question, not a write.
+- [ ] A period outside the academic year in force raises T-051's «a date
+      is needed» on its dates, and is not written until it is answered.
 - [ ] The evaluation set gains at least five lists, one of them a file.
 
 ## Notes

@@ -31,7 +31,9 @@ not touch the template.
       event kinds, whose payloads are the raw inputs of the deadline and info
       event commands of T-056 (`z.input` of `deadlineInput` and
       `infoEventInput`) with each date field widened to accept a date
-      expression, plus `questions` and `notUnderstood`. The model's
+      expression, plus `questions` and `notUnderstood`. A question points at
+      one change and one field, and is of the kind «a date is needed» or
+      «choose one of» (ADR-029). The model's
       structured-output schema is `z.toJSONSchema(…, { io: "input" })` of the
       proposal schema, and a test asserts that it converts.
 - [ ] After the date expressions are resolved, each proposed change is passed
@@ -45,8 +47,11 @@ not touch the template.
       year, and a Kyiv night after midnight that is still the previous day in
       UTC.
 - [ ] An expression that resolves to nothing (no academic year set up, no
-      break ahead, a day and month outside the year) is shown as a question
-      asking for the date, and is not written (ADR-029).
+      break ahead, a day and month outside the year) raises «a date is
+      needed» on its field (ADR-029). A test asserts that «щочетверга нарада
+      до канікул» with no break ahead stays in the list with a date input on
+      its boundary, is not added while that input is empty, and is added with
+      the date the teacher enters.
 - [ ] The model is called from one module that is the only importer of
       `@anthropic-ai/sdk`. The API key comes from the environment, and its
       absence hides the input rather than failing a page. Calls are limited per
@@ -77,8 +82,14 @@ not touch the template.
       the new date. A test confirms at 00:05 a proposal resolved at 23:55 the
       day before, and asserts that nothing is written and the new date is
       shown.
-- [ ] `questions` and `notUnderstood` are shown as text above the list. Nothing
-      in them is written.
+- [ ] A question is shown as an input on the change it points at: a date
+      input for «a date is needed», one button per option for «choose one
+      of». A change with an unanswered question is marked and is not added
+      until it is answered or unticked. The answer is sent back as the
+      field's value and parsed by the command like any other value. This
+      ticket builds both kinds of question and uses «a date is needed».
+- [ ] `notUnderstood` is shown above the list as the quoted fragments with
+      «уточніть і надішліть ще раз». Nothing in it is written.
 - [ ] Unit tests cover the pipeline with the model call stubbed. An evaluation
       set of at least 20 «input → expected proposal» pairs lives in the repo
       with a script that runs it on demand. Neither the gate nor CI runs it.

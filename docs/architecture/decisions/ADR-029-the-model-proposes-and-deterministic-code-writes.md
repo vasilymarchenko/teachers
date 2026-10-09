@@ -53,10 +53,20 @@ Option 2.
   deadline, an info event, the lessons of one template day, a day override, a
   non-teaching period, bell times). Each kind is built by a ticket: T-051 the
   events, T-052 the template day and the override, T-053 the bell times, T-061
-  the non-teaching period. It also carries a list of questions for
-  anything ambiguous, and a list of fragments the model did not understand.
-  Anything outside the closed set lands in the «not understood» list and is
-  never forced into a kind.
+  the non-teaching period. It also carries questions and a list of fragments
+  the model did not understand. Anything outside the closed set lands in the
+  «not understood» list and is never forced into a kind.
+- A question is not free text. Each one points at one proposed change and
+  one field of it, and is of one of two kinds: «a date is needed», answered
+  with a date, or «choose one of», answered from a closed list of options
+  that the field's schema defines. The model may ask only these, and so may
+  the domain: an expression that resolves to nothing raises «a date is
+  needed» on its field. The confirmation screen shows a question as an input
+  on its change. A change with an unanswered question cannot be added until
+  it is answered or unticked. The answer becomes the field's value and is
+  parsed by the command like any other. The model asks no free questions.
+  What it cannot place in a change goes to «not understood», quoted, and the
+  teacher clarifies it in the text and sends it again.
 - The proposal schema is written in Zod in `lib/validation`, and it is also the
   structured-output schema given to the model (the role `docs/tech-stack.md`
   gives Zod). A proposed change's payload is the raw input of the command its
@@ -75,15 +85,15 @@ Option 2.
   month resolves to that date inside the first academic year that has not
   ended on `today()`. Recurrence boundaries reuse `boundaryKind` as it is.
 - An expression that resolves to nothing (no academic year set up, no break
-  ahead, a day and month outside the year) becomes a question to the teacher,
-  never a guess and never a silently dropped change. It is the signal
+  ahead, a day and month outside the year) raises «a date is needed» on its
+  change, never a guess and never a silently dropped change. It is the signal
   `resolveBoundary()` already gives with `undefined`: ask for an explicit date.
 - The model gets the teacher's context with the input: subjects, classes and
   teachers already entered (`getLessonSuggestions()`), the bell schedule and
   lesson numbers in use, and the current date and parity. With these it
   normalises names and avoids guessing. A choice it cannot make from the input
-  (both parity weeks or one, which lesson numbering) becomes a question, not a
-  default.
+  (both parity weeks or one, which lesson numbering) becomes a «choose one
+  of» question, not a default.
 - Nothing is written before the teacher confirms. The confirmed proposal comes
   back to the server as data and is parsed again from scratch. The server
   does not trust what it sent out earlier. Applying a confirmed proposal is
