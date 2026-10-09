@@ -74,7 +74,9 @@ sees no difference.
       - the T-022 test (every UPDATE checks the rows it matched) and the §8.4
         check in `lib/auth/queryDiscipline.test.ts` cover `lib/commands`, and
         the §8.4 check asserts that every exported command takes `userId`
-        first and that every statement filters by it.
+        first and that every statement filters by it. The helper and the
+        fingerprint run other commands and are not commands themselves. They
+        live in one module, which is the only exemption the test names.
 - [ ] T-050's tests for the event actions pass unmodified.
 - [ ] `architect-overview.md` §2 shows `lib/commands/` in the layout and
       describes `lib/actions` as the form adapter. §8.2 states that the schema

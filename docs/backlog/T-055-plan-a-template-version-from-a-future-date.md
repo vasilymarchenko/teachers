@@ -57,7 +57,10 @@ overview §10.8 (Q-008).
       is so that chosen during a break it means the day after
       that break. The symbol is not stored: the screen shows the resolved
       date. A break that ends after the year has no such day, and the choice
-      is refused with a message, not a version outside the year.
+      is refused with a message, not a version outside the year. Where no
+      break that has not ended is set up at all, «після канікул» is shown
+      unavailable, with «канікул попереду не внесено» and a link to the year
+      setup, and «з дати» stays.
 - [ ] The form sends the date it showed for «після канікул», and the server
       checks it at write time as it checks «з дати»: never before `today()`.
       Breaks edited between the form and the save do not move it, as a
@@ -93,8 +96,11 @@ overview §10.8 (Q-008).
         the overwrite replaces where the planned version differed from the
         version in force, so that nothing planned is lost unseen. Where there
         are none, the screen only asks.
-      - With more than one planned version ahead, each is named with its start
-        date and handled the same way.
+      - With more than one planned version ahead, the change meets only the
+        nearest one, which is the one that caps it. A carry goes into that
+        one. Each later planned version is named with its start date and
+        offered the same carry on its own, with its own list of the rows it
+        would replace. A carry into one never writes into another.
 - [ ] There is no «скасувати запланований розклад». A planned version is
       changed the way any version is changed. Its days change through the day
       save. Its range changes by planning another version from a date, and a

@@ -138,7 +138,10 @@ Option 2.
   refreshes the preview and its fingerprint. Confirmation, below, is the same
   at whatever round it comes.
 - The model never produces a concrete date it had to compute. A full date it
-  reads verbatim, year included («12.10.2026»), is passed through. Anything
+  reads verbatim, year included («12.10.2026»), is taken as written, since the
+  teacher named the year. For a single change, though, a full date before
+  the anchor date raises «a date is needed», pre-filled with the date read,
+  so that a mistyped year costs one look and not a silent past date. Anything
   else is a date expression, a small closed union, resolved by a pure function
   in `lib/domain` against the proposal's anchor date (below) and the year's
   rows: the relative ones
@@ -153,16 +156,22 @@ Option 2.
   begins after the night, not at midnight. The anchor travels with the
   proposal and, like the rest of it, is not stored. A new proposal, started
   by sending text from an empty input, gets a new anchor.
-- A day and month is resolved by default within the current academic year:
-  the first one that has not ended on the anchor date. It spans two calendar years,
-  so a day and month falls in it at most once. Where that does not give a
-  date the teacher plausibly meant, the domain asks instead of guessing.
-  - A single change (a deadline, an info event, a day override, a
-    timetable's start) gets the date inside the current academic year. If
-    that date falls outside the year, it raises «a date is needed». If the
-    date is before the anchor date, it raises «choose one of»: that date, or the
-    same day a year later. «12.10» said in May is therefore asked about, not
-    put in last October.
+- A day and month is resolved by a rule that depends on the kind of change.
+  Where that does not give a date the teacher plausibly meant, the domain
+  asks instead of guessing.
+  - A deadline or an info event is not tied to the academic year. It takes
+    the occurrence of the day and month nearest to the anchor date, before
+    or after it. If that is before the anchor date, it raises «choose one
+    of»: that date, or the same day a year later. «12.10» said in May
+    therefore means next October. «10.06» said in May means this June, even
+    where the academic year ends on 31 May. «28.05» said on 30 May is asked
+    about. None of this needs an academic year set up.
+  - A day override or a timetable's start lives in the academic year. It
+    takes the date inside the current academic year: the first one that has
+    not ended on the anchor date. The year spans two calendar years, so a day
+    and month falls in it at most once. If that date falls outside the year,
+    it raises «a date is needed». If it is before the anchor date, it raises
+    «choose one of»: that date, or the same day a year later.
   - A list of non-teaching periods (T-061) belongs to one academic year as a
     whole. By default that is the current one, and its dates may lie before
     the anchor date: a list of this year's holidays entered in September includes

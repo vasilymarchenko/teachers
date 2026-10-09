@@ -42,16 +42,19 @@ not touch the template.
       to its command as raw input and parsed there with the write's own
       schema, not with a copy of it.
 - [ ] Relative dates arrive as date expressions and are resolved by a pure
-      function in `lib/domain` against `today()`. Unit tests with fixed
+      function in `lib/domain` against the proposal's anchor date. Unit tests with fixed
       instants cover «сьогодні», «завтра», a named weekday on that weekday
       (which resolves to today, ADR-029) and on the day after it, and a Kyiv
       night after midnight that is still the previous day in UTC. Each is
       resolved against an anchor date taken from such an instant. A day and
-      month without a year resolves within the current academic year as
-      ADR-029 states for a single change. Its tests cover dates on either side
-      of 1 January, «12.10» said in September (this October), «12.10» said in
-      May («choose one of» last October or next), and a day and month the
-      academic year does not contain («a date is needed»).
+      month without a year resolves, for an event, to its occurrence nearest
+      the anchor date, as ADR-029 states. Its tests cover dates on either
+      side of 1 January, «12.10» said in September (this October), «12.10»
+      said in May (next October), «10.06» said in May with the academic year
+      ending on 31 May (this June), «28.05» said on 30 May («choose one of»
+      that date or a year later), and the same with no academic year set up.
+      A full date with its year before the anchor date raises «a date is
+      needed», pre-filled with it, and one after it is taken as written.
 - [ ] An expression that resolves to nothing (no academic year set up, no
       break ahead, a day and month outside the year) raises «a date is
       needed» on its field (ADR-029). A test asserts that «щочетверга нарада
@@ -61,7 +64,10 @@ not touch the template.
 - [ ] The model is called from one module that is the only importer of
       `@anthropic-ai/sdk`. The API key comes from the environment, and its
       absence hides the input rather than failing a page. Calls are limited per
-      teacher, with a timeout. The model output is parsed with the schema, and
+      teacher, with a timeout. The count is kept in the memory of the web
+      process, which production runs as one replica, and it resets on each
+      restart and deploy. That is enough for a guard against runaway cost. A
+      table for it comes only if that proves too weak. The model output is parsed with the schema, and
       a parse failure is shown as «не вдалося розібрати», never as a partial
       write.
 - [ ] The confirmation screen lists each proposed change with the resolved
