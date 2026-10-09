@@ -36,6 +36,22 @@ confirms it as one new template version.
 - [ ] Confirming creates exactly one template version for the view through the
       T-059 commands, run by T-051's command for a confirmed proposal. The
       confirmation view is that command's preview.
+- [ ] The import's scope is the file's grid (ADR-029). Each weekday of the
+      grid is a template day change with an entry for every lesson number of
+      the grid, so an empty cell clears that lesson. Where the version in
+      force has lessons outside the grid (a weekday or a lesson number the
+      file has no place for), one «choose one of» question for the whole
+      proposal lists them, with «прибрати» and «залишити». Without lessons
+      there, no question is asked. The preview marks every lesson the import
+      removes. Tests cover three cases: a file without Saturday while the
+      version in force has Saturday lessons (the question, answered each
+      way); a file whose grid starts at lesson 1 while the version in force
+      has a lesson 0 (the question); and an empty cell inside the grid (that
+      lesson is removed, with no question).
+- [ ] A file that does not tell the parity weeks apart raises one «choose
+      one of» question for the whole proposal: «в обох тижнях», «лише в
+      чисельнику» or «лише в знаменнику», as T-052 asks it for one day. A
+      file with both weeks, on one sheet or two, raises none.
 - [ ] Bell times from the file are written only when the version starts
       today. They then go through the T-057 bell schedule command in the same
       transaction. When the version starts later, they are not written,
@@ -50,7 +66,7 @@ confirms it as one new template version.
       teacher's text where it names one («з 03.11», «після канікул»), and the
       version is created through T-055's future cut. A planned version already
       ahead is handled by T-055's rule for a change against a planned version
-      (overview §10.8). The scope is the whole week, and D is the start the
+      (overview §10.8). The scope is the import's scope above, and D is the start the
       teacher chose. Before the planned start, an import whose own boundary
       ends after it stops there unless carried, and one whose boundary ends
       on or before it does not touch it. On the planned start the import

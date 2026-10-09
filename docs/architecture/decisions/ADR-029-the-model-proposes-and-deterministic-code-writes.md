@@ -63,9 +63,16 @@ Option 2.
   в чисельнику», which sets `target.parity` and the row's both-weeks choice
   together. The model may ask only these, and so may
   the domain: an expression that resolves to nothing raises «a date is
-  needed» on its field. One question points at the whole proposal instead
-  of one change: the academic year of a list of non-teaching periods
-  (T-061), which is «choose one of» over the years set up. The confirmation
+  needed» on its field. A few questions point at the whole proposal instead
+  of one change, each «choose one of»:
+  - the academic year of a list of non-teaching periods (T-061), over the
+    years set up;
+  - for a timetable file that does not tell the parity weeks apart, which
+    weeks it is for (T-053);
+  - for a timetable file, what happens to lessons the file does not show
+    (T-053).
+
+  The confirmation
   screen shows a question as an input on its change. A change with an unanswered question cannot be added until
   it is answered or unticked. The answer becomes the field's value and is
   parsed by the command like any other. The model asks no free questions.
@@ -91,6 +98,15 @@ Option 2.
   changes the second lesson and leaves the rest of Monday as it is. A removal
   is an entry with an empty lesson, and the confirmation screen shows it as a
   removal.
+- A timetable from a file (T-053) is a whole week, and its scope is the
+  file's grid: the weekdays it has columns for and the lesson numbers it
+  has rows for. Each day of the grid is proposed with an entry for every
+  lesson number of the grid, so an empty cell clears that lesson. Outside
+  the grid, the file says nothing. A weekday or lesson number it has no
+  place for may be a day without lessons or a part the file, or a photo of
+  it, left out. Where the version in force has lessons there, one question
+  for the whole proposal lists them and asks whether to remove them or to
+  keep them. It is never decided by default.
 - Import is a loop of rounds, not one call. Each round goes the same way:
   1. The model turns the input into a proposal.
   2. Deterministic code checks it and finds two kinds of problem. A gap is
