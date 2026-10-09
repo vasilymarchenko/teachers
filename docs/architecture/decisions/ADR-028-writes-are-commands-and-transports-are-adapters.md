@@ -111,14 +111,25 @@ Option 3.
   transaction wrote. The template day save is where that bites: two day saves
   in one transaction must plan the second against the version the first
   created (a `replace`), not against the version committed before both.
-- A preview is the same commands run in a transaction that the caller rolls
-  back, with the resulting state read through the same handle before the
-  rollback. No command has a separate dry-run mode. A preview of several
+- One helper in `lib/commands` runs a caller's commands in one transaction
+  and ends it in one of two ways: a commit, or a rollback after the
+  resulting state has been read through the same handle. A write is the
+  commit ending. A preview is the rollback ending of the same call. No
+  command has a separate dry-run mode. A preview of several
   commands then composes exactly as their write does, and it meets the same
   refusals, the database constraints included. A per-command dry run was
   rejected: each one plans against the database as committed, so the second
   of two would preview a trim and a new version where the write does a
   `replace`, and the preview would show a result the write never produces.
+- A write that spans several commands is itself a command. It does more than
+  call them in turn: confirming an import proposal parses it, checks it, and
+  then runs the commands of its changes. That work belongs in `lib/commands`,
+  not in the Server Action that receives the form. The Server Action stays an
+  adapter that opens no transaction, so the test that no file in
+  `lib/actions` writes to the database (T-059) holds for the import screens
+  as well. Such a command runs its parts through the helper above. Its
+  preview is the same command with the rollback ending, so the preview and
+  the write are one code path.
 - No MCP endpoint and no REST API are built now. Either, when it comes, is one
   more adapter over the commands. MCP was considered and deferred for two
   reasons, recorded so that the question is not reopened blind:

@@ -57,9 +57,14 @@ not touch the template.
       date in words. Each one can be unticked, and «Виправити» opens the
       existing event form pre-filled. «Додати вибране» sends the confirmed list
       back.
-- [ ] The server parses the confirmed list from scratch and applies it through
-      the T-056 event commands in one transaction. A refusal on any item writes
-      nothing and names that item.
+- [ ] Applying a confirmed proposal is a command in `lib/commands`
+      (ADR-028, ADR-029). It parses the confirmed list from scratch, resolves
+      its date expressions again and checks them as below, and runs the T-056
+      event commands through the T-056 helper in its commit ending. A refusal
+      on any item writes nothing and names that item. The Server Action behind
+      «Додати вибране» only reads the submission, calls this command and maps
+      its result. It opens no transaction. The same command in the rollback
+      ending is the preview that later tickets show (T-052, T-053).
 - [ ] Each date on the confirmation screen comes back as its symbol and the
       date shown. The server resolves the symbol again and writes only if the
       two agree. Otherwise it writes nothing and shows the proposal again with

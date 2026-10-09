@@ -33,7 +33,8 @@ confirms it as one new template version.
       template editor, with the cells that differ from the version in force
       marked.
 - [ ] Confirming creates exactly one template version for the view through the
-      T-059 commands.
+      T-059 commands, run by T-051's command for a confirmed proposal. The
+      confirmation view is that command's preview.
 - [ ] Bell times from the file are written only when the version starts
       today. They then go through the T-057 bell schedule command in the same
       transaction. When the version starts later, they are not written,

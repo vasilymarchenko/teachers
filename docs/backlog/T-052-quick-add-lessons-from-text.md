@@ -38,9 +38,10 @@ from which date and for which parity weeks, before anything is written.
       лише в чисельнику?»), not a default. The teacher's answer sets the
       per-row both-weeks choice of ADR-025.
 - [ ] All template changes of one confirmation are applied as one template
-      version, through the T-059 commands in one transaction. The preview on
-      the confirmation screen is the same commands run through the preview
-      helper of T-056, so it shows what the write will leave.
+      version, through the T-059 commands, run by T-051's command for a
+      confirmed proposal. The preview on the confirmation screen is that same
+      command in the rollback ending of the T-056 helper, so it shows what the
+      write will leave.
 - [ ] The preview names the cut date (`today()`) and, where the version in
       force is trimmed, the warning of overview §3.2 I2.
 - [ ] When a planned version lies ahead, the confirmation screen applies

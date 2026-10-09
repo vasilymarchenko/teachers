@@ -36,10 +36,14 @@ sees no difference.
       function it calls takes the handle as an optional last parameter
       (ADR-028). An integration test runs two event commands in one
       transaction, the second reading what the first wrote, and rolls it back.
-- [ ] A preview helper runs a caller's commands in a transaction, reads the
-      resulting state through the same handle, and rolls back (ADR-028). An
-      integration test asserts that the preview of two event commands equals
-      what their write leaves, and that the preview leaves no row.
+- [ ] One helper in `lib/commands` runs a caller's commands in one
+      transaction and ends it either with a commit or with a rollback after
+      reading the resulting state through the same handle (ADR-028). The
+      rollback ending is the preview. Integration tests run two event
+      commands through it. In the commit ending, both rows are written. In the
+      rollback ending, the state it returns equals what the commit leaves,
+      and no row is left. When the second command refuses, nothing is left
+      in either ending.
 - [ ] Convention tests over `lib/commands/**`, written here so that every later
       slice is held to them:
       - no command reads `FormData`, calls `requireUser()` or calls

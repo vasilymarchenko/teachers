@@ -86,8 +86,12 @@ Option 2.
   default.
 - Nothing is written before the teacher confirms. The confirmed proposal comes
   back to the server as data and is parsed again from scratch. The server
-  does not trust what it sent out earlier. It is then applied through the
-  ADR-028 commands, in one transaction.
+  does not trust what it sent out earlier. Applying a confirmed proposal is
+  itself a command in `lib/commands` (ADR-028). It parses the proposal,
+  resolves its date expressions again and compares them with the dates
+  shown, then runs the command of each change, all in one transaction. The
+  preview on a confirmation screen is the same command with the rollback
+  ending.
 - A resolved date travels back with its symbol. Each date the confirmation
   screen showed, from a date expression or from a boundary symbol
   («до кінця семестру», «після канікул»), comes back as the pair: the symbol,

@@ -35,8 +35,9 @@ the series. The teacher sees no difference.
       one view in one transaction and asserts that the result is one new
       version (the second save a `replace` of the version the first created),
       not an overlap refused by I3.
-- [ ] The preview helper of T-056 over the same two day saves returns the
-      versions and slots their write leaves, and leaves no row.
+- [ ] The helper of T-056, in its rollback ending, over the same two day
+      saves returns the versions and slots their commit leaves, and leaves no
+      row.
 - [ ] T-060's tests for these actions pass unmodified.
 - [ ] A convention test asserts that no file in `lib/actions` writes to the
       database: no `insert`, `update`, `delete` or `transaction` on a Drizzle

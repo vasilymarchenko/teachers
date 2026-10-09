@@ -29,8 +29,9 @@ This is the non-teaching period kind of ADR-029's closed set.
       whichever of the two tickets builds it first.
 - [ ] The confirmation screen lists each period with its dates in words and
       marks one that overlaps a period already entered. Confirming writes the
-      ticked ones through the T-057 command in one transaction, and a refusal
-      on any item writes nothing and names that item.
+      ticked ones through the T-057 command, run by T-051's command for a
+      confirmed proposal in one transaction. A refusal on any item writes
+      nothing and names that item.
 - [ ] A period outside the academic year in force is a question, not a write.
 - [ ] The evaluation set gains at least five lists, one of them a file.
 
