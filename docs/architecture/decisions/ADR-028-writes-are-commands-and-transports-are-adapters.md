@@ -115,7 +115,17 @@ Option 3.
   and ends it in one of two ways: a commit, or a rollback after the
   resulting state has been read through the same handle. A write is the
   commit ending. A preview is the rollback ending of the same call. No
-  command has a separate dry-run mode. A preview of several
+  command has a separate dry-run mode.
+- A preview returns the outcome it shows as a description: the versions with
+  their ranges, the lessons by day and the events, in a fixed order and
+  without generated ids or timestamps. It also returns a fingerprint of that
+  description. A write may carry the fingerprint of the preview the teacher
+  saw. The helper then builds the same description from the same transaction
+  before committing. If the fingerprints differ, it rolls back and returns a
+  refusal that carries the new preview. The check does not enumerate what
+  may have changed in between: midnight, a template edited in another window,
+  breaks or bells edited meanwhile. It catches any of them, because each one
+  changes the outcome. A preview of several
   commands then composes exactly as their write does, and it meets the same
   refusals, the database constraints included. A per-command dry run was
   rejected: each one plans against the database as committed, so the second

@@ -51,6 +51,10 @@ from which date and for which parity weeks, before anything is written.
       planned rows a carry would replace. A test asserts that a lesson
       confirmed with the carry is in the calendar on the planned version's
       start date, and one confirmed without it is not.
+- [ ] The preview's fingerprint is checked at confirmation as T-051 checks
+      it. Tests save a template day in another request between preview and
+      confirmation, and let midnight pass between them. Each asserts that
+      nothing is written and that the new preview is shown.
 - [ ] A day override proposal resolves its date with the T-051 date
       expressions and is applied through the day override command.
 - [ ] The evaluation set gains at least 15 lesson and override cases.

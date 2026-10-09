@@ -53,8 +53,8 @@ not touch the template.
       teacher, with a timeout. The model output is parsed with the schema, and
       a parse failure is shown as «не вдалося розібрати», never as a partial
       write.
-- [ ] The confirmation screen lists each proposed change with the resolved
-      date in words. Each one can be unticked, and «Виправити» opens the
+- [ ] The confirmation screen is built from the preview of the command below
+      and lists each proposed change with the resolved date in words. Each one can be unticked, and «Виправити» opens the
       existing event form pre-filled. «Додати вибране» sends the confirmed list
       back.
 - [ ] Applying a confirmed proposal is a command in `lib/commands`
@@ -64,7 +64,13 @@ not touch the template.
       on any item writes nothing and names that item. The Server Action behind
       «Додати вибране» only reads the submission, calls this command and maps
       its result. It opens no transaction. The same command in the rollback
-      ending is the preview that later tickets show (T-052, T-053).
+      ending is the preview this screen and later ones show (T-052, T-053).
+- [ ] «Додати вибране» sends back the fingerprint of the preview the screen
+      showed, and the command commits only if its outcome has the same one
+      (ADR-028). Otherwise it writes nothing and the screen shows the new
+      preview with «поки ви дивилися, дані змінилися — перегляньте ще раз». A
+      test confirms with the fingerprint of a different preview, and asserts
+      that nothing is written and that the new preview is returned.
 - [ ] Each date on the confirmation screen comes back as its symbol and the
       date shown. The server resolves the symbol again and writes only if the
       two agree. Otherwise it writes nothing and shows the proposal again with

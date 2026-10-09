@@ -103,8 +103,12 @@ Option 2.
   midnight passed or the year's breaks were edited meanwhile, it writes
   nothing and shows the proposal again with the new date. Re-resolving alone
   could write a date the teacher never saw, and sending the date alone would
-  lose the symbol the screen shows. The pattern is the one the template
-  editor already follows when a version changed in another window.
+  lose the symbol the screen shows.
+- The confirmed proposal also carries the fingerprint of the preview the
+  confirmation screen showed (ADR-028). A write whose outcome differs from it
+  writes nothing and shows the new preview. The date pair stays. The symbol
+  is the input that says what to write. The fingerprint is the net under
+  everything else the preview depended on.
 - A named weekday said on that weekday («до п'ятниці» on a Friday) resolves to
   today. The teacher sees the date on the confirmation screen and corrects it
   there if next week was meant.

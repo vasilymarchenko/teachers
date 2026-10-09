@@ -54,6 +54,11 @@ confirms it as one new template version.
       carried, on it the import replaces it, and after it the import trims it.
       The start date comes back with its symbol and is checked as T-051
       checks a date.
+- [ ] The preview's fingerprint is checked at confirmation as T-051 checks
+      it. A test changes the template in another request between preview and
+      confirmation. Another, for a version that starts today, changes the bell
+      times in between. Each asserts that nothing is written and that the new
+      preview is shown.
 - [ ] The evaluation set gains at least five timetable files, including one
       with merged cells and one with both parity weeks on a single sheet.
 
