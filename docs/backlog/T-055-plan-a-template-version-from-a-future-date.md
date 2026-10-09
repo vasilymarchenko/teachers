@@ -87,6 +87,22 @@ overview §10.8 (Q-008).
       is deleted and no `validTo` moves forward (fixtures §3.8), so a change
       of mind costs the teacher re-entering the lessons. The decision and why
       the alternatives were rejected are in overview §10.8.
+- [ ] The editor edits the version in force on a date D, which the URL
+      carries as it carries the view, the parity week and the day. D
+      defaults to today, which is the editor as it is now. The editor reads
+      and saves the version in force on D, and its saves start on D. D is
+      never before today, so a version that has ended stays listed and read
+      only.
+      - Above the grid there is a tab for the version in force today and one
+        for each planned version, each with its start date. A planned
+        version's tab sets D to its start, so a save there edits it (the
+        «D equal to S» case above).
+      - «Новий розклад з…» sets D to the chosen date.
+      - The heading always says which version is being edited, for example
+        «Ви редагуєте розклад, що почне діяти 02.11».
+      - An integration test opens a planned version's tab, changes a Monday,
+        and saves. The change shows in the calendar from the planned start,
+        and the version in force today is unchanged.
 - [ ] The strip of versions marks a planned version as planned, with its start
       date, and the trim warning of overview §3.2 I2 names the planned date.
 - [ ] `design/expand-fixtures.md` gains the cases: a cut on a future date, a
