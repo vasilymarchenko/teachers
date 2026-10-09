@@ -3,7 +3,7 @@ id: T-050
 type: ticket
 title: Commands 0/4 — characterization tests for the write Server Actions outside the template
 status: todo
-depends_on: [T-009, T-010, T-011, T-012]
+depends_on: [T-009, T-010, T-011, T-012, T-045]
 refs:
   - docs/architecture/decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md
   - docs/architecture/architect-overview.md §3.2
@@ -22,8 +22,9 @@ nothing can check that promise: none of the 27 write Server Actions has a test,
 and the only tests that import `lib/actions` are about signing in. This ticket
 pins down what the 24 actions outside the template do now (events, the year
 frame and the bells, day overrides), so that each slice of the refactor is
-checked against it. The three template actions are T-060's, after T-043 has
-changed their save. It changes no application code.
+checked against it. It runs after T-045, which changes the academic year
+writes, so that their tests are written once. The three template actions are
+T-060's, after T-043 has changed their save. It changes no application code.
 
 ## Acceptance criteria
 

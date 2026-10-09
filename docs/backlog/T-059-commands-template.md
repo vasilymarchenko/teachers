@@ -3,7 +3,7 @@ id: T-059
 type: ticket
 title: Commands 4/4 — the template, previewable in one transaction, and no write left in lib/actions
 status: todo
-depends_on: [T-056, T-060]
+depends_on: [T-057, T-058, T-060]
 refs:
   - docs/architecture/decisions/ADR-028-writes-are-commands-and-transports-are-adapters.md
   - docs/architecture/architect-overview.md §3.2
@@ -20,8 +20,8 @@ has pinned it down, so that the save moves once and in its final form.
 `applyTemplateEdit()` stops taking `FormData`, and its reads go through the
 caller's handle, so that several template commands compose in one transaction
 and in the preview the import screens show (ADR-028).
-The slice closes the series: after it no write is left in `lib/actions`, and
-a test keeps it that way, so the two styles do not live side by side past
+The slice closes the series, after T-057 and T-058 have moved theirs: after it
+no write is left in `lib/actions`, and a test keeps it that way, so the two styles do not live side by side past
 the series. The teacher sees no difference.
 
 ## Acceptance criteria

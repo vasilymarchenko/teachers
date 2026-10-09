@@ -59,16 +59,16 @@ for reading. Order is priority; the ID number is not.
 | [T-030](T-030-one-migrator-smoke-definition.md) | One migrator smoke test, called by both CI and the gate | todo | T-029 |
 | [T-031](T-031-pin-the-node-version.md) | Pin the Node version where a developer will hit it, not only in CI | done | T-029 |
 | [T-032](T-032-gate-counts-under-report.md) | The gate can under-report — a missing origin/main, a dirty tree, an unresolvable opening head | todo | T-029 |
-| [T-050](T-050-characterization-tests-for-write-actions.md) | Commands 0/4 — characterization tests for the write Server Actions outside the template | todo | T-009, T-010, T-011, T-012 |
+| [T-050](T-050-characterization-tests-for-write-actions.md) | Commands 0/4 — characterization tests for the write Server Actions outside the template | todo | T-009, T-010, T-011, T-012, T-045 |
 | [T-060](T-060-characterization-tests-for-template-actions.md) | Commands 0/4 — characterization tests for the template write Server Actions, on the save T-043 leaves | todo | T-043, T-050 |
 | [T-056](T-056-commands-pattern-and-events.md) | Commands 1/4 — the command pattern, its convention tests, and the event writes | todo | T-050 |
 | [T-057](T-057-commands-year-frame-and-bells.md) | Commands 2/4 — the year frame and the bell schedule | todo | T-056 |
 | [T-058](T-058-commands-day-overrides.md) | Commands 3/4 — day overrides | todo | T-056 |
-| [T-059](T-059-commands-template.md) | Commands 4/4 — the template, previewable in one transaction, and no write left in lib/actions | todo | T-056, T-060 |
+| [T-059](T-059-commands-template.md) | Commands 4/4 — the template, previewable in one transaction, and no write left in lib/actions | todo | T-057, T-058, T-060 |
+| [T-055](T-055-plan-a-template-version-from-a-future-date.md) | Plan a new template version from a future date — after a break or from a date — and cancel it by overwriting | todo | T-059 |
 | [T-051](T-051-quick-add-events-from-text.md) | Quick add — free text becomes deadlines and info events through a proposal the teacher confirms | todo | T-056, Q-007 |
 | [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051, T-055, T-058, T-059 |
 | [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, T-055, T-057, T-059 |
-| [T-055](T-055-plan-a-template-version-from-a-future-date.md) | Plan a new template version from a future date — after a break or from a date — and cancel it by overwriting | todo | T-059 |
 | [T-061](T-061-import-non-teaching-periods.md) | Import non-teaching periods — a list of holidays and breaks from text or a file becomes year rows through a proposal | todo | T-051, T-057 |
 
 ## Open questions
@@ -180,14 +180,16 @@ T-050, T-060, T-056–T-059, T-051–T-053 and T-061 are the import track
 (specification §10, ADR-028, ADR-029) and are not drawn. The first six are the
 command refactor of ADR-028, run as a series: T-050 pins down with integration
 tests what every write Server Action outside the template does now, and hangs
-off T-009, T-010, T-011 and T-012 for the actions it tests. T-060 does the same
+off T-009, T-010, T-011 and T-012 for the actions it tests and off T-045,
+which adds a field to the academic year writes it tests. T-060 does the same
 for the three template actions and hangs off T-050 for its test helper and off
 T-043, which changes the template day save, so that those tests are written
 once and against the save that moves. T-056 hangs off T-050 and sets the
 command pattern on the event writes. T-057 and T-058 hang off T-056 and move
-the year frame with the bells, and the day overrides. T-059 hangs off T-056
-too, and off T-060 for the tests it must pass; it ends the series with a test
-that no write is left in `lib/actions`. None of the six waits on Q-007. T-051 hangs off
+the year frame with the bells, and the day overrides. T-059 hangs off T-057
+and T-058, because it ends the series with a test that no write is left in
+`lib/actions`, which holds only once they have moved theirs, and off T-060 for
+the tests it must pass. None of the six waits on Q-007. T-051 hangs off
 T-056 for the event commands and off Q-007 for the decision to build it at
 all. T-052 hangs off T-051 for the proposal pipeline it extends, off T-058 and
 T-059 for the override and template commands, and off T-043 for the per-row
@@ -200,6 +202,29 @@ answers Q-008 and hangs off T-059, whose template commands it extends with a
 future cut. T-061 hangs off T-051 for the proposal pipeline and off T-057 for
 the non-teaching period command. An MCP endpoint was considered and deferred
 (ADR-028) and has no ticket.
+
+**Order of the import track.** The table lists the track in the order it is
+meant to be worked, with the unrelated tickets between its rows keeping their
+own priority:
+
+1. T-046, then T-043, and T-045. These change writes that T-050 and T-060 pin
+   down: T-043 the template day save, T-045 the academic year save. A write
+   characterized before the ticket that changes it has its tests written
+   twice. T-043 needs the row header T-046 adds, so T-046 comes first.
+2. T-050, then T-060. The whole baseline is in place before any write moves,
+   and T-060 reuses T-050's helper.
+3. T-056, T-057, T-058, T-059. T-056 sets the pattern on the simplest writes.
+   T-057 and T-058 do not depend on each other. T-059 is last for the reason
+   its edges give.
+4. T-055. It extends the template commands and does not wait on Q-007, so it
+   is the part of the track a teacher sees even if import is never built.
+5. T-051, T-052, T-053, T-061, once Q-007 brings import into scope. T-051 builds
+   the pipeline on the two kinds that do not touch the template. T-061 is last:
+   a list of holidays is entered once a year, and by then T-053 has built the
+   file reader it reuses.
+
+Nothing up to step 4 waits on Q-007, so the question can be answered while the
+refactor runs.
 
 ## Coverage
 
