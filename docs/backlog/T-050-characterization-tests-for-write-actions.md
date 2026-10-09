@@ -31,8 +31,12 @@ T-060's, after T-043 has changed their save. It changes no application code.
 - [ ] Every exported write Server Action in `lib/actions` except `auth.ts` and
       `scheduleTemplate.ts` has integration tests (`*.integration.test.ts`, against a migrated Postgres),
       called the way a form calls it: `FormData` in, `FormState` out. They mock
-      `requireUser()` and `revalidatePath()` as
-      `lib/auth/setupGate.integration.test.ts` already does, and nothing else.
+      what `lib/auth/setupGate.integration.test.ts` already mocks and nothing
+      else: `requireUser()`, `revalidatePath()` and `redirect()`.
+      `createAcademicYearAction` and `deleteAcademicYearAction` end in
+      `redirect()` on success instead of returning a `FormState`. Their success
+      tests assert the redirect target, together with the rows left in the
+      database.
 - [ ] For each action, a successful submission asserts the rows it leaves in
       the database, not only the `FormState`.
 - [ ] For each action, every refusal path the action has asserts the exact
@@ -42,8 +46,12 @@ T-060's, after T-043 has changed their save. It changes no application code.
 - [ ] For each action, a second teacher's rows are untouched by the first
       teacher's submission, including one that names the second teacher's row
       id (overview §8.4).
-- [ ] A test whose outcome depends on the date fixes the clock through the
-      instant `today()` takes, never through a date.
+- [ ] A test whose outcome depends on the date fixes the system time with
+      `vi.setSystemTime()` to an instant, never to a date. The actions take no
+      instant and read the time inside, through `today()` and `new Date()`, so
+      this is the only clock a test can fix without changing application
+      code. The test restores the real time after itself. This is not counted
+      as a mock.
 - [ ] The tests are written against the actions' public behaviour only, so
       that T-056–T-058 can run them unmodified through the adapters they leave
       behind.

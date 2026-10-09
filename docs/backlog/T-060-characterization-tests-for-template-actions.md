@@ -32,8 +32,8 @@ application code.
       version capped by a later one (`capToNextVersion()`), a version changed in
       another window (`VersionChanged`), and a boundary that cannot be
       resolved. They cover too the per-row both-weeks choice T-043 adds
-      (ADR-025). Each fixes the clock through the instant `today()` takes,
-      never through a date.
+      (ADR-025). Each fixes the system time to an instant as T-050 does,
+      never to a date.
 - [ ] The tests are written against the actions' public behaviour only, so
       that T-059 can run them unmodified through the adapters it leaves behind.
 - [ ] No file outside the new tests changes.
