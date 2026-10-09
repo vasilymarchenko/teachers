@@ -64,9 +64,17 @@ not touch the template.
       teacher, with a timeout. The model output is parsed with the schema, and
       a parse failure is shown as «не вдалося розібрати», never as a partial
       write.
-- [ ] The confirmation screen is built from the preview of the command below
-      and lists each proposed change with the resolved date in words. Each one
-      can be unticked. «Виправити» opens the change's own fields in place in
+- [ ] The confirmation screen lists each proposed change with the resolved
+      date in words, and each one can be unticked. The preview of the command
+      below runs only the ready changes: ticked, with no open question
+      (ADR-029). Every other change is shown from the proposal with its
+      question inputs. A ready change the preview refuses shows the refusal
+      next to it, and the others keep their preview. «Додати вибране» is
+      enabled only when every ticked change is ready and none is refused. A
+      test proposes three deadlines, one with a title over the schema's
+      limit, and asserts that the preview shows the other two and the
+      refusal on the third, and that «Додати вибране» stays disabled until
+      the third is fixed or unticked. «Виправити» opens the change's own fields in place in
       the list (title, date, note, recurrence), with the inputs questions use.
       It does not open the event form and saves nothing by itself. An edited
       date is sent back as an explicit date, without a symbol. Every edit

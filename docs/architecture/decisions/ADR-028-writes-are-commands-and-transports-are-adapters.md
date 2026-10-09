@@ -139,6 +139,21 @@ Option 3.
   resulting state has been read through the same handle. A write is the
   commit ending. A preview is the rollback ending of the same call. No
   command has a separate dry-run mode.
+- The two endings treat a refusal differently:
+  - **The commit ending is all or nothing.** The first refusal rolls the
+    whole transaction back, and nothing is written.
+  - **The rollback ending runs each command in its own savepoint** (a
+    nested transaction). A command that refuses is rolled back to its
+    savepoint, its refusal is recorded against it, and the commands after it
+    run on. The preview then shows what the others would do, plus each
+    refusal next to its command.
+
+  Without this, one refusal among ten changes would blank the preview of the
+  other nine, and the teacher could not see which one to fix. A command
+  after a refused one plans against the state without it, which is what the
+  write would do once the teacher unticks the refused one. A preview with a
+  refusal cannot be committed as it stands. Its caller lets the teacher fix
+  or untick the refused change, and previews again.
 - A preview returns two things. The first is what the screen shows. The
   caller builds it from the state the transaction reads before its rollback,
   and the helper puts no rule on it. The second is a fingerprint of the

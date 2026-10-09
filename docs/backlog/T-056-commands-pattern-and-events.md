@@ -46,8 +46,11 @@ sees no difference.
       rollback ending is the preview. Integration tests run two event
       commands through it. In the commit ending, both rows are written. In the
       rollback ending, the state it returns equals what the commit leaves,
-      and no row is left. When the second command refuses, nothing is left
-      in either ending.
+      and no row is left. When the second of three commands refuses:
+      - in the commit ending, nothing is left;
+      - in the rollback ending, each command runs in its own savepoint
+        (ADR-028), the preview shows the outcome of the first and the third,
+        the second's refusal is reported against it, and no row is left.
 - [ ] The rollback ending returns the state the caller reads for its screen
       and the fingerprint of the diff the commands made, and the commit
       ending accepts an expected fingerprint (ADR-028). The helper reads the

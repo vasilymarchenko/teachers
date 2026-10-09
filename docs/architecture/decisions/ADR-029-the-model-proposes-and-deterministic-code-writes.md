@@ -171,6 +171,14 @@ Option 2.
   the command of each change, all in one transaction. The
   preview on a confirmation screen is the same command with the rollback
   ending.
+- The preview runs only the changes that are **ready**: ticked, with no open
+  question, and not in «not understood». The screen shows every other
+  change from the proposal itself, with its question inputs. A ready change
+  whose command refuses in the preview shows the refusal next to it, and the
+  rest of the preview stands (ADR-028). «Додати» is enabled only when every
+  ticked change is ready and the preview refused none of them. The
+  confirmation then sends back exactly the set the preview ran, and its
+  fingerprint is the fingerprint of that set.
 - A date expression travels with the proposal as an expression, and the
   screen shows the date it resolves to. Re-resolving it against the same
   anchor date gives the same date, so the passing of time changes nothing.
