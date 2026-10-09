@@ -3,7 +3,7 @@ id: T-052
 type: ticket
 title: Quick add — free text becomes template lessons and day overrides, with a preview of the new version
 status: todo
-depends_on: [T-043, T-051, T-055, T-058, T-059]
+depends_on: [T-043, T-051, T-055, T-058, T-059, Q-007]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/architecture/architect-overview.md §3.2
@@ -43,8 +43,13 @@ from which date and for which parity weeks, before anything is written.
       confirmed proposal. The preview on the confirmation screen is that same
       command in the rollback ending of the T-056 helper, so it shows what the
       write will leave.
-- [ ] The preview names the cut date (`today()`) and, where the version in
-      force is trimmed, the warning of overview §3.2 I2.
+- [ ] The preview names the date the change starts on and, where the version
+      in force is trimmed, the warning of overview §3.2 I2. By default the
+      date is `today()`. Where the text names a start («з 13.10 по понеділках
+      …», «після канікул»), the confirmation screen offers T-055's start
+      choices («з сьогодні», «після канікул», «з дати»), as T-053 does. The
+      change is made through T-055's future cut, and its start date comes
+      back with its symbol and is checked as T-051 checks a date.
 - [ ] When a planned version lies ahead, the confirmation screen applies
       T-055's rule for a change that starts before it (overview §10.8). Each
       template day it changes is a day-save scope. The screen says that the

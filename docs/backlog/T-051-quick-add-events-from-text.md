@@ -88,9 +88,10 @@ not touch the template.
 - [ ] Each date on the confirmation screen comes back as its symbol and the
       date shown. The server resolves the symbol again and writes only if the
       two agree. Otherwise it writes nothing and shows the proposal again with
-      the new date. A test confirms at 00:05 a proposal resolved at 23:55 the
-      day before, and asserts that nothing is written and the new date is
-      shown.
+      the new date. A test confirms at 00:05 a proposal of «завтра» resolved
+      at 23:55 the day before, and asserts that nothing is written and the
+      new date is shown. «До п'ятниці» would not do: said Thursday 23:55 and
+      re-resolved Friday 00:05, it gives the same Friday both times.
 - [ ] A question is shown as an input on the change it points at: a date
       input for «a date is needed», one button per option for «choose one
       of». A change with an unanswered question is marked and is not added

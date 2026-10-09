@@ -67,9 +67,9 @@ for reading. Order is priority; the ID number is not.
 | [T-059](T-059-commands-template.md) | Commands 4/4 — the template, previewable in one transaction, and no write left in lib/actions | todo | T-057, T-058, T-060 |
 | [T-055](T-055-plan-a-template-version-from-a-future-date.md) | Plan a new template version from a future date — after a break or from a date — changed like any other version, with no cancel | todo | T-059 |
 | [T-051](T-051-quick-add-events-from-text.md) | Quick add — free text becomes deadlines and info events through a proposal the teacher confirms | todo | T-056, Q-007 |
-| [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051, T-055, T-058, T-059 |
-| [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, T-055, T-057, T-059 |
-| [T-061](T-061-import-non-teaching-periods.md) | Import non-teaching periods — a list of holidays and breaks from text or a file becomes year rows through a proposal | todo | T-051, T-057 |
+| [T-052](T-052-quick-add-lessons-from-text.md) | Quick add — free text becomes template lessons and day overrides, with a preview of the new version | todo | T-043, T-051, T-055, T-058, T-059, Q-007 |
+| [T-053](T-053-import-timetable-from-file.md) | Import a timetable from a spreadsheet or a photo as one new template version, with bell times | todo | T-052, T-055, T-057, T-059, Q-007 |
+| [T-061](T-061-import-non-teaching-periods.md) | Import non-teaching periods — a list of holidays and breaks from text or a file becomes year rows through a proposal | todo | T-051, T-057, Q-007 |
 | [T-062](T-062-bell-schedule-from-a-date.md) | Bell schedule from a date — a set of bell times takes effect on its start date, and past lessons keep their times | todo | T-057 |
 
 ## Open questions
@@ -83,7 +83,7 @@ Each mirrors a section of `docs/architecture/architect-overview.md` §10.
 | [Q-005](Q-005-student-contacts.md) | Student contact structure — one contact or several with roles | open | — (second phase, no ticket yet) |
 | [Q-006](Q-006-is-taught-by-me-matching.md) | How `isTaughtByMe` matches a CLASS lesson to an OWN lesson | open | — (default pinned in `design/expand-fixtures.md` §8.6) |
 | [Q-004](Q-004-server-pdf-renderer.md) | Server-side PDF renderer, if one is ever needed | open | — (deferred with the feature) |
-| [Q-007](Q-007-ai-import-scope-and-data.md) | Is AI-assisted import in scope, and may teacher data be sent to an external model | open | T-051 |
+| [Q-007](Q-007-ai-import-scope-and-data.md) | Is AI-assisted import in scope, and may teacher data be sent to an external model | open | T-051, T-052, T-053, T-061 |
 | [Q-002](Q-002-mobile-template-editor.md) | Mobile interaction pattern for the weekly template editor | answered | — (answer in `architect-overview.md` §10.2) |
 | [Q-008](Q-008-future-dated-template-version.md) | May a template edit start on a future date, not only today | answered | — (answer in `architect-overview.md` §10.8) |
 
@@ -148,7 +148,7 @@ is not drawn either: it is a defect in the invariant test that ticket's last
 criterion produced, not new work off it.
 Outside the import track, no item waits on an open question any more: Q-002,
 the one that did, is answered (`architect-overview.md` §10.2). In the import
-track, T-051 waits on Q-007. T-014 is done, so the UI tickets that waited on
+track, T-051, T-052, T-053 and T-061 wait on Q-007. T-014 is done, so the UI tickets that waited on
 the shell — T-007, T-009, T-010 and T-012 — are done, so every dependency they
 carried is satisfied. T-011 and T-021, which hang off T-007 alone, are done
 too; T-013 is what remains of the calendar work. T-038 hangs off T-009 and T-014 and
@@ -201,7 +201,9 @@ template commands, and off T-055 for the date the imported version starts on,
 «після канікул» being the case a new timetable file usually comes with. T-055
 answers Q-008 and hangs off T-059, whose template commands it extends with a
 future cut. T-061 hangs off T-051 for the proposal pipeline and off T-057 for
-the non-teaching period command. An MCP endpoint was considered and deferred
+the non-teaching period command. T-052, T-053 and T-061 also name Q-007
+directly, though they reach it through T-051 already, so that the question's
+row names every ticket it holds back. An MCP endpoint was considered and deferred
 (ADR-028) and has no ticket.
 T-062 is not part of the import track and is not drawn. It takes the reaction
 overview §9 records for «`BellSchedule` без дати початку дії», and hangs off
@@ -226,9 +228,10 @@ own priority:
 4. T-055. It extends the template commands and does not wait on Q-007, so it
    is the part of the track a teacher sees even if import is never built.
 5. T-051, T-052, T-053, T-061, once Q-007 brings import into scope. T-051 builds
-   the pipeline on the two kinds that do not touch the template. T-061 is last:
-   a list of holidays is entered once a year, and by then T-053 has built the
-   file reader it reuses.
+   the pipeline on the two kinds that do not touch the template. T-061 is last
+   because a list of holidays is entered once a year. It shares the file
+   reader with T-053, and whichever of the two comes first builds it, so
+   T-061 does not wait on T-053.
 
 Nothing up to step 4 waits on Q-007, so the question can be answered while the
 refactor runs.
@@ -245,6 +248,10 @@ than off a ticket a review found something in. Second-phase work (class list and
 has no tickets by design; `architect-overview.md` §7 records the extension
 points it will use. Import (§10) and AI are third-phase work that now has
 tickets, T-050–T-053 and T-056–T-061, of which T-051–T-053 and T-061 wait on Q-007 — the
-decision to bring them into scope; the command refactor and T-055 do not. T-039 is outside the specification too: it is
+decision to bring them into scope; the command refactor does not. T-055 and
+T-062 are first-release scope rather than import: T-055 plans a template
+version from a later date (specification §5.2), and T-062 gives the bell
+schedule a start date (§3.3). Import uses both, and neither waits on Q-007.
+T-039 is outside the specification too: it is
 what the person running the deployment uses to give a teacher an account, not a
 screen a teacher sees.

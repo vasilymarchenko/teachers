@@ -51,7 +51,9 @@ overview §10.8 (Q-008).
       starts.
 - [ ] «Після канікул» resolves at write time to the first day after the
       nearest break that has not ended on `today()` (its `dateTo` is on or
-      after `today()`), so that chosen during a break it means the day after
+      after `today()`). Only `NonTeachingPeriod.kind = BREAK` counts, never a
+      public holiday or another non-teaching period, as for `NEXT_BREAK`. This
+      is so that chosen during a break it means the day after
       that break. The symbol is not stored: the screen shows the resolved
       date. A break that ends after the year has no such day, and the choice
       is refused with a message, not a version outside the year.

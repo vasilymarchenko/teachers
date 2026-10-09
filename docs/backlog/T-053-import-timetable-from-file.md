@@ -3,7 +3,7 @@ id: T-053
 type: ticket
 title: Import a timetable from a spreadsheet or a photo as one new template version, with bell times
 status: todo
-depends_on: [T-052, T-055, T-057, T-059]
+depends_on: [T-052, T-055, T-057, T-059, Q-007]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/specs/specification.md §10
@@ -26,7 +26,8 @@ confirms it as one new template version.
 
 - [ ] A spreadsheet is read on the server into a text grid with cell addresses,
       merged cells unrolled. The model receives the grid, not the file. A photo
-      is sent as an image.
+      is sent as an image. The reader is the one T-061 also uses, whichever of
+      the two tickets builds it first.
 - [ ] File size and the number of rows and cells are limited, and exceeding a
       limit is a message, not a truncated import.
 - [ ] The confirmation view shows the proposed week in the layout of the

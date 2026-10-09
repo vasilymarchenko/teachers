@@ -3,7 +3,7 @@ id: T-061
 type: ticket
 title: Import non-teaching periods — a list of holidays and breaks from text or a file becomes year rows through a proposal
 status: todo
-depends_on: [T-051, T-057]
+depends_on: [T-051, T-057, Q-007]
 refs:
   - docs/architecture/decisions/ADR-029-the-model-proposes-and-deterministic-code-writes.md
   - docs/specs/specification.md §3.1
