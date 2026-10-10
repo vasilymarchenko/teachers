@@ -24,6 +24,7 @@ for reading. Order is priority; the ID number is not.
 | [T-036](T-036-session-starts-from-current-main.md) | A session starts from a current main — fetched by a hook, not by remembering | done | — |
 | [T-037](T-037-cost-a-change-what-it-is-worth.md) | A change that touches no code costs what it is worth — routed review, routed gate, and when a ticket run is needed at all | done | T-033 |
 | [T-063](T-063-scenario-catalogue-baseline.md) | Scenario catalogue — /teachers-scenarios writes down what a teacher can do now | in-progress | — |
+| [T-064](T-064-teachers-idea-skill.md) | Feature idea — /teachers-idea turns a raw idea into an agreed idea.md through an interview | todo | T-063 |
 | [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | done | T-017 |
 | [T-034](T-034-bound-the-ticket-loop-context.md) | Bound the context a /teachers-ticket run accumulates | in-progress | T-033 |
 | [T-035](T-035-land-a-pull-request.md) | /teachers-land — the fix-and-merge loop for a pull request with no ticket bound | todo | T-034 |
@@ -165,12 +166,14 @@ ticket documented with a script, for the two servers ADR-027 names; nothing in
 the diagram waits on it.
 T-063 depends on nothing and is not drawn: it writes down the behaviour the
 product tickets built, and nothing waits on it.
+T-064 hangs off T-063 and is not drawn: the interview it adds reads the
+catalogue that ticket wrote, and nothing in the diagram waits on it.
 
 ## Coverage
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031, T-032, T-033, T-034, T-035, T-036, T-037 and T-063 are
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-063 and T-064 are
 not product scope: they are the review tooling those tickets are checked by, and
 the documents that tooling reads. T-024 is not product scope either, and is not review tooling: it
 is the deployment path checking itself, which is why it hangs off T-015 rather
