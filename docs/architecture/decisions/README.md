@@ -22,6 +22,7 @@ few months, and each time it costs a discussion.
 |---|---|---|
 | `docs/specs/specification.md` | the idea the product started from | kept as written (ADR-030) |
 | `docs/scenarios/` | what a teacher can do now, and sees at each step | updated in place; features fold into it |
+| `docs/features/` | what one feature is meant to give a teacher, agreed before it is designed | agreed in an interview; `done` when built, then folded into `docs/scenarios/` |
 | `docs/architecture/architect-overview.md` | what is true now, and how it hangs together | updated in place |
 | `docs/architecture/decisions/` | why this, and not that — as of a date | immutable |
 | `docs/architecture/design/` | mechanics: schema, signatures, fixtures | updated in place |

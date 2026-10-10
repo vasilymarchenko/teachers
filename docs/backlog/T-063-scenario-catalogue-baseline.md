@@ -2,7 +2,7 @@
 id: T-063
 type: ticket
 title: Scenario catalogue — /teachers-scenarios writes down what a teacher can do now
-status: in-progress
+status: done
 depends_on: []
 refs:
   - docs/architecture/decisions/ADR-030-current-behaviour-is-a-catalogue-of-teacher-scenarios.md

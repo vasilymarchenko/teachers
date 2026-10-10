@@ -25,6 +25,7 @@
 | Скіл | `.claude/skills/teachers-fix-loop/SKILL.md` | обмежений цикл review → fix |
 | Скіл | `.claude/skills/teachers-review/SKILL.md` | рев'ю проти документів, тільки читає |
 | Скіл | `.claude/skills/teachers-scenarios/SKILL.md` | будує й оновлює каталог сценаріїв `docs/scenarios/`, у цикл не входить |
+| Скіл | `.claude/skills/teachers-idea/SKILL.md` | інтерв'ю, з якого ідея фічі виходить узгодженою: `docs/features/<slug>/idea.md`, у цикл не входить |
 | Скіл | `.claude/skills/vam-handoff/SKILL.md` | загальний handoff розмови, у цикл не входить |
 | Субагент | `.claude/agents/teachers-review-round.md` | межа контексту одного раунду fix-loop |
 | Субагент | `.claude/agents/teachers-review-contract.md` | прохід «diff ↔ тікет ↔ документи» |
@@ -34,6 +35,7 @@
 | Стан поза контекстом | `.gate/` (git-ignored) | `run.json`, `findings.json`, `ledger.jsonl`, `last-run.json` |
 | Документи-стандарт | `docs/architecture/**`, `docs/specs/**`, `docs/tech-stack.md` | те, проти чого рев'ю міряє зміну |
 | Каталог сценаріїв | `docs/scenarios/**` | що вчитель може зробити зараз (`ADR-030`); конвенції — `docs/scenarios/CLAUDE.md` |
+| Фічі | `docs/features/**` | що нова фіча має дати вчителю, узгоджене до дизайну (`ADR-030`); конвенції — `docs/features/CLAUDE.md` |
 
 Зовнішні скіли, які harness викликає, але не визначає: `/code-review` (загальна коректність) і вбудовані субагенти `Plan` та general-purpose.
 
@@ -297,6 +299,7 @@ Diff, у якому є хоч один файл з кодом, — це `code`, 
 - **`npm run cost`** (`scripts/cost/transcript-cost.ts`) — читає transcript сесії і показує кількість викликів, розмір контексту і розподіл токенів по фазах. Інструмент для рішень про форму циклу, а не частина циклу.
 - **Правила дешевих викликів** — кореневий `CLAUDE.md`, «Two habits that keep a call small»: незалежні виклики в одному повідомленні, великий вивід — у файл і читати звуженим.
 - **`/teachers-scenarios`** — будує й оновлює `docs/scenarios/`: каталог того, що вчитель може зробити в застосунку зараз (`ADR-030`). Що описувати і що воно робить, бере з коду й з проходу застосунку в браузері; кроки й задум — зі специфікації, `docs/demo-scenario.md` і шарів фіч з `docs/features/`; де вони розходяться з кодом, вирішує код. Питає користувача лише там, де код не вирішує або незрозуміло, чого вчитель мав би отримати. Рев'ю на каталог поки не спирається.
+- **`/teachers-idea`** — з сирої ідеї користувача робить узгоджений `docs/features/<slug>/idea.md`. Спершу читає, на що вже відповідають специфікація, каталог сценаріїв, архітектура й backlog, і питає лише решту, партіями по два-три питання. Простіші шляхи пропонує сам і записує, чому користувач їх відкинув. Ризики шукає субагент, який бачить саму ідею, але не інтерв'ю. Нічого не пише, доки користувач не підтвердить фінальний текст.
 - **`vam-handoff`** — стискає розмову в handoff-документ для нової сесії. Загальний скіл, не знає про `.gate/`. Для `teachers-ticket` роль handoff виконує `.gate/run.json` і `--resume`.
 
 ---
@@ -314,6 +317,7 @@ Diff, у якому є хоч один файл з кодом, — це `code`, 
 | умови merge | `teachers-review`, фаза 7 |
 | конвенції backlog | `docs/backlog/CLAUDE.md` |
 | конвенції каталогу сценаріїв | `docs/scenarios/CLAUDE.md` |
+| формат ідеї фічі, її статус | `docs/features/CLAUDE.md` |
 | архітектурні правила | `architect-overview.md`, ADR, `CLAUDE.md` |
 | версія Node | `.nvmrc` |
 
