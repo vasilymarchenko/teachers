@@ -83,6 +83,14 @@ argument for argument as `ci.yml` runs it — its argv is resolved at run time
 because libpq does not read `DATABASE_URL` itself. There is no second
 implementation of the file and it is not executed through a driver.
 
+Every check runs **without a shell**, so an argument reaches its program as
+written: a shell would read the `&` and `?` a `DATABASE_URL` can carry. That
+rules out starting `npm` by name on Windows, where it is `npm.cmd`, a batch
+file Node starts only through a shell. A check whose argv begins with `npm` is
+therefore run as `node <npm_execpath>` — the npm that started `npm run gate` —
+on every platform (`scripts/gate/spawn.ts`). A command that cannot be started
+at all is `failed` with its spawn error as the output, never an empty row.
+
 `migrator-smoke` carries `requires: ["ci-only"]`, so it is selected by an image
 change and always reported `skipped` with its reason. Why it is not run here,
 and what replaces that: `T-030`.
@@ -93,7 +101,8 @@ the built `runner` image against the database the migrator smoke test migrated
 running here.
 
 Environment probes run on **every** invocation and are never cached:
-`DATABASE_URL` set, `command -v psql`, `docker info` exit code. `index.ts` loads
+`DATABASE_URL` set, `psql` on `PATH` (`command -v psql`; `where psql` on
+Windows, which has no `sh`), `docker info` exit code. `index.ts` loads
 `.env` through `dotenv` first, as `drizzle.config.ts` and
 `vitest.integration.config.mts` do — this project keeps `DATABASE_URL` there,
 not in the shell.
@@ -130,7 +139,8 @@ also carried uncommitted work — the gate checks both, so the commit alone woul
 attribute a run to a tree it never saw.
 
 `result` is `passed | failed | skipped`. `exitCode` is `null` only for a check
-that never started — `skipped`, by `unmetRequirement()` or a `null` `argv`;
+that never started — `skipped`, by `unmetRequirement()` or a `null` `argv`, or
+`failed` because its command could not be spawned;
 `hygiene` and `node-version` (`T-031`) both run in-process and both set `0` or
 `1` as a subprocess-backed check would, never `null`. `reason` is present on a
 skip, and also on `node-version` — the one check that is never a check — which
