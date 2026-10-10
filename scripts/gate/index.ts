@@ -37,6 +37,7 @@ import {
 } from "./checks";
 import { runHygiene } from "./hygiene";
 import { unsupportedNodeVersion } from "./nodeVersion";
+import { commandLine } from "./spawn";
 import {
   appendLedger,
   counts,
@@ -151,8 +152,9 @@ function runCheck(
     };
   }
 
-  const [command, ...args] =
-    typeof check.argv === "function" ? check.argv() : check.argv;
+  const [command, args] = commandLine(
+    typeof check.argv === "function" ? check.argv() : check.argv,
+  );
   const result = spawnSync(command, args, {
     encoding: "utf8",
     // A `docker build` or a full `next build` overruns Node's 1 MiB default,
@@ -160,7 +162,10 @@ function runCheck(
     // exit code — the value the ledger reserves for a check that never started.
     maxBuffer: 64 * 1024 * 1024,
   });
-  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+  // A command that never started has no stdout or stderr; its spawn error is
+  // the only thing that says why, and without it the row is an empty failure.
+  const output = `${result.error ? `${result.error.message}
+` : ""}${result.stdout ?? ""}${result.stderr ?? ""}`;
   return {
     name: check.name,
     result: result.status === 0 ? "passed" : "failed",

@@ -321,8 +321,11 @@ function probeEnvironment(requirement: Requirement): string | null {
 }
 
 function commandExists(command: string): boolean {
-  return (
-    spawnSync("sh", ["-c", `command -v ${command}`], { stdio: "ignore" })
-      .status === 0
-  );
+  // `sh` is not on a Windows PATH, so `command -v` there reports every command
+  // missing; `where` is Windows' own lookup.
+  const probe =
+    process.platform === "win32"
+      ? spawnSync("where", [command], { stdio: "ignore" })
+      : spawnSync("sh", ["-c", `command -v ${command}`], { stdio: "ignore" });
+  return probe.status === 0;
 }
