@@ -25,3 +25,17 @@ export function commandLine(
   }
   return [command, args];
 }
+
+/**
+ * What a finished command printed. A command that never started has no stdout
+ * or stderr, and its spawn error is the only thing that says why; without it
+ * the row is a failure with nothing under it.
+ */
+export function commandOutput(result: {
+  error?: Error;
+  stdout?: string | null;
+  stderr?: string | null;
+}): string {
+  const error = result.error ? `${result.error.message}\n` : "";
+  return `${error}${result.stdout ?? ""}${result.stderr ?? ""}`;
+}

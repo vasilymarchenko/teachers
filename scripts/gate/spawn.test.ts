@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { commandLine } from "./spawn";
+import { commandLine, commandOutput } from "./spawn";
 
 const NODE = "/usr/bin/node";
 const NPM_CLI = "/usr/lib/node_modules/npm/bin/npm-cli.js";
@@ -43,5 +43,23 @@ describe("commandLine", () => {
         npm_execpath: NPM_CLI,
       }),
     ).toEqual(["psql", [url, "-f", "scripts/verify-schema.sql"]]);
+  });
+});
+
+describe("commandOutput", () => {
+  it("says why a command never started", () => {
+    expect(
+      commandOutput({
+        error: new Error("spawnSync npm ENOENT"),
+        stdout: null,
+        stderr: null,
+      }),
+    ).toBe("spawnSync npm ENOENT\n");
+  });
+
+  it("is what the command printed when it ran", () => {
+    expect(commandOutput({ stdout: "out\n", stderr: "err\n" })).toBe(
+      "out\nerr\n",
+    );
   });
 });

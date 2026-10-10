@@ -37,7 +37,7 @@ import {
 } from "./checks";
 import { runHygiene } from "./hygiene";
 import { unsupportedNodeVersion } from "./nodeVersion";
-import { commandLine } from "./spawn";
+import { commandLine, commandOutput } from "./spawn";
 import {
   appendLedger,
   counts,
@@ -162,10 +162,7 @@ function runCheck(
     // exit code — the value the ledger reserves for a check that never started.
     maxBuffer: 64 * 1024 * 1024,
   });
-  // A command that never started has no stdout or stderr; its spawn error is
-  // the only thing that says why, and without it the row is an empty failure.
-  const output = `${result.error ? `${result.error.message}
-` : ""}${result.stdout ?? ""}${result.stderr ?? ""}`;
+  const output = commandOutput(result);
   return {
     name: check.name,
     result: result.status === 0 ? "passed" : "failed",
