@@ -34,7 +34,9 @@ The only non-Ukrainian text: file names, scenario ids, frontmatter, and the
   ---
   ```
 
-  Body, in this order: a table `ID | Сценарій | Розділ | Перевірено` with one
+  Body, in this order: one paragraph saying where the scenarios were walked
+  — a production build with the demo data, the deployed instance, or a
+  development server — and on what date; a table `ID | Сценарій | Розділ | Перевірено` with one
   row per scenario; «Задумано, але не збудовано» (what the specification or a
   feature promises, with its section); «Розбіжності» (where a source says one
   thing and the application does another, and what the application does);
@@ -86,7 +88,15 @@ which dates, which views.
   (one part fails, the rest does not). The categories that do not apply are
   named on the *Не стосується* line, so a reader can tell "considered" from
   "forgotten". Each case states what the application **does** now, not what it
-  should do.
+  should do — and what the **teacher meets**, not what the code holds:
+  - a refusal is stated with the input that triggers it, taken from the
+    condition in the code, not from the wording of its message; at a date
+    boundary, both sides are stated (today is accepted, yesterday is not);
+  - where the browser stops the input before the application sees it (a
+    required field, a length limit, a web-address field), the case says so
+    instead of quoting the application's refusal;
+  - a refusal the form gives no way to reach — the field is not shown in that
+    state — is not a case at all.
 - **Перевірено** — one of three:
   - `у браузері <date>` — walked through in a running application on that date;
   - `у коді` — read from the pages, the validation and the tests, not run;
@@ -95,7 +105,10 @@ which dates, which views.
 
   When the main path was walked and some steps were not, the label is
   `у браузері <date>` and each step not walked ends with «(у браузері не
-  пройдено)».
+  пройдено)». **The same holds for every edge case:** the label speaks for the
+  steps and for the cases that were tried, and a case taken from the code and
+  not tried in the browser ends with «(у браузері не пройдено)». Without it, a
+  reader takes the case as walked.
 
 ## Ids
 
@@ -107,7 +120,8 @@ by **Вилучено:** the date, why, and the scenario that replaced it, if an
 
 | Source | Trusted for |
 |---|---|
-| the code — pages, Server Actions, validation, tests | what the application does: it decides |
+| the code — pages, form components, Server Actions, validation, tests | what the application does: it decides |
+| a walk through the running application | what the teacher actually meets: it checks the code's reading, word for word |
 | `docs/demo-scenario.md` | what was walked through in a browser, on its date |
 | a feature layer marked done | what that feature changed |
 | `docs/specs/specification.md` | what was intended, where the code is silent |

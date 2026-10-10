@@ -18,9 +18,10 @@ refs:
 
 Write down what a teacher can do in the application now, and what they see at
 each step, as the catalogue `docs/scenarios/` that ADR-030 decides on, and give
-the repository a skill that builds and refreshes it from the specification,
-the demo scenario and the feature layers, with the code deciding where they
-disagree. This is the baseline that feature descriptions in `docs/features/`
+the repository a skill that builds and refreshes it from the code and a walk
+through the running application, taking steps and intent from the
+specification, the demo scenario and the feature layers, with the code
+deciding where they disagree. This is the baseline that feature descriptions in `docs/features/`
 will be layered over.
 
 ## Acceptance criteria
@@ -44,8 +45,9 @@ will be layered over.
       catalogue.
 - [x] A first `/teachers-scenarios` run on `main` writes `docs/scenarios/`:
       every page a teacher reaches and every write a page offers appear in some
-      scenario's `trace`, every scenario carries a verification label, and
-      its disagreements and open questions have been put to the user.
+      scenario's `trace`, every scenario carries a verification label, the
+      disagreements are recorded in the README, and every question the code
+      could not settle has been put to the user.
 - [x] `npm run gate` passes.
 
 ## Notes
@@ -59,3 +61,12 @@ will be layered over.
 - `docs/scenarios/CLAUDE.md` gained one rule during the run: a scenario whose
   main path was walked but some steps were not keeps `у браузері <date>` and
   marks each step not walked in place.
+- The review of PR 59 walked the catalogue against the deployed instance on
+  2026-10-10 and found three edge cases that were false under a
+  `у браузері` label: S-023 (the deployed page shows "Invalid input"), S-014
+  (a last day of today is accepted), S-024 (a refusal the form cannot reach).
+  The skill and `docs/scenarios/CLAUDE.md` were corrected so that edge cases
+  carry their own «(у браузері не пройдено)», refusals are read from the
+  condition and checked against the form component, the refresh diff covers
+  `components/`, `lib/db/queries/` and `lib/time/`, and Phase 6 says which
+  build to walk and which writes a shared instance allows.

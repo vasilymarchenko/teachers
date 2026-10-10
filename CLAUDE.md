@@ -6,7 +6,7 @@ What is built and what is next is tracked in `docs/backlog/README.md`, not here.
 
 - `docs/specs/specification.md` — the product specification (Ukrainian): the idea the product started from. It is kept as that and not updated as features arrive (ADR-030)
 - `docs/scenarios/` — what a teacher can do in the application now and what they see at each step, as a catalogue of scenarios; conventions in its `CLAUDE.md`, built and refreshed by `/teachers-scenarios`
-- `docs/features/` — one directory per feature: its idea and its scenarios, a layer over `docs/scenarios/` that is folded into it when the feature is done
+- `docs/features/` — one directory per feature: its idea and its scenarios, a layer over `docs/scenarios/` that is folded into it when the feature is done. None exists yet; the format arrives with the skill that writes them (ADR-030)
 - `docs/tech-stack.md` — stack and its rationale
 - `docs/architecture/architect-overview.md` — application architecture: data model, layers, trade-offs (§9) and open questions (§10)
 - `docs/architecture/glossary.md` — binds each Ukrainian product term to its English identifier; new domain terms go there first
