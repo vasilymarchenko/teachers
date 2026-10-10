@@ -141,8 +141,8 @@ Every page a teacher can reach and every write a page offers appear in the
 
 A feature in `docs/features/<slug>/` describes its scenarios as a layer over
 this catalogue: each one either names the `S-NNN` it changes or is a new
-scenario with an id taken from `next_id`. While the feature is not done the
-catalogue does not include it. When it is done, the layer is folded in: changed
+scenario with an id taken from `next_id`. While the feature is not done — its
+`idea.md` status, `docs/features/CLAUDE.md` — the catalogue does not include it. When it is done, the layer is folded in: changed
 scenarios are rewritten in place, new ones added to their area, and their
 `trace` names the feature.
 

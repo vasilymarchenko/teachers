@@ -2,9 +2,11 @@
 id: T-064
 type: ticket
 title: Feature idea — /teachers-idea turns a raw idea into an agreed idea.md through an interview
-status: todo
+status: done
 depends_on: [T-063]
 refs:
+  - docs/features/CLAUDE.md
+  - .claude/skills/teachers-idea/SKILL.md
   - docs/architecture/decisions/ADR-030-current-behaviour-is-a-catalogue-of-teacher-scenarios.md
   - docs/scenarios/CLAUDE.md
   - .claude/skills/teachers-scenarios/SKILL.md
@@ -30,7 +32,7 @@ catalogue from this document, are separate work.
 
 ## Acceptance criteria
 
-- [ ] `docs/features/CLAUDE.md` (English, for the agent) states the feature
+- [x] `docs/features/CLAUDE.md` (English, for the agent) states the feature
       directory's convention: the layout of `docs/features/<slug>/` and how a
       slug is chosen; the frontmatter of `idea.md`, including a status that
       says whether the idea is a draft, agreed, being built or done — the
@@ -40,14 +42,14 @@ catalogue from this document, are separate work.
       kept verbatim in whatever language it was given); where an open question
       of the idea lives and when it becomes a backlog `Q-NNN`; and what may
       change in `idea.md` once it is agreed.
-- [ ] `idea.md` has these sections, in this order: the raw idea, verbatim; the
+- [x] `idea.md` has these sections, in this order: the raw idea, verbatim; the
       problem, with no solution in it; the idea after the interview, with what
       changes for the teacher and what does not; what the teacher will get —
       criteria a teacher can observe; the boundaries — what is out of scope;
       the rejected paths, each with the reason it was rejected; the risks; the
       open questions. Delivery order appears only as an order a teacher can
       see; technical layers belong to the design, not to the idea.
-- [ ] `.claude/skills/teachers-idea/SKILL.md` holds the method only, and every
+- [x] `.claude/skills/teachers-idea/SKILL.md` holds the method only, and every
       rule about the document is in `docs/features/CLAUDE.md`. The method:
   - the raw idea is recorded verbatim before any question is asked;
   - the documents are read first, and nothing they answer is asked — the
@@ -66,17 +68,32 @@ catalogue from this document, are separate work.
     text, no question is asked after it is written, and an answer is never
     invented — an unanswered question goes to the open questions;
   - the document stays within a word budget the convention states.
-- [ ] The skill carries the `teachers-` prefix, and its description says when
+- [x] The skill carries the `teachers-` prefix, and its description says when
       to use it and what it does not do (the scenarios, the design, the
       tickets).
-- [ ] The root `CLAUDE.md` document list describes `docs/features/` by its
+- [x] The root `CLAUDE.md` document list describes `docs/features/` by its
       convention and its skill, instead of saying the format is still to come.
-- [ ] `docs/architecture/harness.md` lists the skill and the feature
+- [x] `docs/architecture/harness.md` lists the skill and the feature
       directory wherever it lists `/teachers-scenarios` and the catalogue, and
       the document table in `docs/architecture/decisions/README.md` has a row
       for `docs/features/`.
-- [ ] An ADR is recorded only if building this chooses between real
+- [x] An ADR is recorded only if building this chooses between real
       alternatives that ADR-030 did not already decide.
-- [ ] `npm run gate` passes.
+- [x] `npm run gate` passes.
 
 ## Notes
+
+- Statuses of `idea.md` are `agreed | done`, not a longer lifecycle: the
+  skill writes the file only after the user confirms its text, so a draft never
+  reaches the repository, and whether a feature is being built is read from the
+  backlog. The interview has one depth, not the easy/medium/hard dial of the
+  sample interview skill it was adapted from.
+- New product terms go into a new glossary §9 with no identifier, following the
+  precedent of §6 (second-phase terms); the design fills the identifier.
+- An open question stays in `idea.md` and becomes a `Q-NNN` only when a ticket
+  has to wait on it.
+- No ADR: ADR-030 already chose `docs/features/` as the home of a feature, and
+  nothing built here chose between real alternatives beyond it.
+- `npm run gate` cannot start lint and typecheck on Windows (it spawns `npm`
+  without a shell, and Windows names it `npm.cmd`); both were run directly and
+  pass, and hygiene passed in the gate. The gate defect is outside this ticket.
