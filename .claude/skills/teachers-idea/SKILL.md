@@ -75,8 +75,9 @@ categories, picked by the shape of the idea rather than in a fixed order:
   often; in terms of the scenarios from the Phase 3 map;
 - **the solution** — why this way, what the teacher does instead today;
 - **what the teacher will get** — the action and what the teacher sees after
-  it, for each changed or new intent: this is where «a phrase must end where
-  the form ends» is decided, scenario by scenario;
+  it, for each changed or new intent. Where the idea gives a new way to do what
+  a catalogue scenario already does, ask whether it must end in what that
+  scenario ends in, and decide it scenario by scenario;
 - **constraints** — what must not change (it becomes «Що не змінюється»),
   dependencies on open questions or on work in flight;
 - **fit** — how it sits with what the application does now and with the
@@ -91,8 +92,8 @@ from scratch; where it fully answers, there is no question.
 
 **When to stop.** When §2–§5 can each be written from the user's answers and
 the documents, with no sentence the skill would have to supply itself. What is
-still unsettled then goes to §8; the interview does not go on until everything
-is settled.
+still unsettled then goes to §8: the interview is not stretched until every
+question has an answer.
 
 **Never invented.** An option the user did not choose is not an answer. If
 `AskUserQuestion` is denied, stop and say so — this skill has no way to work

@@ -2,7 +2,7 @@
 id: T-064
 type: ticket
 title: Feature idea — /teachers-idea turns a raw idea into an agreed idea.md through an interview
-status: in-progress
+status: done
 depends_on: [T-063]
 refs:
   - docs/features/CLAUDE.md
@@ -79,7 +79,7 @@ catalogue from this document, are separate work.
       for `docs/features/`.
 - [x] An ADR is recorded only if building this chooses between real
       alternatives that ADR-030 did not already decide.
-- [ ] `npm run gate` passes.
+- [x] `npm run gate` passes.
 
 ## Notes
 
@@ -98,4 +98,5 @@ catalogue from this document, are separate work.
 - `npm run gate` cannot start lint and typecheck on Windows (it spawns `npm`
   without a shell, and Windows names it `npm.cmd`); both were run directly and
   pass, and hygiene passed in the gate. The gate defect is outside this ticket;
-  the gate criterion is ticked on CI's verdict on the pushed head (ADR-007).
+  the gate criterion is ticked on CI's verdict (ADR-007): `ci.yml` green on
+  PR 61 at 6c940a8.
