@@ -64,6 +64,10 @@ base: <sha>                 # the origin/main commit the interview read
   the last of the feature's scenarios, and it is what `docs/scenarios/CLAUDE.md`
   and `/teachers-scenarios` read as «a feature layer marked done».
 
+Being built is not a status of its own: it is read from the backlog. Every
+ticket that builds part of a feature names `docs/features/<slug>/` in its
+`refs:`, and a feature is being built while one of those tickets is not done.
+
 ### Sections
 
 In this order, with these headings:
@@ -104,9 +108,10 @@ within **1200 words**. An idea that does not fit is usually two features.
 An open question lives in `idea.md` §8, in Ukrainian, with what each answer
 would change. It becomes a backlog question only when a ticket has to wait on
 it: then a `Q-NNN` is filed under `docs/backlog/CLAUDE.md` and its id is put in
-an HTML comment after the question — `<!-- Q-NNN -->`. When it is answered, the
-answer goes into the section it decides, the question leaves §8, and the
-`Q-NNN`, if there was one, is closed by the backlog's rules.
+an HTML comment after the question — `<!-- Q-NNN -->`. An answer is a change
+to what was agreed, and goes the way «Changes after agreement» says: the answer
+goes into the section it decides, the question leaves §8, and the `Q-NNN`, if
+there was one, is closed by the backlog's rules.
 
 ## New product terms
 
@@ -119,8 +124,9 @@ to its section. A term is never used in `idea.md` before it is in the glossary.
 ## Changes after agreement
 
 - **Сира ідея** never changes.
-- A change to §3, §4 or §5 changes what was agreed. It goes through
-  `/teachers-idea` on the same slug, which interviews only the change and asks
-  for confirmation again; `updated` moves, `agreed` does not.
-- A correction that changes no meaning — a typo, a wrong scenario id, an answered
-  question moved into its section — is a direct change.
+- A change to §3, §4 or §5 changes what was agreed, and so does an answer to
+  an open question, wherever it lands. It goes through `/teachers-idea` on the
+  same slug, which interviews only the change and asks for confirmation again;
+  `updated` moves, `agreed` does not.
+- A correction that changes no meaning — a typo, a wrong scenario id — is a
+  direct change.

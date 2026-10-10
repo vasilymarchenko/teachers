@@ -24,7 +24,8 @@ answer, a fact cited from a document, or an open question.
   user choose in Phase 4's first batch.
 - **New or revision.** No `docs/features/<slug>/idea.md` on `origin/main`: a
   new idea. Otherwise a revision: §1 stays, and the interview covers only the
-  change the user brings (`docs/features/CLAUDE.md`, «Changes after agreement»).
+  change the user brings — a changed promise, or an answer to an open question
+  (`docs/features/CLAUDE.md`, «Changes after agreement»).
 - **Branch.** An idea is a direct change (root `CLAUDE.md`, "A ticket run, or a
   direct change"). On `main`, or on a branch carrying unrelated work, the branch
   `docs/idea-<slug>` is cut from `origin/main` — but only in Phase 8, when there
@@ -144,9 +145,10 @@ glossary in Phase 8.
    is removed or becomes an open question.
 4. **Scenarios** — every `S-NNN` cited exists in `docs/scenarios/`, and every
    item of «Що змінюється» names a scenario or says it is new.
-5. **Language** — outside the frontmatter, §1 and comments: no backticks, no
-   paths, no `T-`/`ADR-`/`Q-` ids, no words in Latin letters; every product
-   term is in the glossary or in the batch above. Grep, then read every hit.
+5. **Language** — the rule and its exceptions are `docs/features/CLAUDE.md`,
+   «Language». Grep the text outside those exceptions for backticks, paths,
+   ids and words in Latin letters, and read every hit; every product term is
+   in the glossary or in the batch above.
 6. **Budget** — the body within the word budget of `docs/features/CLAUDE.md`.
    Over it: tighten §2 and §3 first; never drop a risk, a boundary or a
    rejected path to fit — say instead that the idea may be two features, and

@@ -2,7 +2,7 @@
 id: T-064
 type: ticket
 title: Feature idea — /teachers-idea turns a raw idea into an agreed idea.md through an interview
-status: done
+status: in-progress
 depends_on: [T-063]
 refs:
   - docs/features/CLAUDE.md
@@ -35,9 +35,9 @@ catalogue from this document, are separate work.
 - [x] `docs/features/CLAUDE.md` (English, for the agent) states the feature
       directory's convention: the layout of `docs/features/<slug>/` and how a
       slug is chosen; the frontmatter of `idea.md`, including a status that
-      says whether the idea is a draft, agreed, being built or done — the
-      «marked done» that `docs/scenarios/CLAUDE.md` and `/teachers-scenarios`
-      read; the sections of `idea.md` and what each holds; the language rule
+      says whether the idea is agreed or done — the «marked done» that
+      `docs/scenarios/CLAUDE.md` and `/teachers-scenarios` read — and where
+      it is read from that a feature is being built; the sections of `idea.md` and what each holds; the language rule
       (Ukrainian, for a teacher, product terms from the glossary; the raw idea
       kept verbatim in whatever language it was given); where an open question
       of the idea lives and when it becomes a backlog `Q-NNN`; and what may
@@ -79,14 +79,15 @@ catalogue from this document, are separate work.
       for `docs/features/`.
 - [x] An ADR is recorded only if building this chooses between real
       alternatives that ADR-030 did not already decide.
-- [x] `npm run gate` passes.
+- [ ] `npm run gate` passes.
 
 ## Notes
 
 - Statuses of `idea.md` are `agreed | done`, not a longer lifecycle: the
   skill writes the file only after the user confirms its text, so a draft never
   reaches the repository, and whether a feature is being built is read from the
-  backlog. The interview has one depth, not the easy/medium/hard dial of the
+  backlog. Criterion 1 was narrowed from four states to two during the work,
+  on the user's decision. The interview has one depth, not the easy/medium/hard dial of the
   sample interview skill it was adapted from.
 - New product terms go into a new glossary §9 with no identifier, following the
   precedent of §6 (second-phase terms); the design fills the identifier.
@@ -96,4 +97,5 @@ catalogue from this document, are separate work.
   nothing built here chose between real alternatives beyond it.
 - `npm run gate` cannot start lint and typecheck on Windows (it spawns `npm`
   without a shell, and Windows names it `npm.cmd`); both were run directly and
-  pass, and hygiene passed in the gate. The gate defect is outside this ticket.
+  pass, and hygiene passed in the gate. The gate defect is outside this ticket;
+  the gate criterion is ticked on CI's verdict on the pushed head (ADR-007).
