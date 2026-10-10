@@ -18,8 +18,9 @@ refs:
 
 When a teacher adds or edits an information event and gives it a «Останній
 день» earlier than its «Дата», the form shows «Дата завершення не може бути
-раніша за дату початку» under «Останній день» — the message
-`lib/validation/event.ts` names — and not zod's default «Invalid input», which
+раніша за дату початку» under «Останній день» — the message of
+`DATE_RANGE_RULE` in `lib/validation/fields.ts`, which `lib/validation/event.ts`
+uses — and not zod's default «Invalid input», which
 is what the running application shows today (S-023, S-025). The year,
 semester and non-teaching-period forms, which share the rule, keep showing the
 same message, and a test pins the information-event message under the same
@@ -40,9 +41,11 @@ module loading the production bundle has.
       schema under `lib/validation/` before parsing, the way the server bundle
       does, and asserts the information-event refusal carries the message.
 - [ ] After every schema under `lib/validation/` is loaded, `DATE_RANGE_RULE`
-      in `lib/validation/fields.ts` still holds its `message`. No object a
-      schema passes to zod is changed by that call in a way another schema
-      can see.
+      in `lib/validation/fields.ts` still holds its `message`, unchanged. The
+      same holds for every other object exported from `lib/validation/` that
+      a schema passes to `.refine(fn, params)` or spreads into
+      `ctx.addIssue(...)`: a test asserts each one's fields are the same
+      after all schemas are loaded as before.
 - [ ] In `docs/scenarios/events.md`, the S-023 edge case states the Ukrainian
       message and is walked in a browser (its «(у браузері не пройдено)» is
       not added). S-025's reference to it holds. The S-023 row is removed from
