@@ -14,6 +14,7 @@ for reading. Order is priority; the ID number is not.
 | [T-039](T-039-teacher-management-console.md) | Manage teacher accounts from the console — create, set password, deactivate, list | done | T-006, T-015 |
 | [T-040](T-040-bell-schedule-start-times-only.md) | Bell schedule — the teacher enters start times and one lesson length, ends are computed | done | T-009 |
 | [T-041](T-041-year-setup-shows-the-way-out.md) | Year setup shows the teacher the next step, and says when the rest of the app is open | done | T-038 |
+| [T-065](T-065-event-date-range-message.md) | Information event — a last day before its date is refused in Ukrainian, not «Invalid input» | todo | T-012 |
 | [T-048](T-048-year-setup-browser-test.md) | Browser test for the first year setup, run in a new e2e job of ci.yml | todo | T-041 |
 | [T-042](T-042-month-day-is-one-click-target.md) | Month view — the whole day is one click target, not only its number | done | T-007 |
 | [T-047](T-047-save-enabled-only-when-changed.md) | Edit forms enable «Зберегти» only when they hold unsaved changes | done | T-009, T-010, T-011, T-012 |
@@ -168,6 +169,8 @@ T-063 depends on nothing and is not drawn: it writes down the behaviour the
 product tickets built, and nothing waits on it.
 T-064 hangs off T-063 and is not drawn: the interview it adds reads the
 catalogue that ticket wrote, and nothing in the diagram waits on it.
+T-065 hangs off T-012 for the information-event form whose refusal it
+corrects; it is not drawn, and nothing in the diagram waits on it.
 
 ## Coverage
 
