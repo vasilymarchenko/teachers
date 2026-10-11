@@ -93,10 +93,56 @@ In this order, with these headings:
    interview, each with the reason it was rejected, in the user's words.
 7. **Ризики** — how the feature could fail the teacher: what triggers it and
    what the teacher meets. Found by a reviewer that saw the idea and not the
-   interview.
+   interview, and kept by the user — or named by the user in the interview.
 8. **Відкриті питання** — what the interview did not settle (below).
 
 A section with nothing in it says so in one line («Немає.»); it is not dropped.
+
+### Skeleton
+
+```markdown
+## 1. Сира ідея
+
+> the user's words, verbatim
+
+## 2. Проблема
+
+Prose.
+
+## 3. Ідея
+
+Prose.
+
+**Що змінюється**
+- S-016 · Поставити інший урок на одну дату — what changes in it.
+- Новий намір: what the teacher can now do.
+
+**Що не змінюється**
+- S-NNN · its title — what stays exactly as now.
+
+**У якому порядку**  <!-- only when the feature arrives in parts -->
+1. …
+
+## 4. Що вчитель отримає
+
+- The action — what the teacher sees after it.
+
+## 5. Межі
+
+- What the feature does not do.
+
+## 6. Відкинуті шляхи
+
+- The path — why it was rejected, in the user's words.
+
+## 7. Ризики
+
+- What triggers it — what the teacher meets.
+
+## 8. Відкриті питання
+
+- The question? What each answer would change. <!-- Q-NNN -->
+```
 
 ### Word budget
 

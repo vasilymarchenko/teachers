@@ -19,9 +19,8 @@ answer, a fact cited from a document, or an open question.
 
 ## Phase 1 — Resolve the run
 
-- **Arguments.** `/teachers-idea <slug> [raw idea]`. No slug: propose two or
-  three from the idea by the slug rule of `docs/features/CLAUDE.md` and let the
-  user choose in Phase 4's first batch.
+- **Arguments.** `/teachers-idea <slug> [raw idea]`. No slug: Phase 2 proposes
+  two or three, right after the raw idea.
 - **New or revision.** No `docs/features/<slug>/idea.md` on `origin/main`: a
   new idea. Otherwise a revision: §1 stays, and the interview covers only the
   change the user brings — a changed promise, or an answer to an open question
@@ -33,12 +32,22 @@ answer, a fact cited from a document, or an open question.
   (`git show origin/main:<path>`; root `CLAUDE.md`, "A session starts from a
   current main").
 - **Working state.** The interview is long, and the session may be compacted
-  in the middle of it. Keep the collected answers and the draft in
-  `.gate/idea-<slug>.md` (git-ignored) and update it after every batch — that
-  file, not the conversation, is what Phase 7 assembles from. Nothing under
-  `docs/` is written before Phase 8.
+  in the middle of it. Keep it in `.gate/idea-<slug>.md` (git-ignored), under
+  these headings: the raw idea, verbatim; the slug, new or revision, and the
+  commit read; the catalogue map (Phase 3); the answers, each with its batch
+  number and the question it answered; the simpler paths and the user's
+  reasons; the risks and what the user did with each; the terms; the draft.
+  Update it after every batch — that file, not the conversation, is what
+  Phase 7 assembles from. Nothing under `docs/` is written before Phase 8.
+- **An interrupted run.** Once the slug is known, look for
+  `.gate/idea-<slug>.md`. If it is there, a previous run stopped: say in one
+  line how far it got — the last phase finished, the batches answered — and ask
+  whether to continue from it or start over. Continuing keeps its raw idea and
+  its answers and resumes at the first phase it did not finish; starting over
+  deletes it.
 
-State in one line: the slug, new or revision, and the commit read.
+Once the slug is known, state in one line: the slug, new or revision, and the
+commit read.
 
 ## Phase 2 — The raw idea
 
@@ -47,11 +56,23 @@ plain chat — «Опиши ідею своїми словами, як є» — 
 verbatim in the working state: no correction, no translation, no merging with
 later answers. Nothing else is asked before it.
 
+If the arguments gave no slug, propose two or three now, from the raw idea and
+by the slug rule of `docs/features/CLAUDE.md`, in one question. The working
+state is created under the chosen slug, with the raw idea written first, and
+the interrupted-run check of Phase 1 runs then.
+
 ## Phase 3 — Read what is already answered
 
 1. `docs/features/CLAUDE.md` — whole.
 2. `docs/architecture/glossary.md` — the Ukrainian column and §9.
-3. `docs/scenarios/README.md`, then the area files the raw idea touches. Map
+3. `docs/scenarios/README.md` — first, whether the catalogue is current: the
+   commits between its `base` and `origin/main` over the paths
+   `/teachers-scenarios` inventories on a refresh (its Phase 2,
+   `git log --oneline <base>..origin/main -- <paths>`). If there are any, the
+   catalogue may not show what a teacher meets now: list them to the user and
+   propose `/teachers-scenarios` first. Going on anyway is the user's call, and
+   the report then says the map was drawn on a catalogue behind `main`.
+   Then the area files the raw idea touches. Map
    the idea onto the catalogue: which scenarios it changes, which it leaves
    alone, and which intents it adds that no scenario has. This map is the
    spine of the interview; keep it in the working state.
@@ -90,6 +111,16 @@ four sentences — not a one-word label. Where a document already answers, the
 question cites it («Специфікація §5.2 каже …; це досі так?») instead of asking
 from scratch; where it fully answers, there is no question.
 
+**Options, or a plain question.** Options when the space of answers is known:
+alternatives the documents or the idea itself give, or a plain scale («щодня /
+щотижня / раз на семестр»). A question whose answer is a fact only the user
+holds — a concrete episode, what the teacher does today, why it matters now —
+is asked in plain chat, without options: options there would be the skill's
+guesses, and the nearest guess would be taken for the answer. Such questions
+go together in one message, not one per turn. No option is ever marked as
+recommended, and a question about a fact offers «Не знаю», which sends the
+point it was to settle to §8.
+
 **When to stop.** When §2–§5 can each be written from the user's answers and
 the documents, with no sentence the skill would have to supply itself. What is
 still unsettled then goes to §8: the interview is not stretched until every
@@ -112,18 +143,47 @@ to §6 with the user's reason.
 ## Phase 6 — Risks, from a clean context
 
 Dispatch one `general-purpose` subagent. Its prompt, in English, holds only:
-the raw idea; the draft §3–§5 as agreed; the paths `docs/scenarios/`,
-`docs/specs/specification.md` and `docs/architecture/glossary.md`; and the edge
-categories of `docs/scenarios/CLAUDE.md` («Особливі випадки») as the lenses.
-**Not** the interview, not the rejected paths, not the skill's own view of the
-idea — the reviewer must not inherit the optimism of the conversation. It
-returns five to ten ways the idea fails the teacher: what triggers it, what
-the teacher meets, how one would notice.
+the raw idea; the draft §2–§5 as agreed; the paths `docs/scenarios/`,
+`docs/specs/specification.md` and `docs/architecture/glossary.md`; and the
+lenses below. **Not** the interview, not the rejected paths, not the skill's
+own view of the idea — the reviewer must not inherit the optimism of the
+conversation. The prompt forbids it to read `.gate/`: the working state holds
+the interview. It returns five to ten ways the idea fails the teacher: what
+triggers it, what the teacher meets, how one would notice.
 
-Put them to the user, up to four per call. For each: keep it as a risk (§7),
-answer it with a boundary (§5) or a change to the idea (back to Phase 4 for
-that point), make it an open question (§8), or drop it with a reason. A risk is
-never softened in the wording; one the user drops is not recorded.
+The lenses:
+
+- the edge categories of `docs/scenarios/CLAUDE.md` («Особливі випадки»);
+- **the problem left standing** — the teacher gets everything §4 promises, and
+  what §2 describes is still true;
+- **a broken promise** — something «Що не змінюється» or a neighbouring
+  catalogue scenario keeps, which the idea changes after all;
+- **a silent wrong result** — the application does something other than the
+  teacher meant, and nothing on the screen shows it;
+- **no way back** — an action the teacher cannot undo, or can undo only by
+  doing the work again;
+- **what is already there** — the years, timetables and events the teacher
+  entered before the feature arrived;
+- **more work** — the new way takes more steps or more attention than the one
+  it replaces.
+
+**Before the user sees them,** check each risk against the catalogue and the
+documents. One built on a wrong reading of what the application does is
+dropped, and the report counts it; one a §5 boundary already answers is not
+put to the user.
+
+Put the rest to the user, up to four per call. For each: keep it as a risk
+(§7), answer it with a boundary (§5) or a change to the idea (back to Phase 4
+for that point), make it an open question (§8), or drop it with a reason. A
+risk is never softened in the wording; one the user drops is not recorded. If
+the reason the user gives contradicts a document or an earlier answer, say so
+once, citing both; the user decides, and the point is not raised again. A risk
+the user named themselves during the interview goes to §7 as they stated it.
+
+**A change gets one more look.** When a risk here, or a change asked for in
+Phase 7, alters §3–§5, the changed point goes to one more subagent pass, built
+by the same rules and limited to that point. Its risks go through the same
+choices. There is no third pass: what it leaves unsettled goes to §8.
 
 ## Phase 7 — Assemble, check, confirm
 
@@ -142,10 +202,11 @@ glossary in Phase 8.
 1. **Sections** — all eight, in order; an empty one says «Немає.».
 2. **Raw idea** — §1 equals the Phase 2 text, character for character.
 3. **Provenance** — every sentence of §2–§7 traces to an answer, a cited
-   document, or a subagent risk the user kept. A sentence that traces to none
-   is removed or becomes an open question.
-4. **Scenarios** — every `S-NNN` cited exists in `docs/scenarios/`, and every
-   item of «Що змінюється» names a scenario or says it is new.
+   document, a subagent risk the user kept, or a risk the user named. A
+   sentence that traces to none is removed or becomes an open question.
+4. **Scenarios** — every `S-NNN` cited exists in `docs/scenarios/` on
+   `origin/main`, and every item of «Що змінюється» names a scenario or says
+   it is new.
 5. **Language** — the rule and its exceptions are `docs/features/CLAUDE.md`,
    «Language». Grep the text outside those exceptions for backticks, paths,
    ids and words in Latin letters, and read every hit; every product term is
@@ -153,11 +214,14 @@ glossary in Phase 8.
 6. **Budget** — the body within the word budget of `docs/features/CLAUDE.md`.
    Over it: tighten §2 and §3 first; never drop a risk, a boundary or a
    rejected path to fit — say instead that the idea may be two features, and
-   let the user decide.
+   let the user choose which part stays under this slug. The run goes on for
+   that part; the other goes into the report, in the user's words, as the raw
+   idea of a later run.
 
 **Confirm.** Show the full text in chat and ask one question: confirm it as
-written, or say what to change. A change goes back through the check. Loop
-until the user confirms. This is the last question the run asks.
+written, or say what to change. A change goes back through the check, and one
+that alters §3–§5 also gets the one more look of Phase 6. Loop until the user
+confirms. This is the last question the run asks.
 
 ## Phase 8 — Write and hand over
 
@@ -177,9 +241,11 @@ its content.
 
 **Report** in the user's language: the slug and the path; how many scenarios
 the idea changes and how many intents it adds; how many simpler paths were
-rejected; how many risks were kept, moved or dropped; the open questions and
-any `Q-NNN` filed; the terms added. The next step is the feature's scenarios
-over the catalogue.
+rejected; how many risks were kept, moved or dropped, and how many were
+dropped before the user saw them as a wrong reading of the application; the
+open questions and any `Q-NNN` filed; the terms added; whether the catalogue
+was behind `main`; a part split off by the budget, if any. The next step is the
+feature's scenarios over the catalogue.
 
 ## What this skill does not do
 

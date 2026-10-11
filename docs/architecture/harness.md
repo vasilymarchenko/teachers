@@ -276,6 +276,7 @@ Diff, у якому є хоч один файл з кодом, — це `code`, 
 | `last-run.json` | gate, весь останній запуск | рев'ю фаза 3, fix-loop крок 4, `--report` |
 | `findings.json` | fix-loop | наступний раунд, відновлена сесія |
 | `run.json` | `teachers-ticket` (і ключ `loop` — fix-loop) | кожна фаза, `teachers-review-round`, `--resume` |
+| `idea-<slug>.md` | `teachers-idea`, після кожної партії питань | фаза 7 (збирає `idea.md`), перерваний запуск; субагенту ризиків читати заборонено |
 
 ---
 
