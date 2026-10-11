@@ -85,6 +85,21 @@ export function echoBothWeeks(
   return echoed;
 }
 
+/**
+ * Whether one row's toggle opens on, from the form state's `values`.
+ *
+ * Only a refusal's echo can switch it on. A fresh form, a success and the
+ * form after «Скопіювати з чисельника» open every toggle off, whatever the two
+ * weeks store at the row: a toggle that opened on for an equal row would write
+ * the first edit after a copy back into the week it was copied from (ADR-025).
+ */
+export function bothWeeksOpensOn(
+  values: Record<string, string> | undefined,
+  lessonNumber: number,
+): boolean {
+  return values?.[templateBothWeeksField(lessonNumber)] === "on";
+}
+
 /** One row as the form submits it: every field of the view, plus its number. */
 const rawEntry = rawSlotFields.extend({
   lessonNumber: z.number().int().min(0).max(9),

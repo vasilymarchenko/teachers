@@ -136,5 +136,6 @@ what it wrote into the other week, and its toggle opens off (ADR-025).
 Implemented on 2026-10-11: `saveDaySlots()` in `templateSlots.ts`,
 `sameLesson()` in `slotFields.ts`, the toggle and the row's line in
 `components/schedule/`; the mechanics are in
-`design/T-010-weekly-template-editor.md` §1, §2 and §5. Remaining: the
-review and the acceptance criteria ticked against evidence.
+`design/T-010-weekly-template-editor.md` §1, §2 and §5. The toggle's
+opening state is `bothWeeksOpensOn()` in `templateDay.ts`, tested for the
+copy flow.

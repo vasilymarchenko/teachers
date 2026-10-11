@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { EMPTY_FORM_STATE, type FormState } from "./formState";
 import { slotPayloadFor } from "./slotPayload";
 import {
+  bothWeeksOpensOn,
   echoBothWeeks,
   readTemplateBothWeeks,
   readTemplateDay,
@@ -261,5 +263,23 @@ describe("the «в обох тижнях» toggles (T-043)", () => {
       [templateBothWeeksField(2)]: "on",
       [templateBothWeeksField(3)]: "",
     });
+  });
+
+  it("opens every toggle off on a fresh form, after a success and after a copy", () => {
+    // A fresh form and the copy's re-render carry no values; a save answers
+    // `{}` or `{ notice }`. None of them may switch a toggle on (ADR-025).
+    const states: FormState[] = [
+      EMPTY_FORM_STATE,
+      {},
+      { notice: "Також змінено у знаменнику: урок 2" },
+    ];
+    for (const state of states) {
+      expect([1, 2, 3].filter((n) => bothWeeksOpensOn(state.values, n))).toEqual([]);
+    }
+  });
+
+  it("opens a toggle on only where a refusal echoed it on", () => {
+    const values = echoBothWeeks(undefined, submitted(), [1, 2, 3]);
+    expect([1, 2, 3].filter((n) => bothWeeksOpensOn(values, n))).toEqual([2]);
   });
 });

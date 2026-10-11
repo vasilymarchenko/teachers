@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { TemplateSlotInput } from "./types";
+import { EMPTY_FORM_STATE } from "@/lib/validation/formState";
 import { sameLesson } from "@/lib/validation/slotFields";
+import { bothWeeksOpensOn } from "@/lib/validation/templateDay";
 import {
   copyParity,
   otherParity,
@@ -274,13 +276,16 @@ describe("saveDaySlots — «в обох тижнях» (T-043, ADR-025)", () =>
       (s) => s.weekday === "MON" && s.parity === "DENOMINATOR",
     );
     const next = copiedDenominator.map((s) => (s.lessonNumber === 2 ? chemistry : s));
+    // The form after the copy carries no values, so it opens the toggles from
+    // nothing — the rule `DayForm` renders with, not an assumption.
+    const bothWeeks = [1, 2, 3].filter((n) => bothWeeksOpensOn(EMPTY_FORM_STATE.values, n));
 
     const result = saveDaySlots(
       copied,
       { weekday: "MON", parity: "DENOMINATOR" },
       next,
       [1, 2, 3],
-      [],
+      bothWeeks,
       same,
     );
 

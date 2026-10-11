@@ -50,7 +50,7 @@ domain; the action passes `sameLesson(view, …)` from
 
 | File | Exports |
 |---|---|
-| `lib/validation/templateDay.ts` | `templateDayInputFor(view)`, `readTemplateDay()`, `templateDayFieldErrors()`, `templateSlotField()`, `TEMPLATE_SLOT_FIELDS`; `templateBothWeeksField()`, `readTemplateBothWeeks()`, `echoBothWeeks()` (T-043) |
+| `lib/validation/templateDay.ts` | `templateDayInputFor(view)`, `readTemplateDay()`, `templateDayFieldErrors()`, `templateSlotField()`, `TEMPLATE_SLOT_FIELDS`; `templateBothWeeksField()`, `readTemplateBothWeeks()`, `echoBothWeeks()`, `bothWeeksOpensOn()` (T-043) |
 | `lib/validation/slotFields.ts` | `sameLesson(view, a, b)` (T-043) beside the shared lesson fields |
 | `lib/validation/templateBoundary.ts` | `templateBoundaryInput`, `TEMPLATE_BOUNDARY_FIELD` |
 | `lib/validation/enums.ts` | `SCHEDULE_VIEW_VALUES` added to the existing tuples |
@@ -192,7 +192,7 @@ rendered row, so a toggle submitted off is echoed off rather than missing.
 
 | Action | `mutate` |
 |---|---|
-| day | `saveDaySlots(slots, { weekday, parity }, submitted, lessonNumbers, bothWeeks, sameLesson)` |
+| day | `saveDaySlots(slots, { weekday, parity }, submitted, lessonNumbers, bothWeeks, (a, b) => sameLesson(view, a, b))` |
 | copy | `copyParity(slots, from, to)` |
 | boundary | `(slots) => [...slots]` |
 
@@ -305,7 +305,7 @@ draws it: `Link2` on a filled `primary` chip when on, `Link2Off` on an
 outlined muted chip when off. Its accessible name and hover hint are «Урок 3 —
 в обох тижнях»; below `md` the words «в обох тижнях» are shown beside the icon.
 It opens off whatever the two weeks hold, and after a refusal shows the echoed
-`both-<n>`. `DayForm` passes `untrackedToggles()` — the toggles of rows where
+`both-<n>` — both read by `bothWeeksOpensOn()`. `DayForm` passes `untrackedToggles()` — the toggles of rows where
 `sameLesson()` holds between the two weeks' stored payloads — to
 `TrackedForm`'s `untracked`, so switching one of those alone does not make
 «Зберегти» available; on a row that differs the toggle is compared.

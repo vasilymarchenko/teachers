@@ -16,8 +16,8 @@ import type { TemplateSlotInput } from "@/lib/domain/schedule/types";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation/formState";
 import type { SlotPayload } from "@/lib/validation/slotPayload";
 import {
+  bothWeeksOpensOn,
   TEMPLATE_SLOT_FIELDS,
-  templateBothWeeksField,
   templateSlotField,
   type TemplateSlotFieldName,
 } from "@/lib/validation/templateDay";
@@ -104,10 +104,10 @@ export function DayForm({
                   {lessonRowLabel(row)}
                 </p>
                 <BothWeeksToggle
-                  defaultChecked={
-                    state.values?.[templateBothWeeksField(row.lessonNumber)] ===
-                    "on"
-                  }
+                  defaultChecked={bothWeeksOpensOn(
+                    state.values,
+                    row.lessonNumber,
+                  )}
                   lessonNumber={row.lessonNumber}
                   view={view}
                 />
