@@ -39,6 +39,12 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // `npm run build:teacher` — the bundled account command (ADR-020).
     "dist/**",
+    // Git worktrees the agent cuts under the checkout. Each is a whole copy of
+    // the repository, and one that has been built carries its own `.next/`,
+    // which the root `.next/**` above does not match — so `npm run lint` in the
+    // main checkout failed on generated files. tsc needs no such entry: its
+    // `**` never enters a directory whose name starts with a dot.
+    ".claude/worktrees/**",
   ]),
 ]);
 
