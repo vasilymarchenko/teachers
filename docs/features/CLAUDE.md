@@ -94,6 +94,9 @@ In this order, with these headings:
 7. **Ризики** — how the feature could fail the teacher: what triggers it and
    what the teacher meets. Found by a reviewer that saw the idea and not the
    interview, and kept by the user — or named by the user in the interview.
+   A risk the user dropped is not in the list: it goes, with the user's
+   reason, into one HTML comment at the end of the section, so that a later
+   review does not raise it again.
 8. **Відкриті питання** — what the interview did not settle (below).
 
 A section with nothing in it says so in one line («Немає.»); it is not dropped.
@@ -139,6 +142,10 @@ Prose.
 
 - What triggers it — what the teacher meets.
 
+<!-- відкинуто:
+- the risk — the user's reason.
+-->
+
 ## 8. Відкриті питання
 
 - The question? What each answer would change. <!-- Q-NNN -->
@@ -153,8 +160,11 @@ within **1200 words**. An idea that does not fit is usually two features.
 
 An open question lives in `idea.md` §8, in Ukrainian, with what each answer
 would change. It becomes a backlog question only when a ticket has to wait on
-it: then a `Q-NNN` is filed under `docs/backlog/CLAUDE.md` and its id is put in
-an HTML comment after the question — `<!-- Q-NNN -->`. An answer is a change
+it, so not while the idea is agreed — there is no ticket yet. Whoever writes a
+ticket that builds part of the feature reads §8: for a question that ticket
+waits on, they file a `Q-NNN` under `docs/backlog/CLAUDE.md`, put it in the
+ticket's `depends_on`, and add its id in an HTML comment after the question —
+`<!-- Q-NNN -->`, a direct change to `idea.md`. An answer is a change
 to what was agreed, and goes the way «Changes after agreement» says: the answer
 goes into the section it decides, the question leaves §8, and the `Q-NNN`, if
 there was one, is closed by the backlog's rules.
@@ -173,6 +183,7 @@ to its section. A term is never used in `idea.md` before it is in the glossary.
 - A change to §3, §4 or §5 changes what was agreed, and so does an answer to
   an open question, wherever it lands. It goes through `/teachers-idea` on the
   same slug, which interviews only the change and asks for confirmation again;
-  `updated` moves, `agreed` does not.
+  `updated` moves, `agreed` does not. A `done` idea may be revised too: what
+  it now promises is not built, so its status goes back to `agreed`.
 - A correction that changes no meaning — a typo, a wrong scenario id — is a
   direct change.

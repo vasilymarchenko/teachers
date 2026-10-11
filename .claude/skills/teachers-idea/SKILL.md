@@ -22,9 +22,14 @@ answer, a fact cited from a document, or an open question.
 - **Arguments.** `/teachers-idea <slug> [raw idea]`. No slug: Phase 2 proposes
   two or three, right after the raw idea.
 - **New or revision.** No `docs/features/<slug>/idea.md` on `origin/main`: a
-  new idea. Otherwise a revision: §1 stays, and the interview covers only the
+  new idea. Otherwise a revision, whatever its status — whether to revise is
+  the user's call, not the skill's: §1 stays, and the interview covers only the
   change the user brings — a changed promise, or an answer to an open question
-  (`docs/features/CLAUDE.md`, «Changes after agreement»).
+  (`docs/features/CLAUDE.md`, «Changes after agreement»). Phases 5 and 6 look
+  at the change only. The tickets whose `refs:` name `docs/features/<slug>/`
+  are listed to the user before the interview: they were written against the
+  promises the revision may change. A `done` idea is said to be so in that
+  line — what it promised is already in the catalogue.
 - **Branch.** An idea is a direct change (root `CLAUDE.md`, "A ticket run, or a
   direct change"). On `main`, or on a branch carrying unrelated work, the branch
   `docs/idea-<slug>` is cut from `origin/main` — but only in Phase 8, when there
@@ -36,7 +41,9 @@ answer, a fact cited from a document, or an open question.
   these headings: the raw idea, verbatim; the slug, new or revision, and the
   commit read; the catalogue map (Phase 3); the answers, each with its batch
   number and the question it answered; the simpler paths and the user's
-  reasons; the risks and what the user did with each; the terms; the draft.
+  reasons; the risks and what the user did with each; the terms; the draft,
+  each sentence followed by its source — the batch and question, the document
+  and section, or the risk.
   Update it after every batch — that file, not the conversation, is what
   Phase 7 assembles from. Nothing under `docs/` is written before Phase 8.
 - **An interrupted run.** Once the slug is known, look for
@@ -175,7 +182,8 @@ put to the user.
 Put the rest to the user, up to four per call. For each: keep it as a risk
 (§7), answer it with a boundary (§5) or a change to the idea (back to Phase 4
 for that point), make it an open question (§8), or drop it with a reason. A
-risk is never softened in the wording; one the user drops is not recorded. If
+risk is never softened in the wording; one the user drops goes, with the
+user's reason, into the comment at the end of §7 (`docs/features/CLAUDE.md`). If
 the reason the user gives contradicts a document or an earlier answer, say so
 once, citing both; the user decides, and the point is not raised again. A risk
 the user named themselves during the interview goes to §7 as they stated it.
@@ -201,9 +209,12 @@ glossary in Phase 8.
 
 1. **Sections** — all eight, in order; an empty one says «Немає.».
 2. **Raw idea** — §1 equals the Phase 2 text, character for character.
-3. **Provenance** — every sentence of §2–§7 traces to an answer, a cited
-   document, a subagent risk the user kept, or a risk the user named. A
-   sentence that traces to none is removed or becomes an open question.
+3. **Provenance** — every sentence of §2–§7 has its source in the working
+   state's draft — an answer, a cited document, a subagent risk the user kept,
+   or a risk the user named — and the source says what the sentence says, no
+   more. A change the user asks for at confirmation is its own source. A
+   sentence with none, or saying more than its source, is cut back, removed,
+   or becomes an open question.
 4. **Scenarios** — every `S-NNN` cited exists in `docs/scenarios/` on
    `origin/main`, and every item of «Що змінюється» names a scenario or says
    it is new.
@@ -228,24 +239,28 @@ confirms. This is the last question the run asks.
 Cut the branch (Phase 1), then write, asking nothing:
 
 - `docs/features/<slug>/idea.md`, frontmatter set: `status: agreed`,
-  `agreed` and `updated` today on a new idea, only `updated` on a revision,
-  `base` the commit Phase 1 read;
-- the accepted terms into `docs/architecture/glossary.md` §9;
-- a `Q-NNN` only for an open question the user said a ticket must wait on
-  (`docs/features/CLAUDE.md`, «Open questions») — otherwise none.
+  `agreed` and `updated` today on a new idea, only `updated` on a revision
+  (a `done` one goes back to `agreed`), `base` the commit Phase 1 read;
+- the accepted terms into `docs/architecture/glossary.md` §9.
 
-Run `npm run gate`. Commit in the convention of the root `CLAUDE.md`. Pushing,
-`/teachers-review` and the pull request follow the direct-change rules there;
-this skill does not merge. Delete `.gate/idea-<slug>.md` once the commit holds
-its content.
+No `Q-NNN` is filed: no ticket exists yet to wait on one
+(`docs/features/CLAUDE.md`, «Open questions»).
+
+Run `npm run gate`. A failure in a file this run wrote is fixed and the gate
+run again; any other failure is reported, and the run stops before the commit.
+Commit in the convention of the root `CLAUDE.md`, and stop there: the user
+confirmed a text, not its publication. Delete `.gate/idea-<slug>.md` once the
+commit holds its content.
 
 **Report** in the user's language: the slug and the path; how many scenarios
 the idea changes and how many intents it adds; how many simpler paths were
 rejected; how many risks were kept, moved or dropped, and how many were
 dropped before the user saw them as a wrong reading of the application; the
-open questions and any `Q-NNN` filed; the terms added; whether the catalogue
-was behind `main`; a part split off by the budget, if any. The next step is the
-feature's scenarios over the catalogue.
+open questions; the terms added; whether the catalogue was behind `main`; a
+part split off by the budget, if any; on a revision, the tickets listed in
+Phase 1. Then the steps the direct-change rules of the root `CLAUDE.md` still
+owe, for the user to take: push, `/teachers-review`, the pull request. The next
+step after them is the feature's scenarios over the catalogue.
 
 ## What this skill does not do
 
