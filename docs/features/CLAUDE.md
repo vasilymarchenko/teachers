@@ -70,6 +70,10 @@ ticket that builds part of a feature names `docs/features/<slug>/` in its
 
 ### Sections
 
+Every sentence rests on the user's answers and on the current documents —
+never on `docs/specs/specification.md`, which is the idea the product started
+from (`ADR-030`); views have moved since.
+
 In this order, with these headings:
 
 1. **Сира ідея** — the user's words as they first gave them, verbatim, as a
@@ -161,6 +165,9 @@ added later, as «Open questions» says.
 
 The body — without the frontmatter, the raw idea and the HTML comments — stays
 within **1200 words**. An idea that does not fit is usually two features.
+When the user splits one off, its §1 is the whole raw idea of the one it came
+from, verbatim, followed by `<!-- split from <slug> -->`; its §3 says which
+part of that raw idea it takes.
 
 ## Open questions
 
@@ -190,6 +197,12 @@ to its section. A term is never used in `idea.md` before it is in the glossary.
   an open question, wherever it lands. It goes through `/teachers-idea` on the
   same slug, which interviews only the change and asks for confirmation again;
   `updated` moves, `agreed` does not. A `done` idea may be revised too: what
-  it now promises is not built, so its status goes back to `agreed`.
+  it now promises is not built, so its status goes back to `agreed`. What the
+  catalogue already holds from it stays there as current behaviour; only the
+  revision waits to be folded in (`docs/scenarios/CLAUDE.md`, «Feature
+  layers»).
+- Before the idea is merged, a change to §3, §4 or §5 on its branch — one a
+  review asks for, say — goes through `/teachers-idea` on that branch the
+  same way.
 - A correction that changes no meaning — a typo, a wrong scenario id — is a
   direct change.

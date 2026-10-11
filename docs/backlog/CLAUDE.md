@@ -109,4 +109,7 @@ contradicts the document it copied.
   `architect-overview.md` and reference it — do not bury the decision in
   `## Notes`.
 - Close a question by setting `status: answered`, recording the answer in the
-  architecture document, and leaving the file as the record of what was decided.
+  architecture document — or, for a question filed from a feature's
+  `idea.md`, in the section of that idea the answer decides
+  (`docs/features/CLAUDE.md`, «Open questions») — and leaving the file as the
+  record of what was decided.
