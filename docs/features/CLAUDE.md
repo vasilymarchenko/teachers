@@ -103,6 +103,8 @@ A section with nothing in it says so in one line («Немає.»); it is not dr
 
 ### Skeleton
 
+The file starts with §1 after the frontmatter; there is no title heading.
+
 ```markdown
 ## 1. Сира ідея
 
@@ -148,8 +150,12 @@ Prose.
 
 ## 8. Відкриті питання
 
-- The question? What each answer would change. <!-- Q-NNN -->
+- The question? What each answer would change.
+- A question a ticket waits on. <!-- Q-NNN -->
 ```
+
+The `<!-- Q-NNN -->` comment is never there when the idea is agreed; it is
+added later, as «Open questions» says.
 
 ### Word budget
 
