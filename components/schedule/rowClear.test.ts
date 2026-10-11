@@ -60,6 +60,16 @@ describe("what the clear touches", () => {
     expect(rowIcon(state)).toBe("undo");
   });
 
+  it("loses the undo if the row is read back half-cleared", () => {
+    // Why `RowActions` writes every field before it sends any event: a read
+    // between two writes still holds a lesson, and a lesson drops the undo.
+    const state = run(["Фізика", "7-А"], [
+      { type: "clear" },
+      { type: "read", values: ["", "7-А"] },
+    ]);
+    expect(state.kept).toBeNull();
+  });
+
   it("keeps the undo when the cleared row is read back empty", () => {
     // `RowActions` dispatches `input` on each field it emptied; the row is
     // read again on each one.

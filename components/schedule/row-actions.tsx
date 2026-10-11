@@ -85,12 +85,18 @@ export function RowActions({
     if (state === null) return;
     const next = rowClearReducer(state, event);
     setState(next);
-    inputs().forEach((input, index) => {
+    // Every field is written before any event is sent. An event per field as
+    // it is written would have the row read back half-cleared — still holding
+    // a lesson — and that read drops what the clear kept.
+    const changed = inputs().filter((input, index) => {
       const value = next.values[index] ?? "";
-      if (input.value === value) return;
+      if (input.value === value) return false;
       input.value = value;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
+      return true;
     });
+    for (const input of changed) {
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
   };
 
   const icon = state === null ? null : rowIcon(state);
