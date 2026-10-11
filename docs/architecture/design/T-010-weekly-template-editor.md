@@ -98,7 +98,9 @@ holds the constants and carries no `"use server"` directive, for the reason
 | `labels.ts` | every Ukrainian word of this screen; re-exports the ones the calendar and the year setup already own. The words for a lesson's own fields moved to `components/forms/slot-labels.ts` in T-011, shared with the override editor |
 | `selection.ts` | `pickTemplateSelection()`, `templateHref()` — the `?view=&parity=&day=` switches |
 | `lessonRows.ts` | `lessonRows()` — which lesson numbers are rows |
-| `day-form.tsx` | one day: the unit of saving. Its `subject`, `className` and `teacherName` inputs carry `list={suggestionListFor(field)}` (T-044) |
+| `day-form.tsx` | one day: the unit of saving. Its `subject`, `className` and `teacherName` inputs carry `list={suggestionListFor(field)}` (T-044). Each row's header renders `RowActions` (T-046) |
+| `row-actions.tsx` | `RowActions` — the icon at the end of a row's header that clears the row or undoes the clear (T-046) |
+| `rowClear.ts` | `rowLessonFields()`, `rowHasLesson()`, `rowClearReducer()`, `rowIcon()` — the row's clear/undo state, until the save (T-046) |
 | `week-grid.tsx` | seven `DayForm`s |
 | `switchers.tsx`, `boundary-form.tsx`, `copy-parity-form.tsx`, `version-notice.tsx` | the controls around the grid |
 
