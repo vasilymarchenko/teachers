@@ -46,6 +46,60 @@ export function templateSlotField(
   return `slot-${lessonNumber}-${field}`;
 }
 
+/**
+ * The `name=` of one row's «в обох тижнях» toggle (T-043, ADR-025) — a
+ * checkbox, so it is in the submission only when it is on.
+ */
+export function templateBothWeeksField(lessonNumber: number): string {
+  return `both-${lessonNumber}`;
+}
+
+/** The lesson numbers, of the rows shown, whose toggle the form submitted on. */
+export function readTemplateBothWeeks(
+  formData: FormData,
+  lessonNumbers: readonly number[],
+): number[] {
+  return lessonNumbers.filter(
+    (lessonNumber) => formData.get(templateBothWeeksField(lessonNumber)) !== null,
+  );
+}
+
+/**
+ * The toggles as they were submitted, one entry per row shown — `"on"` or the
+ * empty string — added to a refusal's echoed `values`.
+ *
+ * An unchecked checkbox is absent from the submission, so without an entry of
+ * its own a form reading `values` could not tell "submitted off" from "not
+ * echoed" and would fall back to what it opens with.
+ */
+export function echoBothWeeks(
+  values: Record<string, string> | undefined,
+  formData: FormData,
+  lessonNumbers: readonly number[],
+): Record<string, string> {
+  const on = new Set(readTemplateBothWeeks(formData, lessonNumbers));
+  const echoed: Record<string, string> = { ...values };
+  for (const lessonNumber of lessonNumbers) {
+    echoed[templateBothWeeksField(lessonNumber)] = on.has(lessonNumber) ? "on" : "";
+  }
+  return echoed;
+}
+
+/**
+ * Whether one row's toggle opens on, from the form state's `values`.
+ *
+ * Only a refusal's echo can switch it on. A fresh form, a success and the
+ * form after «Скопіювати з чисельника» open every toggle off, whatever the two
+ * weeks store at the row: a toggle that opened on for an equal row would write
+ * the first edit after a copy back into the week it was copied from (ADR-025).
+ */
+export function bothWeeksOpensOn(
+  values: Record<string, string> | undefined,
+  lessonNumber: number,
+): boolean {
+  return values?.[templateBothWeeksField(lessonNumber)] === "on";
+}
+
 /** One row as the form submits it: every field of the view, plus its number. */
 const rawEntry = rawSlotFields.extend({
   lessonNumber: z.number().int().min(0).max(9),

@@ -30,6 +30,7 @@ import {
   ruleValidFrom,
 } from "@/lib/domain/schedule/boundaries";
 import { weekdayOf } from "@/lib/domain/schedule/calendarRules";
+import { otherParity } from "@/lib/domain/schedule/templateSlots";
 import {
   capToNextVersion,
   type TemplateBoundary,
@@ -86,8 +87,7 @@ export default async function Page({
 
   const slots = current?.slots ?? [];
   const rows = lessonRows(bells, slots);
-  const otherParity =
-    selection.parity === "NUMERATOR" ? "DENOMINATOR" : "NUMERATOR";
+  const copyTo = otherParity(selection.parity);
 
   return (
     <div className="space-y-10">
@@ -136,7 +136,7 @@ export default async function Page({
             <CopyParityForm
               from={selection.parity}
               key={`copy-${selection.view}-${selection.parity}`}
-              to={otherParity}
+              to={copyTo}
               view={selection.view}
             />
           </Section>

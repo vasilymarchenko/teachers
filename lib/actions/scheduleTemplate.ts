@@ -26,7 +26,11 @@ import {
   planTemplateEdit,
   type TemplateBoundary,
 } from "@/lib/domain/schedule/copyOnWrite";
-import { copyParity, replaceDaySlots } from "@/lib/domain/schedule/templateSlots";
+import {
+  copyParity,
+  otherParity,
+  saveDaySlots,
+} from "@/lib/domain/schedule/templateSlots";
 import type { TemplateSlotInput } from "@/lib/domain/schedule/types";
 import { today, type IsoDate } from "@/lib/time/today";
 import {
@@ -40,11 +44,15 @@ import {
   TEMPLATE_BOUNDARY_FIELD,
   templateBoundaryInput,
 } from "@/lib/validation/templateBoundary";
+import { sameLesson } from "@/lib/validation/slotFields";
 import {
+  echoBothWeeks,
+  readTemplateBothWeeks,
   readTemplateDay,
   templateDayFieldErrors,
   templateDayInputFor,
 } from "@/lib/validation/templateDay";
+import { BOTH_WEEKS_LABELS } from "@/components/schedule/labels";
 import {
   NO_YEAR,
   SAVE_REFUSED,
@@ -346,13 +354,19 @@ async function applyTemplateEdit(
 }
 
 /**
- * One weekday of one parity week — the unit of saving (ADR-006).
+ * One weekday of one parity week — the unit of saving (ADR-006) — plus the
+ * rows the teacher switched to «в обох тижнях» (ADR-025, T-043).
  *
  * `lessonNumbers` are the rows the screen actually showed, in order; they are
  * bound to the action by the form and are what both `readTemplateDay()` and
  * `templateDayFieldErrors()` read a row's lesson number from. They are not
  * teacher input in any meaningful sense — an invented number would simply fail
  * the schema's `0…9` and the `template_slot_number_ck` behind it.
+ *
+ * The toggles are the one submitted input beyond the rows: one boolean per
+ * rendered lesson number. The other parity week is derived from the bound
+ * `parity`, never submitted. Both weeks are written by one `saveDaySlots()`
+ * inside one `applyTemplateEdit()`, so in one transaction or not at all.
  */
 export async function saveTemplateDayAction(
   view: ScheduleView,
@@ -364,14 +378,23 @@ export async function saveTemplateDayAction(
 ): Promise<FormState> {
   const { id: userId } = await requireUser();
 
+  const bothWeeks = readTemplateBothWeeks(formData, lessonNumbers);
+  // A refusal puts every toggle back as it was submitted, off ones included —
+  // an unchecked box is absent from `formData` and would otherwise reopen as
+  // whatever the form opens with.
+  const refused = (state: FormState): FormState => ({
+    ...state,
+    values: echoBothWeeks(state.values, formData, lessonNumbers),
+  });
+
   const parsed = templateDayInputFor(view).safeParse(
     readTemplateDay(formData, lessonNumbers),
   );
   if (!parsed.success) {
-    return {
+    return refused({
       fieldErrors: templateDayFieldErrors(parsed.error, lessonNumbers),
       values: submittedValues(formData),
-    };
+    });
   }
 
   // An entry with no payload is an empty cell, and an empty cell is the absence
@@ -389,12 +412,35 @@ export async function saveTemplateDayAction(
         ],
   );
 
-  return applyTemplateEdit(
+  let changedInOther: number[] = [];
+  const state = await applyTemplateEdit(
     userId,
     view,
-    (slots) => replaceDaySlots(slots, { weekday, parity }, next, lessonNumbers),
+    (slots) => {
+      const plan = saveDaySlots(
+        slots,
+        { weekday, parity },
+        next,
+        lessonNumbers,
+        bothWeeks,
+        (a, b) => sameLesson(view, a, b),
+      );
+      changedInOther = plan.changedInOther;
+      return plan.slots;
+    },
     formData,
   );
+
+  // `applyTemplateEdit()` answers `{}` on success and a message on a refusal.
+  if (state.error !== undefined || state.fieldErrors !== undefined) {
+    return refused(state);
+  }
+  return changedInOther.length === 0
+    ? state
+    : {
+        ...state,
+        notice: BOTH_WEEKS_LABELS.saved(otherParity(parity), changedInOther),
+      };
 }
 
 /**

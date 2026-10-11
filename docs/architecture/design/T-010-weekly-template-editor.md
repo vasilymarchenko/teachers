@@ -20,12 +20,13 @@ copy-on-write before it was `planTemplateEdit()` and the constraints
 
 | File | Exports |
 |---|---|
-| `lib/domain/schedule/templateSlots.ts` | `replaceDaySlots()`, `copyParity()`, `SlotCell` |
+| `lib/domain/schedule/templateSlots.ts` | `replaceDaySlots()`, `saveDaySlots()` (T-043), `copyParity()`, `otherParity()`, `SlotCell` |
 | `lib/domain/schedule/copyOnWrite.ts` | `planTemplateEdit()` (T-005), `capToNextVersion()` and `TemplateBoundary` (added here) |
 
-Both `templateSlots.ts` functions take the **whole** slot set of the version in
-force and return the set the new version will hold. They are the only thing that
-differs between the screen's three writes.
+The slot-set functions of `templateSlots.ts` take the **whole** slot set of the
+version in force and return the set the new version will hold; the `mutate`
+each write passes (§2) is the only thing that differs between the screen's
+three writes.
 
 `replaceDaySlots()` takes a fourth argument, `covered` — the lesson numbers the
 form rendered. It replaces the day only at those numbers: an empty input is the
@@ -33,11 +34,24 @@ teacher clearing a cell, but a number the form never showed has no input to be
 empty, and a slot there (added in another window, or left behind by a deleted
 bell row) is carried into the new version rather than deleted.
 
+`saveDaySlots(slots, cell, next, covered, bothWeeks, same)` (T-043, ADR-025) is
+the day save: `replaceDaySlots()` for `cell`, then `replaceDaySlots()` again for
+the same weekday of `otherParity(cell.parity)`, limited to `bothWeeks ∩
+covered` and with `next`'s slots at those numbers re-keyed to the other parity
+— so a row switched on and emptied is removed there too, and every other slot
+of the other week is carried through. It returns `{ slots, changedInOther }`:
+the numbers of `bothWeeks ∩ covered` whose other-week payload was not `same`
+as the one written. `same` is passed in because the payload is opaque in the
+domain; the action passes `sameLesson(view, …)` from
+`lib/validation/slotFields.ts`, which compares the view's fields after the
+`rawSlotFields` trimming a save applies.
+
 ### Validation — one schema per form (overview §8.2)
 
 | File | Exports |
 |---|---|
-| `lib/validation/templateDay.ts` | `templateDayInputFor(view)`, `readTemplateDay()`, `templateDayFieldErrors()`, `templateSlotField()`, `TEMPLATE_SLOT_FIELDS` |
+| `lib/validation/templateDay.ts` | `templateDayInputFor(view)`, `readTemplateDay()`, `templateDayFieldErrors()`, `templateSlotField()`, `TEMPLATE_SLOT_FIELDS`; `templateBothWeeksField()`, `readTemplateBothWeeks()`, `echoBothWeeks()`, `bothWeeksOpensOn()` (T-043) |
+| `lib/validation/slotFields.ts` | `sameLesson(view, a, b)` (T-043) beside the shared lesson fields |
 | `lib/validation/templateBoundary.ts` | `templateBoundaryInput`, `TEMPLATE_BOUNDARY_FIELD` |
 | `lib/validation/enums.ts` | `SCHEDULE_VIEW_VALUES` added to the existing tuples |
 
@@ -83,7 +97,7 @@ is the only caller and says why.
 
 | Action | Bound arguments |
 |---|---|
-| `saveTemplateDayAction` | `view`, `parity`, `weekday`, `lessonNumbers` |
+| `saveTemplateDayAction` | `view`, `parity`, `weekday`, `lessonNumbers`; its one submitted input beyond the rows is the `both-<lessonNumber>` checkboxes (T-043) |
 | `copyParityAction` | `view`, `from`, `to` |
 | `setTemplateBoundaryAction` | `view` |
 
@@ -101,6 +115,8 @@ holds the constants and carries no `"use server"` directive, for the reason
 | `day-form.tsx` | one day: the unit of saving. Its `subject`, `className` and `teacherName` inputs carry `list={suggestionListFor(field)}` (T-044). Each row's header renders `RowActions` (T-046) |
 | `row-actions.tsx` | `RowActions` — the icon at the end of a row's header that clears the row or undoes the clear (T-046) |
 | `rowClear.ts` | `rowLessonFields()`, `rowHasLesson()`, `rowClearReducer()`, `rowIcon()` — the row's clear/undo state, until the save (T-046) |
+| `both-weeks-toggle.tsx` | `BothWeeksToggle` — the row's «в обох тижнях» checkbox, drawn as an icon (T-043) |
+| `bothWeeks.ts` | `rowLine()`, `shownLine()`, `rowIsBlank()`, `untrackedToggles()` — the row's line of text and the toggles T-047 leaves out (T-043) |
 | `week-grid.tsx` | seven `DayForm`s |
 | `switchers.tsx`, `boundary-form.tsx`, `copy-parity-form.tsx`, `version-notice.tsx` | the controls around the grid |
 
@@ -159,11 +175,24 @@ date: the cut is still `today()`'s and cannot arrive from a form.
 slots. The outcome is the one §4.7 describes — one version, the same range,
 different slots — and this shape keeps step 7 to a single way of writing slots.
 
+### The day save writes two parity weeks
+
+`saveTemplateDayAction` reads `bothWeeks = readTemplateBothWeeks(formData,
+lessonNumbers)` — one boolean per rendered lesson number; the other parity is
+`otherParity(parity)`, never submitted — and passes `saveDaySlots()` as its
+`mutate` (ADR-025). Both weeks are therefore one slot set, one new version and
+one transaction. The `mutate` keeps `changedInOther`; on success, if it is not
+empty, the action returns `{ notice: BOTH_WEEKS_LABELS.saved(other,
+changedInOther) }` («Також змінено у знаменнику: урок 2, урок 4»). Every
+refusal — the schema's or `applyTemplateEdit()`'s — goes back with
+`echoBothWeeks()` merged into `values`: `both-<n>` is `"on"` or `""` for every
+rendered row, so a toggle submitted off is echoed off rather than missing.
+
 ### The three `mutate`s
 
 | Action | `mutate` |
 |---|---|
-| day | `replaceDaySlots(slots, { weekday, parity }, submitted, lessonNumbers)` |
+| day | `saveDaySlots(slots, { weekday, parity }, submitted, lessonNumbers, bothWeeks, (a, b) => sameLesson(view, a, b))` |
 | copy | `copyParity(slots, from, to)` |
 | boundary | `(slots) => [...slots]` |
 
@@ -267,9 +296,47 @@ the view — seven across for `OWN` at `xl`, wrapping over two or three for
 `CLASS`, whose cell has four fields (overview §10.2).
 
 **The row header is the place of a row's actions.** It is one line of fixed
-height — «3 · 10:15», then the row's icons — so the seven cards stay on the
-same rows whether or not a row shows an icon. Today it holds one
-(`components/schedule/row-actions.tsx`, rules in `rowClear.ts`, T-046):
+height — «3 · 10:15», then the «в обох тижнях» toggle, then the clear icon —
+so the seven cards stay on the same rows whether or not a row shows an icon.
+
+**The toggle** (`both-weeks-toggle.tsx`, T-043, ADR-025) is a native checkbox
+named `both-<lessonNumber>`, visually hidden inside a 24×24 `<label>` that
+draws it: `Link2` on a filled `primary` chip when on, `Link2Off` on an
+outlined muted chip when off. Its accessible name and hover hint are «Урок 3 —
+в обох тижнях»; below `md` the words «в обох тижнях» are shown beside the icon.
+It opens off whatever the two weeks hold, and after a refusal shows the echoed
+`both-<n>` — both read by `bothWeeksOpensOn()`. `DayForm` passes `untrackedToggles()` — the toggles of rows where
+`sameLesson()` holds between the two weeks' stored payloads — to
+`TrackedForm`'s `untracked`, so switching one of those alone does not make
+«Зберегти» available; on a row that differs the toggle is compared.
+
+**The row's line.** Under the header, one `h-4` line of `text-xs`, present on
+every row, so the cards stay aligned. `rowLine(view, parity, own, other)`
+gives up to three candidate texts from the stored payloads of the two weeks,
+each rendered as a `truncate` span with `data-both-line` and the whole text in
+`title`; `app/globals.css` shows one, from `[data-both-toggle]:checked` and
+whether the row is empty — the row's `data-row-blank`, which `BothWeeksToggle`
+keeps equal to `rowIsBlank()` (trimmed, as the save reads it) once hydrated,
+or, without JavaScript, every `[data-lesson-field]` being
+`:placeholder-shown`. `shownLine()` states the same rule for the tests:
+
+| toggle | row | other week | line |
+|---|---|---|---|
+| off | — | equal to the row | empty |
+| off | — | a different lesson | «Знаменник: Фізика · 7-А» |
+| off | — | no lesson | «Знаменник: уроку немає» |
+| on | not empty | no lesson | «додасть урок у знаменник» |
+| on | not empty | a different lesson | «замінить «Фізика» у знаменнику» |
+| on | not empty | equal | «зміни запишуться і в знаменник» |
+| on | empty | a lesson | «видалить «Фізика» зі знаменника» |
+| on | empty | no lesson | empty |
+
+"Equal" and "different" are decided on the stored payloads when the page
+renders; only the toggle and the row's emptiness are read live. A clear by the
+icon leaves the toggle as it is.
+
+**The clear icon** (`components/schedule/row-actions.tsx`, rules in
+`rowClear.ts`, T-046):
 
 - **Clear** — shown on a row with at least one non-empty lesson field (the
   inputs of `TEMPLATE_SLOT_FIELDS[view]` for that lesson number). It empties

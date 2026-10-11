@@ -145,3 +145,37 @@ export function toSlotPayload(
         ...optional("note", fields.note),
       };
 }
+
+/**
+ * Whether two lessons are the same lesson in `view` — T-043, the one test of
+ * "equal" for the template day's «в обох тижнях» (ADR-025): the row's line of
+ * text, which toggles T-047 leaves out, and what a save reports it changed.
+ *
+ * Both sides go through `rawSlotFields`, the trimming a save applies, so a
+ * cell does not read as different over a trailing space. `undefined` is no
+ * lesson, and a payload whose fields are all blank is the same no lesson.
+ * Only the view's own fields are compared.
+ */
+export function sameLesson(
+  view: ScheduleView,
+  a: SlotPayload | undefined,
+  b: SlotPayload | undefined,
+): boolean {
+  const fieldsOf = (payload: SlotPayload | undefined): RawSlotFields => {
+    const record = (payload ?? {}) as Partial<Record<SlotFieldName, unknown>>;
+    const text = (field: SlotFieldName) => {
+      const value = record[field];
+      return typeof value === "string" ? value : "";
+    };
+    return rawSlotFields.parse({
+      subject: text("subject"),
+      className: text("className"),
+      teacherName: text("teacherName"),
+      zoomLink: text("zoomLink"),
+      note: text("note"),
+    });
+  };
+  const left = fieldsOf(a);
+  const right = fieldsOf(b);
+  return SLOT_FIELDS[view].every((field) => left[field] === right[field]);
+}

@@ -35,6 +35,14 @@ export type FormState = {
    * goes back.
    */
   values?: Record<string, string>;
+  /**
+   * A message about a submission that went through — what it did beyond what
+   * the form shows, such as the lessons a template day save also wrote into
+   * the other parity week (T-043, ADR-025). Only a form that has something to
+   * say sets it; every other form ignores it, and it does not make a success
+   * read as a refusal.
+   */
+  notice?: string;
 };
 
 export const EMPTY_FORM_STATE: FormState = {};

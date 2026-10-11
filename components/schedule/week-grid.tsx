@@ -2,6 +2,7 @@ import type { Parity, ScheduleView, Weekday } from "@/lib/db/schema/enums";
 import type { TemplateSlotInput } from "@/lib/domain/schedule/types";
 import { WEEKDAY_VALUES } from "@/lib/validation/enums";
 import { cn } from "@/lib/utils";
+import { otherParity } from "@/lib/domain/schedule/templateSlots";
 import { DayForm } from "./day-form";
 import type { LessonRow } from "./lessonRows";
 
@@ -53,6 +54,10 @@ export function WeekGrid({
           key={weekday}
         >
           <DayForm
+            otherSlots={slots.filter(
+              (slot) =>
+                slot.weekday === weekday && slot.parity === otherParity(parity),
+            )}
             parity={parity}
             rows={rows}
             slots={slots.filter(

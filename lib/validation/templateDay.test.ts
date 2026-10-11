@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { EMPTY_FORM_STATE, type FormState } from "./formState";
 import { slotPayloadFor } from "./slotPayload";
 import {
+  bothWeeksOpensOn,
+  echoBothWeeks,
+  readTemplateBothWeeks,
   readTemplateDay,
+  templateBothWeeksField,
   templateDayFieldErrors,
   templateDayInputFor,
   templateSlotField,
@@ -232,5 +237,49 @@ describe("readTemplateDay", () => {
         row(4),
       ],
     });
+  });
+});
+
+describe("the «в обох тижнях» toggles (T-043)", () => {
+  const submitted = () => {
+    const formData = new FormData();
+    formData.set(templateBothWeeksField(2), "on");
+    formData.set(templateBothWeeksField(9), "on"); // not a row the form showed
+    formData.set(templateSlotField(1, "subject"), "Фізика");
+    return formData;
+  };
+
+  it("reads one boolean per rendered lesson number", () => {
+    expect(readTemplateBothWeeks(submitted(), [1, 2, 3])).toEqual([2]);
+  });
+
+  it("echoes every toggle after a refusal, the off ones as well", () => {
+    // An unchecked box is absent from the submission; the echo names it.
+    expect(
+      echoBothWeeks({ [templateSlotField(1, "subject")]: "Фізика" }, submitted(), [1, 2, 3]),
+    ).toEqual({
+      [templateSlotField(1, "subject")]: "Фізика",
+      [templateBothWeeksField(1)]: "",
+      [templateBothWeeksField(2)]: "on",
+      [templateBothWeeksField(3)]: "",
+    });
+  });
+
+  it("opens every toggle off on a fresh form, after a success and after a copy", () => {
+    // A fresh form and the copy's re-render carry no values; a save answers
+    // `{}` or `{ notice }`. None of them may switch a toggle on (ADR-025).
+    const states: FormState[] = [
+      EMPTY_FORM_STATE,
+      {},
+      { notice: "Також змінено у знаменнику: урок 2" },
+    ];
+    for (const state of states) {
+      expect([1, 2, 3].filter((n) => bothWeeksOpensOn(state.values, n))).toEqual([]);
+    }
+  });
+
+  it("opens a toggle on only where a refusal echoed it on", () => {
+    const values = echoBothWeeks(undefined, submitted(), [1, 2, 3]);
+    expect([1, 2, 3].filter((n) => bothWeeksOpensOn(values, n))).toEqual([2]);
   });
 });

@@ -16,6 +16,7 @@ import type { TemplateSlotInput } from "@/lib/domain/schedule/types";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation/formState";
 import type { SlotPayload } from "@/lib/validation/slotPayload";
 import {
+  bothWeeksOpensOn,
   TEMPLATE_SLOT_FIELDS,
   templateSlotField,
   type TemplateSlotFieldName,
@@ -27,6 +28,8 @@ import {
   lessonRowLabel,
   WEEKDAY_LABELS,
 } from "./labels";
+import { BothWeeksToggle } from "./both-weeks-toggle";
+import { rowLine, untrackedToggles, type RowLine } from "./bothWeeks";
 import type { LessonRow } from "./lessonRows";
 import { RowActions } from "./row-actions";
 
@@ -53,6 +56,7 @@ export function DayForm({
   weekday,
   rows,
   slots,
+  otherSlots,
 }: {
   view: ScheduleView;
   parity: Parity;
@@ -60,6 +64,8 @@ export function DayForm({
   rows: readonly LessonRow[];
   /** The version's slots for this weekday and parity, in any order. */
   slots: readonly TemplateSlotInput[];
+  /** The same weekday in the other parity week — what a toggle writes into. */
+  otherSlots: readonly TemplateSlotInput[];
 }) {
   const lessonNumbers = rows.map((row) => row.lessonNumber);
   const [state, formAction] = useActionState(
@@ -69,7 +75,11 @@ export function DayForm({
   const errors = formErrorsOf(state);
 
   const stored = new Map(slots.map((slot) => [slot.lessonNumber, slot.payload]));
+  const storedOther = new Map(
+    otherSlots.map((slot) => [slot.lessonNumber, slot.payload]),
+  );
   const fields = TEMPLATE_SLOT_FIELDS[view];
+  const untracked = untrackedToggles(view, lessonNumbers, stored, storedOther);
 
   return (
     <TrackedForm
@@ -77,6 +87,7 @@ export function DayForm({
       aria-label={dayFormLabel(WEEKDAY_LABELS[weekday], parity, view)}
       className="border-border bg-card flex h-full flex-col gap-4 rounded-lg border p-4"
       state={state}
+      untracked={untracked}
     >
       <h3 className="text-sm font-semibold">{WEEKDAY_LABELS[weekday]}</h3>
 
@@ -85,15 +96,31 @@ export function DayForm({
       ) : (
         <div className="space-y-4">
           {rows.map((row) => (
-            <div className="space-y-2" key={row.lessonNumber}>
+            <div className="space-y-2" data-both-row="" key={row.lessonNumber}>
               {/* A fixed height whether or not the row shows its icon, so the
                   seven day cards stay on the same rows (design §5). */}
               <div className="flex h-6 items-center gap-1">
                 <p className="text-muted-foreground text-xs font-medium">
                   {lessonRowLabel(row)}
                 </p>
+                <BothWeeksToggle
+                  defaultChecked={bothWeeksOpensOn(
+                    state.values,
+                    row.lessonNumber,
+                  )}
+                  lessonNumber={row.lessonNumber}
+                  view={view}
+                />
                 <RowActions lessonNumber={row.lessonNumber} view={view} />
               </div>
+              <OtherWeekLine
+                line={rowLine(
+                  view,
+                  parity,
+                  stored.get(row.lessonNumber),
+                  storedOther.get(row.lessonNumber),
+                )}
+              />
               {fields.map((field) => (
                 <SlotInput
                   error={errors.for(
@@ -112,6 +139,11 @@ export function DayForm({
       )}
 
       <FormMessage errors={errors} />
+      {state.notice === undefined ? null : (
+        <p className="text-muted-foreground text-sm" role="status">
+          {state.notice}
+        </p>
+      )}
 
       {rows.length > 0 ? (
         <div className="mt-auto pt-2">
@@ -121,6 +153,33 @@ export function DayForm({
         </div>
       ) : null}
     </TrackedForm>
+  );
+}
+
+/**
+ * The line under a row's header: one line of small text, of the same height on
+ * every row whether or not it holds any, so the seven cards stay aligned
+ * (design §5). Every candidate is rendered and `app/globals.css` shows one;
+ * a text too long for the line is cut with an ellipsis and is whole in its
+ * hover hint and in the DOM a screen reader reads.
+ */
+function OtherWeekLine({ line }: { line: RowLine }) {
+  const candidates = [
+    ["off", line.off],
+    ["filled", line.filled],
+    ["empty", line.empty],
+  ] as const;
+
+  return (
+    <div className="text-muted-foreground h-4 text-xs leading-4">
+      {candidates.map(([kind, text]) =>
+        text === undefined ? null : (
+          <span className="truncate" data-both-line={kind} key={kind} title={text}>
+            {text}
+          </span>
+        ),
+      )}
+    </div>
   );
 }
 
@@ -158,6 +217,7 @@ function SlotInput({
       {(props) => (
         <Input
           {...props}
+          data-lesson-field=""
           defaultValue={fieldValue(state, name, storedValue(stored, field))}
           list={suggestionListFor(field)}
           placeholder={SLOT_FIELD_LABELS[field]}
