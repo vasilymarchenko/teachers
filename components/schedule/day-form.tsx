@@ -28,6 +28,7 @@ import {
   WEEKDAY_LABELS,
 } from "./labels";
 import type { LessonRow } from "./lessonRows";
+import { RowActions } from "./row-actions";
 
 /**
  * One weekday of one parity week — the unit of saving (ADR-006).
@@ -42,7 +43,9 @@ import type { LessonRow } from "./lessonRows";
  * the version.
  *
  * An empty row means «уроку немає»: clearing the inputs and saving deletes the
- * slot, which is what makes one submission create, update and delete.
+ * slot, which is what makes one submission create, update and delete. The icon
+ * in a row's header (`RowActions`, T-046) clears them in one click and can put
+ * them back until the save.
  */
 export function DayForm({
   view,
@@ -83,9 +86,14 @@ export function DayForm({
         <div className="space-y-4">
           {rows.map((row) => (
             <div className="space-y-2" key={row.lessonNumber}>
-              <p className="text-muted-foreground text-xs font-medium">
-                {lessonRowLabel(row)}
-              </p>
+              {/* A fixed height whether or not the row shows its icon, so the
+                  seven day cards stay on the same rows (design §5). */}
+              <div className="flex h-6 items-center gap-1">
+                <p className="text-muted-foreground text-xs font-medium">
+                  {lessonRowLabel(row)}
+                </p>
+                <RowActions lessonNumber={row.lessonNumber} view={view} />
+              </div>
               {fields.map((field) => (
                 <SlotInput
                   error={errors.for(
