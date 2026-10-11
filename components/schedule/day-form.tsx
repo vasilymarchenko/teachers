@@ -109,6 +109,7 @@ export function DayForm({
                     "on"
                   }
                   lessonNumber={row.lessonNumber}
+                  view={view}
                 />
                 <RowActions lessonNumber={row.lessonNumber} view={view} />
               </div>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { templateBothWeeksField } from "@/lib/validation/templateDay";
 import type { SlotPayload } from "@/lib/validation/slotPayload";
-import { rowLine, shownLine, untrackedToggles } from "./bothWeeks";
+import { rowIsBlank, rowLine, shownLine, untrackedToggles } from "./bothWeeks";
 
 /**
  * The row's line and the toggles T-047 leaves out — T-043, ADR-025. The suite
@@ -107,5 +107,19 @@ describe("which toggles T-047 leaves out", () => {
       templateBothWeeksField(1),
       templateBothWeeksField(4),
     ]);
+  });
+});
+
+describe("whether a row is empty, as the save reads it", () => {
+  it("reads a row of spaces as empty, so the line promises a removal", () => {
+    // `rawSlotFields` trims, so a row of spaces saves as no lesson.
+    expect(rowIsBlank([" ", "  "])).toBe(true);
+    expect(
+      show(physics, physics, { checked: true, empty: rowIsBlank([" ", ""]) }),
+    ).toBe("видалить «Фізика» зі знаменника");
+  });
+
+  it("reads a row with any text as holding a lesson", () => {
+    expect(rowIsBlank(["", "7-А"])).toBe(false);
   });
 });

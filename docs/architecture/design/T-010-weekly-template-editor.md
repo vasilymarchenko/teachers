@@ -116,7 +116,7 @@ holds the constants and carries no `"use server"` directive, for the reason
 | `row-actions.tsx` | `RowActions` — the icon at the end of a row's header that clears the row or undoes the clear (T-046) |
 | `rowClear.ts` | `rowLessonFields()`, `rowHasLesson()`, `rowClearReducer()`, `rowIcon()` — the row's clear/undo state, until the save (T-046) |
 | `both-weeks-toggle.tsx` | `BothWeeksToggle` — the row's «в обох тижнях» checkbox, drawn as an icon (T-043) |
-| `bothWeeks.ts` | `rowLine()`, `shownLine()`, `untrackedToggles()` — the row's line of text and the toggles T-047 leaves out (T-043) |
+| `bothWeeks.ts` | `rowLine()`, `shownLine()`, `rowIsBlank()`, `untrackedToggles()` — the row's line of text and the toggles T-047 leaves out (T-043) |
 | `week-grid.tsx` | seven `DayForm`s |
 | `switchers.tsx`, `boundary-form.tsx`, `copy-parity-form.tsx`, `version-notice.tsx` | the controls around the grid |
 
@@ -315,8 +315,10 @@ every row, so the cards stay aligned. `rowLine(view, parity, own, other)`
 gives up to three candidate texts from the stored payloads of the two weeks,
 each rendered as a `truncate` span with `data-both-line` and the whole text in
 `title`; `app/globals.css` shows one, from `[data-both-toggle]:checked` and
-whether every `[data-lesson-field]` of the row is `:placeholder-shown` —
-`shownLine()` states the same rule for the tests:
+whether the row is empty — the row's `data-row-blank`, which `BothWeeksToggle`
+keeps equal to `rowIsBlank()` (trimmed, as the save reads it) once hydrated,
+or, without JavaScript, every `[data-lesson-field]` being
+`:placeholder-shown`. `shownLine()` states the same rule for the tests:
 
 | toggle | row | other week | line |
 |---|---|---|---|

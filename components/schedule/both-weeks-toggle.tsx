@@ -1,6 +1,12 @@
+"use client";
+
 import { Link2, Link2Off } from "lucide-react";
+import { useEffect, useRef } from "react";
+import type { ScheduleView } from "@/lib/db/schema/enums";
 import { templateBothWeeksField } from "@/lib/validation/templateDay";
+import { rowIsBlank } from "./bothWeeks";
 import { BOTH_WEEKS_LABELS } from "./labels";
+import { rowLessonFields } from "./rowClear";
 
 /**
  * A row's «в обох тижнях» toggle (T-043, ADR-025): a native checkbox, drawn as
@@ -13,18 +19,52 @@ import { BOTH_WEEKS_LABELS } from "./labels";
  * two differ in shape as well as colour. Below `md`, where the form is the
  * one-day view, the words are shown beside the icon; from `md` up the icon
  * stands alone and the words are its hover hint.
+ *
+ * The one thing it does with JavaScript: it keeps `data-row-blank` on its row
+ * up to date with `rowIsBlank()`, so the row's line treats a row of spaces as
+ * empty, as the save will. Without JavaScript the CSS falls back to
+ * `:placeholder-shown`, which is the same answer for every row but that one.
  */
 export function BothWeeksToggle({
+  view,
   lessonNumber,
   defaultChecked,
 }: {
+  view: ScheduleView;
   lessonNumber: number;
   defaultChecked: boolean;
 }) {
   const label = BOTH_WEEKS_LABELS.toggle(lessonNumber);
+  const labelRef = useRef<HTMLLabelElement>(null);
+  const namesKey = rowLessonFields(view, lessonNumber).join(" ");
+
+  useEffect(() => {
+    const row = labelRef.current?.closest<HTMLElement>("[data-both-row]");
+    const form = labelRef.current?.closest("form");
+    if (!row || !form) return;
+    const names = namesKey.split(" ");
+    const mark = () => {
+      const values = names.map((name) => {
+        const element = form.elements.namedItem(name);
+        return element instanceof HTMLInputElement ? element.value : "";
+      });
+      row.dataset.rowBlank = String(rowIsBlank(values));
+    };
+    // `reset` fires before the browser puts the defaults back.
+    const onReset = () => queueMicrotask(mark);
+    mark();
+    form.addEventListener("input", mark);
+    form.addEventListener("reset", onReset);
+    return () => {
+      form.removeEventListener("input", mark);
+      form.removeEventListener("reset", onReset);
+      delete row.dataset.rowBlank;
+    };
+  }, [namesKey]);
 
   return (
     <label
+      ref={labelRef}
       className="text-muted-foreground inline-flex h-6 shrink-0 cursor-pointer items-center gap-1 text-xs"
       title={label}
     >

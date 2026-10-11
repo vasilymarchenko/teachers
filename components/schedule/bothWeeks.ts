@@ -71,6 +71,16 @@ export function rowLine(
   return { off, filled, empty };
 }
 
+/**
+ * Whether a row's lesson fields hold no lesson — as the save reads them, after
+ * trimming, so a row of spaces is empty. CSS alone can only tell an input that
+ * shows its placeholder; with JavaScript on, `BothWeeksToggle` writes this
+ * answer onto the row (`data-row-blank`) and the CSS prefers it.
+ */
+export function rowIsBlank(values: readonly string[]): boolean {
+  return values.every((value) => value.trim() === "");
+}
+
 /** Which candidate the CSS shows — the rule of `app/globals.css`, for tests. */
 export function shownLine(
   line: RowLine,
