@@ -70,6 +70,10 @@ ticket that builds part of a feature names `docs/features/<slug>/` in its
 
 ### Sections
 
+Every sentence rests on the user's answers and on the current documents —
+never on `docs/specs/specification.md`, which is the idea the product started
+from (`ADR-030`); views have moved since.
+
 In this order, with these headings:
 
 1. **Сира ідея** — the user's words as they first gave them, verbatim, as a
@@ -93,22 +97,87 @@ In this order, with these headings:
    interview, each with the reason it was rejected, in the user's words.
 7. **Ризики** — how the feature could fail the teacher: what triggers it and
    what the teacher meets. Found by a reviewer that saw the idea and not the
-   interview.
+   interview, and kept by the user — or named by the user in the interview.
+   A risk the user dropped is not in the list: it goes, with the user's
+   reason, into one HTML comment at the end of the section, so that a later
+   review does not raise it again.
 8. **Відкриті питання** — what the interview did not settle (below).
 
 A section with nothing in it says so in one line («Немає.»); it is not dropped.
+
+### Skeleton
+
+The file starts with §1 after the frontmatter; there is no title heading.
+
+```markdown
+## 1. Сира ідея
+
+> the user's words, verbatim
+
+## 2. Проблема
+
+Prose.
+
+## 3. Ідея
+
+Prose.
+
+**Що змінюється**
+- S-016 · Поставити інший урок на одну дату — what changes in it.
+- Новий намір: what the teacher can now do.
+
+**Що не змінюється**
+- S-NNN · its title — what stays exactly as now.
+
+**У якому порядку**  <!-- only when the feature arrives in parts -->
+1. …
+
+## 4. Що вчитель отримає
+
+- The action — what the teacher sees after it.
+
+## 5. Межі
+
+- What the feature does not do.
+
+## 6. Відкинуті шляхи
+
+- The path — why it was rejected, in the user's words.
+
+## 7. Ризики
+
+- What triggers it — what the teacher meets.
+
+<!-- відкинуто:
+- the risk — the user's reason.
+-->
+
+## 8. Відкриті питання
+
+- The question? What each answer would change.
+- A question a ticket waits on. <!-- Q-NNN -->
+```
+
+The `<!-- Q-NNN -->` comment is never there when the idea is agreed; it is
+added later, as «Open questions» says.
 
 ### Word budget
 
 The body — without the frontmatter, the raw idea and the HTML comments — stays
 within **1200 words**. An idea that does not fit is usually two features.
+When the user splits one off, its §1 is the whole raw idea of the one it came
+from, verbatim, followed by `<!-- split from <slug> -->`; its §3 says which
+part of that raw idea it takes.
 
 ## Open questions
 
 An open question lives in `idea.md` §8, in Ukrainian, with what each answer
 would change. It becomes a backlog question only when a ticket has to wait on
-it: then a `Q-NNN` is filed under `docs/backlog/CLAUDE.md` and its id is put in
-an HTML comment after the question — `<!-- Q-NNN -->`. An answer is a change
+it, so not while the idea is agreed — there is no ticket yet. Whoever writes a
+ticket that builds part of the feature reads §8: for a question that ticket
+waits on, they file a `Q-NNN` under `docs/backlog/CLAUDE.md`, put it in the
+ticket's `depends_on`, and add its id in an HTML comment after the question —
+`<!-- Q-NNN -->`, a direct change to `idea.md`. An answer is a change
 to what was agreed, and goes the way «Changes after agreement» says: the answer
 goes into the section it decides, the question leaves §8, and the `Q-NNN`, if
 there was one, is closed by the backlog's rules.
@@ -127,6 +196,13 @@ to its section. A term is never used in `idea.md` before it is in the glossary.
 - A change to §3, §4 or §5 changes what was agreed, and so does an answer to
   an open question, wherever it lands. It goes through `/teachers-idea` on the
   same slug, which interviews only the change and asks for confirmation again;
-  `updated` moves, `agreed` does not.
+  `updated` moves, `agreed` does not. A `done` idea may be revised too: what
+  it now promises is not built, so its status goes back to `agreed`. What the
+  catalogue already holds from it stays there as current behaviour; only the
+  revision waits to be folded in (`docs/scenarios/CLAUDE.md`, «Feature
+  layers»).
+- Before the idea is merged, a change to §3, §4 or §5 on its branch — one a
+  review asks for, say — goes through `/teachers-idea` on that branch the
+  same way.
 - A correction that changes no meaning — a typo, a wrong scenario id — is a
   direct change.
