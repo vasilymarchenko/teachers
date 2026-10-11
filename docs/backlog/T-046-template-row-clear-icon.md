@@ -2,7 +2,7 @@
 id: T-046
 type: ticket
 title: Template editor — a lesson row is cleared by an icon, and the clear can be undone before saving
-status: todo
+status: in-progress
 depends_on: [T-010, T-047]
 refs:
   - docs/specs/specification.md §5.1
@@ -61,3 +61,6 @@ Out of scope: removing a lesson without saving the day, a confirmation
 dialog, and the override form under the calendar (T-011).
 
 ## Notes
+
+In progress on `claude/ticket-t-046-row-clear-icon`: implemented; the
+criteria are ticked after the review.

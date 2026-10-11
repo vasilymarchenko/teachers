@@ -264,6 +264,28 @@ what keeps the day switcher a set of plain links. The week's columns depend on
 the view — seven across for `OWN` at `xl`, wrapping over two or three for
 `CLASS`, whose cell has four fields (overview §10.2).
 
+**The row header is the place of a row's actions.** It is one line of fixed
+height — «3 · 10:15», then the row's icons — so the seven cards stay on the
+same rows whether or not a row shows an icon. Today it holds one
+(`components/schedule/row-actions.tsx`, rules in `rowClear.ts`, T-046):
+
+- **Clear** — shown on a row with at least one non-empty lesson field (the
+  inputs of `TEMPLATE_SLOT_FIELDS[view]` for that lesson number). It empties
+  those inputs and nothing else, submits nothing (`type="button"`), and
+  dispatches a bubbling `input` event on each field it changed, which is how
+  `TrackedForm` sees it (T-047). The lesson is removed by the day's
+  «Зберегти», as for a row emptied by hand (§1).
+- **Undo** — in the same place, on a row emptied by the clear: it restores the
+  values the row held just before the clear, unsaved edits included, with the
+  same `input` events. Typing into the row again drops what the clear kept and
+  shows the clear icon; so does any reset of the form, which React performs
+  after every submission — a clear is undone only before the save.
+
+Both are one `lucide-react` icon button of at least 24×24 px, named after the
+lesson («Очистити урок 3», «Відновити урок 3») as its accessible name and its
+hover hint. Nothing is rendered before hydration: with JavaScript off the form
+has no icons and saves as before.
+
 ---
 
 ## 6. What the teacher is told about versions

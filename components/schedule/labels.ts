@@ -64,6 +64,16 @@ export function lessonRowLabel(row: LessonRow): string {
     : `${row.lessonNumber} · ${row.timeFrom}`;
 }
 
+/**
+ * The icon at the end of a row's header (T-046): its accessible name and its
+ * hover hint, naming the lesson — seven «Очистити» on one screen would not say
+ * which.
+ */
+export const ROW_ACTION_LABELS = {
+  clear: (lessonNumber: number) => `Очистити урок ${lessonNumber}`,
+  undo: (lessonNumber: number) => `Відновити урок ${lessonNumber}`,
+};
+
 /** «Скопіювати з чисельника» — specification §5.1, glossary §3. */
 export const COPY_LABELS: Record<Parity, string> = {
   NUMERATOR: "Скопіювати з чисельника у знаменник",
