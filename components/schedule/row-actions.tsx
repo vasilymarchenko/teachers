@@ -33,6 +33,7 @@ export function RowActions({
   lessonNumber: number;
 }) {
   const anchorRef = useRef<HTMLSpanElement>(null);
+  const syncRef = useRef<(() => void) | null>(null);
   const [state, setState] = useState<RowClearState | null>(null);
   const names = rowLessonFields(view, lessonNumber);
   const namesKey = names.join(" ");
@@ -63,9 +64,11 @@ export function RowActions({
       queueMicrotask(() => apply({ type: "reset", values: read() }));
     form.addEventListener("input", onInput);
     form.addEventListener("reset", onReset);
+    syncRef.current = onInput;
     return () => {
       form.removeEventListener("input", onInput);
       form.removeEventListener("reset", onReset);
+      syncRef.current = null;
     };
     // `names` is rebuilt every render; its contents are what matter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -75,7 +78,7 @@ export function RowActions({
   // save that changed what this row shows. Reading the row is cheap, and the
   // reducer returns the same state when nothing changed.
   useEffect(() => {
-    apply({ type: "read", values: read() });
+    syncRef.current?.();
   });
 
   const activate = (event: RowClearEvent) => {
