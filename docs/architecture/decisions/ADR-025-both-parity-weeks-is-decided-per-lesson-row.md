@@ -1,7 +1,7 @@
 ---
 id: ADR-025
 title: Whether a template save covers both parity weeks is decided per lesson row, not per day
-status: proposed
+status: accepted
 date: 2026-10-04
 ticket: T-043
 ---

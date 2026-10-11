@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parityEnum, weekdayEnum } from "@/lib/db/schema/enums";
 import {
+  BOTH_WEEKS_LABELS,
   COPY_LABELS,
   DAY_LABELS,
   lessonRowLabel,
@@ -53,5 +54,20 @@ describe("lessonRowLabel", () => {
 
   it("shows the number alone when that lesson has no bell", () => {
     expect(lessonRowLabel({ lessonNumber: 8 })).toBe("8");
+  });
+});
+
+describe("the «в обох тижнях» labels (T-043)", () => {
+  it("names the toggle after its lesson", () => {
+    expect(BOTH_WEEKS_LABELS.toggle(3)).toBe("Урок 3 — в обох тижнях");
+  });
+
+  it("lists exactly the lessons the save changed in the other week", () => {
+    expect(BOTH_WEEKS_LABELS.saved("DENOMINATOR", [2, 4])).toBe(
+      "Також змінено у знаменнику: урок 2, урок 4",
+    );
+    expect(BOTH_WEEKS_LABELS.saved("NUMERATOR", [1])).toBe(
+      "Також змінено у чисельнику: урок 1",
+    );
   });
 });

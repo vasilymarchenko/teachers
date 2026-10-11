@@ -150,3 +150,23 @@
     @apply text-xl leading-snug font-medium;
   }
 }
+
+/*
+ * The line under a template row's header (T-043, `components/schedule/
+ * bothWeeks.ts`): the server renders every sentence the row could need, and
+ * these rules show the one that fits the «в обох тижнях» checkbox and whether
+ * every lesson field of the row is empty — so it needs no JavaScript.
+ * `shownLine()` states the same rule for the tests.
+ */
+@layer components {
+  [data-both-row] [data-both-line] {
+    display: none;
+  }
+  [data-both-row]:not(:has([data-both-toggle]:checked)) [data-both-line="off"],
+  [data-both-row]:has([data-both-toggle]:checked):has([data-lesson-field]:not(:placeholder-shown))
+    [data-both-line="filled"],
+  [data-both-row]:has([data-both-toggle]:checked):not(:has([data-lesson-field]:not(:placeholder-shown)))
+    [data-both-line="empty"] {
+    display: block;
+  }
+}

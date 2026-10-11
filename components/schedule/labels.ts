@@ -74,6 +74,55 @@ export const ROW_ACTION_LABELS = {
   undo: (lessonNumber: number) => `Відновити урок ${lessonNumber}`,
 };
 
+/**
+ * The other parity week, in the grammatical forms the sentences below need —
+ * «у знаменник», «у знаменнику», «зі знаменника».
+ */
+const OTHER_WEEK: Record<
+  Parity,
+  { name: string; into: string; at: string; from: string }
+> = {
+  NUMERATOR: {
+    name: "Чисельник",
+    into: "чисельник",
+    at: "у чисельнику",
+    from: "з чисельника",
+  },
+  DENOMINATOR: {
+    name: "Знаменник",
+    into: "знаменник",
+    at: "у знаменнику",
+    from: "зі знаменника",
+  },
+};
+
+/**
+ * A row's «в обох тижнях» toggle and the line under its header (T-043,
+ * ADR-025, glossary §3). `other` is always the parity week that is **not** on
+ * the screen: the one the toggle writes into.
+ */
+export const BOTH_WEEKS_LABELS = {
+  /** The toggle's accessible name and hover hint, naming the lesson. */
+  toggle: (lessonNumber: number) => `Урок ${lessonNumber} — в обох тижнях`,
+  /** The words beside the icon on the one-day view. */
+  short: "в обох тижнях",
+  /** Toggle off, the row differs: what the other week has there. */
+  otherHas: (other: Parity, lesson: string) => `${OTHER_WEEK[other].name}: ${lesson}`,
+  otherEmpty: (other: Parity) => `${OTHER_WEEK[other].name}: уроку немає`,
+  /** Toggle on: what the save will do in the other week. */
+  willAdd: (other: Parity) => `додасть урок у ${OTHER_WEEK[other].into}`,
+  willReplace: (other: Parity, subject: string) =>
+    `замінить «${subject}» ${OTHER_WEEK[other].at}`,
+  willWrite: (other: Parity) => `зміни запишуться і в ${OTHER_WEEK[other].into}`,
+  willRemove: (other: Parity, subject: string) =>
+    `видалить «${subject}» ${OTHER_WEEK[other].from}`,
+  /** After the save: the lessons it changed in the other week. */
+  saved: (other: Parity, lessonNumbers: readonly number[]) =>
+    `Також змінено ${OTHER_WEEK[other].at}: ${lessonNumbers
+      .map((lessonNumber) => `урок ${lessonNumber}`)
+      .join(", ")}`,
+};
+
 /** «Скопіювати з чисельника» — specification §5.1, glossary §3. */
 export const COPY_LABELS: Record<Parity, string> = {
   NUMERATOR: "Скопіювати з чисельника у знаменник",

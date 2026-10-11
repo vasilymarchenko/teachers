@@ -1,8 +1,9 @@
 import type { Parity, Weekday } from "@/lib/db/schema/enums";
+import type { SlotPayload } from "@/lib/validation/slotPayload";
 import type { TemplateSlotInput } from "./types";
 
 /**
- * The two ways a teacher changes the set of slots in a `ScheduleTemplate`
+ * The ways a teacher changes the set of slots in a `ScheduleTemplate`
  * version — specification §5.1, and the `mutate` half of the write path
  * described in `docs/architecture/design/T-010-weekly-template-editor.md` §2.
  *
@@ -19,6 +20,11 @@ import type { TemplateSlotInput } from "./types";
 
 /** Which cells of the weekly grid one form owns — one column of one week. */
 export type SlotCell = { weekday: Weekday; parity: Parity };
+
+/** The parity week that is not `parity` — `parity` has exactly two values. */
+export function otherParity(parity: Parity): Parity {
+  return parity === "NUMERATOR" ? "DENOMINATOR" : "NUMERATOR";
+}
 
 /**
  * The slot set with one day of one parity week replaced by `next`.
@@ -52,6 +58,64 @@ export function replaceDaySlots(
       !rows.has(slot.lessonNumber),
   );
   return [...kept, ...next];
+}
+
+/**
+ * One save of the day form — the week on the screen, plus the rows the teacher
+ * switched to «в обох тижнях» (ADR-025).
+ *
+ * The week on the screen is replaced at `covered`, exactly as
+ * `replaceDaySlots()` does. In the other parity week only the lesson numbers in
+ * `bothWeeks` are replaced — with the submitted lesson, or by its absence when
+ * the row was emptied. Every other slot of the other week is carried through:
+ * a row whose toggle is off is a one-week edit, whatever the two weeks hold.
+ * A number in `bothWeeks` that the form did not render speaks for nothing and
+ * is ignored, for the reason `covered` exists.
+ *
+ * `changedInOther` is the lesson numbers whose slot in the other week is not
+ * what it was — what the form reports after the save. A row switched on but
+ * already equal in both weeks is not among them. Equality is `same`, passed in
+ * because the payload is opaque here (`sameLesson()` in
+ * `lib/validation/slotFields.ts`).
+ */
+export function saveDaySlots(
+  slots: readonly TemplateSlotInput[],
+  cell: SlotCell,
+  next: readonly TemplateSlotInput[],
+  covered: readonly number[],
+  bothWeeks: readonly number[],
+  same: (a: SlotPayload | undefined, b: SlotPayload | undefined) => boolean,
+): { slots: TemplateSlotInput[]; changedInOther: number[] } {
+  const rows = new Set(covered);
+  const linked = covered.filter((lessonNumber) => bothWeeks.includes(lessonNumber));
+  const other: SlotCell = { weekday: cell.weekday, parity: otherParity(cell.parity) };
+
+  const payloadAt = (
+    set: readonly TemplateSlotInput[],
+    at: SlotCell,
+    lessonNumber: number,
+  ): SlotPayload | undefined =>
+    set.find(
+      (slot) =>
+        slot.weekday === at.weekday &&
+        slot.parity === at.parity &&
+        slot.lessonNumber === lessonNumber,
+    )?.payload;
+
+  const copied = next
+    .filter((slot) => rows.has(slot.lessonNumber) && linked.includes(slot.lessonNumber))
+    .map((slot) => ({ ...slot, weekday: other.weekday, parity: other.parity }));
+
+  const changedInOther = linked.filter(
+    (lessonNumber) =>
+      !same(payloadAt(slots, other, lessonNumber), payloadAt(copied, other, lessonNumber)),
+  );
+
+  const own = replaceDaySlots(slots, cell, next, covered);
+  return {
+    slots: replaceDaySlots(own, other, copied, linked),
+    changedInOther,
+  };
 }
 
 /**

@@ -2,7 +2,7 @@
 id: T-043
 type: ticket
 title: Template editor — a lesson row is written into both parity weeks by a per-row toggle, and the form shows where the weeks differ
-status: todo
+status: in-progress
 depends_on: [T-010, T-046, T-047]
 refs:
   - docs/specs/specification.md §5.1
@@ -132,3 +132,9 @@ Rewritten on 2026-10-04, before any work started, from a day-level checkbox
 to a per-row toggle: ADR-025, which supersedes ADR-021. Revised the same day
 after the reviews of #49: it follows T-046 and T-047, reports after the save
 what it wrote into the other week, and its toggle opens off (ADR-025).
+
+Implemented on 2026-10-11: `saveDaySlots()` in `templateSlots.ts`,
+`sameLesson()` in `slotFields.ts`, the toggle and the row's line in
+`components/schedule/`; the mechanics are in
+`design/T-010-weekly-template-editor.md` §1, §2 and §5. Remaining: the
+review and the acceptance criteria ticked against evidence.

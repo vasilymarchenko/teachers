@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { slotPayloadFor } from "./slotPayload";
 import {
+  echoBothWeeks,
+  readTemplateBothWeeks,
   readTemplateDay,
+  templateBothWeeksField,
   templateDayFieldErrors,
   templateDayInputFor,
   templateSlotField,
@@ -231,6 +234,32 @@ describe("readTemplateDay", () => {
         row(1, { subject: " Математика ", className: "7-А" }),
         row(4),
       ],
+    });
+  });
+});
+
+describe("the «в обох тижнях» toggles (T-043)", () => {
+  const submitted = () => {
+    const formData = new FormData();
+    formData.set(templateBothWeeksField(2), "on");
+    formData.set(templateBothWeeksField(9), "on"); // not a row the form showed
+    formData.set(templateSlotField(1, "subject"), "Фізика");
+    return formData;
+  };
+
+  it("reads one boolean per rendered lesson number", () => {
+    expect(readTemplateBothWeeks(submitted(), [1, 2, 3])).toEqual([2]);
+  });
+
+  it("echoes every toggle after a refusal, the off ones as well", () => {
+    // An unchecked box is absent from the submission; the echo names it.
+    expect(
+      echoBothWeeks({ [templateSlotField(1, "subject")]: "Фізика" }, submitted(), [1, 2, 3]),
+    ).toEqual({
+      [templateSlotField(1, "subject")]: "Фізика",
+      [templateBothWeeksField(1)]: "",
+      [templateBothWeeksField(2)]: "on",
+      [templateBothWeeksField(3)]: "",
     });
   });
 });
