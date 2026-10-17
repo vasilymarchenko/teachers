@@ -29,6 +29,11 @@ for reading. Order is priority; the ID number is not.
 | [T-033](T-033-review-scope-and-effort.md) | Scope /teachers-review to the change under review, and make its effort level a parameter | done | T-017 |
 | [T-034](T-034-bound-the-ticket-loop-context.md) | Bound the context a /teachers-ticket run accumulates | in-progress | T-033 |
 | [T-035](T-035-land-a-pull-request.md) | /teachers-land — the fix-and-merge loop for a pull request with no ticket bound | todo | T-034 |
+| [T-066](T-066-agents-md-root-instructions.md) | Root instructions live in AGENTS.md, and CLAUDE.md imports them | todo | — |
+| [T-067](T-067-codex-finds-the-skills.md) | Codex finds the project skills — .agents/skills links to .claude/skills, and a test holds the link | todo | T-066 |
+| [T-068](T-068-skills-name-capabilities-not-tools.md) | Skills and agents name a capability, not a Claude Code tool — one map in AGENTS.md binds each to both agents | todo | T-066, T-067 |
+| [T-069](T-069-codex-subagent-adapters.md) | Codex subagent adapters — one .codex/agents TOML per project agent, pointing at its body | todo | T-068 |
+| [T-070](T-070-codex-session-start-hook.md) | A Codex session starts from a current main — the same SessionStart script, registered in .codex/hooks.json | todo | T-066 |
 | [T-002](T-002-project-scaffold.md) | Project scaffold — Next.js, Drizzle, Vitest, Postgres in Compose | done | — |
 | [T-001](T-001-expand-fixtures.md) | Golden fixtures for `expand()` — the hard-week walkthrough | done | — |
 | [T-003](T-003-db-schema-design.md) | Detailed DB schema design document | done | T-001 |
@@ -171,12 +176,18 @@ T-064 hangs off T-063 and is not drawn: the interview it adds reads the
 catalogue that ticket wrote, and nothing in the diagram waits on it.
 T-065 hangs off T-012 for the information-event form whose refusal it
 corrects; it is not drawn, and nothing in the diagram waits on it.
+T-066 to T-070 are the harness made readable by Codex as well as Claude Code
+(`ADR-031`), and are absent from the diagram for the same reason as the rest of
+the tooling work. T-066 depends on nothing: it moves the root instructions every
+other step names. T-067 and T-070 hang off it, T-068 hangs off T-066 for the
+section of `AGENTS.md` it adds and off T-067 for the skill references it
+rewrites, and T-069 hangs off T-068, whose map its adapters dispatch through.
 
 ## Coverage
 
 The tickets above cover the first release as scoped in `docs/specs/specification.md`
 §2 — sections §3–§7 of the specification — plus the deployment path from
-`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-063 and T-064 are
+`docs/tech-stack.md`. T-017, T-018, T-019, T-022, T-023, T-027, T-029, T-030, T-031, T-032, T-033, T-034, T-035, T-036, T-037, T-063, T-064 and T-066–T-070 are
 not product scope: they are the review tooling those tickets are checked by, and
 the documents that tooling reads. T-024 is not product scope either, and is not review tooling: it
 is the deployment path checking itself, which is why it hangs off T-015 rather
