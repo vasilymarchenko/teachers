@@ -34,11 +34,21 @@ sets the model. The caller enforces that a review round edited nothing.
       instructions say only to read and follow `.claude/agents/<name>.md`,
       with the frontmatter ignored. Neither claims a sandbox the recorded
       version does not enforce.
-- [ ] `teachers-fix-loop` records `HEAD` and the working tree's status before it
-      dispatches a review round. When the round returns, it refuses the round,
-      and says so, if either has changed. The same holds in `teachers-review`
-      for the contract pass. `harness.md` §8 states this check as what
-      enforces "never edits" in Codex.
+- [ ] Before `teachers-fix-loop` dispatches a review round, it records `HEAD`
+      and a content fingerprint of the index, the tracked working tree and the
+      untracked files git does not ignore. When the round returns, it refuses
+      the round, and says so, if any of them differs. The same holds in
+      `teachers-review` for the contract pass. One command or script computes
+      the fingerprint, and both skills call it. `harness.md` §8 states this
+      check as what enforces "never edits" in Codex.
+- [ ] The fingerprint has a test. It must change for each of these, made after
+      the fingerprint was taken:
+  - a tracked file that was already modified is edited again, leaving its
+    `git status --porcelain` line unchanged;
+  - a staged-only change;
+  - a new untracked file.
+
+  It must not change when only an ignored path such as `.gate/` is written.
 - [ ] A test in `scripts/gate/` holds `.claude/agents/*.md` and
       `.codex/agents/*.toml` one-to-one by name. It fails when an adapter
       names a body path that does not exist, or carries instructions beyond

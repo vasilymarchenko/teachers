@@ -117,8 +117,9 @@ hold nothing of their own:
    In Codex, a body's "never edits" is an instruction, not a sandbox: the
    subagent has its parent's permissions. What enforces it in both agents is
    the caller. After a review subagent returns, the caller checks that `HEAD`
-   and the working tree are what they were before it ran, and refuses the
-   round otherwise.
+   and the contents of the index, the working tree and the untracked files
+   git does not ignore are what they were before it ran, and refuses the
+   round otherwise. A status listing is not a content check.
 4. **The `SessionStart` hook** is one script,
    `.claude/hooks/session-start-fetch.sh`, registered by both
    `.claude/settings.json` and `.codex/hooks.json`. In Codex the hook may be
