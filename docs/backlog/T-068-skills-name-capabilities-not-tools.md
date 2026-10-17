@@ -13,6 +13,7 @@ refs:
   - .claude/skills/teachers-scenarios/SKILL.md
   - .claude/skills/teachers-fix-loop/SKILL.md
   - .claude/agents/teachers-review-round.md
+  - .claude/agents/teachers-review-contract.md
   - scripts/gate/skills.test.ts
   - docs/architecture/harness.md
 ---
@@ -28,12 +29,18 @@ keeps tool names out of the bodies.
 ## Acceptance criteria
 
 - [ ] `AGENTS.md` has one section that lists each capability the bodies use,
-      with its Claude Code binding and its Codex binding. At least these:
-      ask the user structured questions (`AskUserQuestion`); dispatch a named
-      project subagent; dispatch a planner (`Plan`); dispatch a read-only
+      with its Claude Code binding and its Codex binding. It covers every tool
+      name the bodies use that is not the same in both agents, and at least
+      these: ask the user structured questions (`AskUserQuestion`); dispatch a
+      named project subagent; dispatch a planner (`Plan`); dispatch a read-only
       explorer (`Explore`); dispatch a general subagent (`general-purpose`);
       invoke another skill (`Skill`); run the generic correctness review
-      (`/code-review`).
+      (`/code-review`); report findings to the host (`ReportFindings`); run a
+      shell command (`Bash`). `## Notes` records the search over the bodies
+      that produced the list.
+- [ ] The map's entry for invoking another skill is where the invocation
+      syntax `T-067` wrote into `AGENTS.md` now lives, and `AGENTS.md` states
+      it once.
 - [ ] For the generic correctness review, the Codex binding states what runs,
       and what each `--effort` level of `teachers-review` buys there. The
       review report names the binding that ran.
@@ -41,7 +48,9 @@ keeps tool names out of the bodies.
       asking is denied" rules apply when no structured-question tool exists.
 - [ ] No skill or agent body names a tool from the map outside a quotation of
       the map's section. A test in `scripts/gate/skills.test.ts` enforces it
-      over every `SKILL.md` and every agent definition.
+      over every `SKILL.md` and every agent definition. The frontmatter of a
+      Claude Code agent definition is its adapter, not its body, and is
+      exempt.
 - [ ] `teachers-review` keeps its `--effort` vocabulary. Its phase 1 table
       states the levels as its own, and states their meaning in each binding
       by reference to the map.

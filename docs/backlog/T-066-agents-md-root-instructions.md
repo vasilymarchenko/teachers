@@ -34,10 +34,10 @@ session reads the same text.
       into that directory, for an agent that does not load it on its own. The
       subtree files (`docs/backlog/`, `docs/features/`, `docs/scenarios/`)
       keep their names.
-- [ ] Every reference to the root instructions in a living document — the
-      skills, the agents, the subtree `CLAUDE.md` files, `harness.md`,
-      `README.md`, the `docs/architecture/decisions/README.md` — names
-      `AGENTS.md`. ADRs and `done` tickets are not edited.
+- [ ] Every file that cites the root `CLAUDE.md` for one of its rules — a
+      document, a skill, an agent, or a code comment — cites `AGENTS.md`
+      instead. ADRs and `done` tickets are not edited. `## Notes` records the
+      search that found no citation left.
 - [ ] `docs/architecture/harness.md` §1 lists `AGENTS.md` as the root
       instructions and `CLAUDE.md` as Claude Code's import of them.
 - [ ] `npm run gate` passes.

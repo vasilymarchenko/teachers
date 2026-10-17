@@ -37,7 +37,8 @@ body and sets the model and sandbox.
 - [ ] `teachers-fix-loop` running in Codex dispatches `teachers-review-round`
       as a subagent and receives only the round's JSON. A run is done by hand
       on a pull request and recorded in `## Notes`.
-- [ ] `docs/architecture/harness.md` §8 lists each subagent's Codex adapter.
+- [ ] `docs/architecture/harness.md` §8 lists each subagent's Codex adapter,
+      and the subagent rows of §1 name both agents.
 - [ ] `npm run gate` passes.
 
 ## Notes

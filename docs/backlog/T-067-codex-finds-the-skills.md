@@ -27,9 +27,9 @@ agent invokes a skill.
       a symlink (including a checkout that wrote it as a file), or resolves
       anywhere but `.claude/skills`. Its failure message names
       `core.symlinks` as the usual cause on Windows.
-- [ ] `changeKind()` and the path routing in `scripts/gate/checks.ts` classify a
-      path under `.agents/` the way they classify the same path under
-      `.claude/`, and `checks.routing.test.ts` covers it.
+- [ ] `checks.routing.test.ts` asserts that a diff changing only
+      `.agents/skills` is a `code` change, so the gate runs the link test on
+      the one change that can break the link.
 - [ ] Codex, at the version recorded in `## Notes`, lists all six skills in
       this repository. The check is done by hand and recorded with the command
       used.
