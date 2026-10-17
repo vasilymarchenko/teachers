@@ -15,8 +15,9 @@ where Claude Code looks for it: the root `CLAUDE.md`, `.claude/skills/`,
 
 Most of it is already agent-neutral: `npm run gate` and everything under
 `scripts/gate/`, `ci.yml`, the state files under `.gate/` (a run started by one
-agent can be resumed by the other with `--resume`), and every document under
-`docs/`. What is not neutral is how an agent finds the rest, and what the rest
+agent can be resumed by the other with `--resume` in the same working tree;
+`.gate/` is git-ignored, so a push or another clone does not carry it), and
+every document under `docs/`. What is not neutral is how an agent finds the rest, and what the rest
 tells it to call:
 
 - **Root instructions.** Codex reads `AGENTS.md`, from the repository root down
@@ -34,10 +35,15 @@ tells it to call:
   files can be shared, but the directories cannot.
 - **Subagents.** Claude Code reads `.claude/agents/*.md`, with `tools` and
   `model` in the frontmatter. Codex defines custom agents in TOML under
-  `.codex/agents/`, with its own fields for instructions, model and sandbox.
-  The formats differ, so one file cannot serve both.
-- **Hook.** Codex reads `SessionStart` hooks from `.codex/hooks.json`, and
-  runs a project's hooks only once the user has trusted that project. The
+  `.codex/agents/`, with its own fields for instructions and model. The
+  formats differ, so one file cannot serve both. A Codex subagent inherits
+  its parent's sandbox and approval settings, and a custom-agent file cannot
+  override them. A Claude Code agent's `tools` list narrows what that agent
+  can call. Codex has no per-agent equivalent.
+- **Hook.** Codex reads `SessionStart` hooks from `.codex/hooks.json`. Two
+  trusts gate a project's hook: the user has to trust the project, and also
+  the exact hook definition. Codex skips a new or changed definition until the
+  user reviews and trusts it. The
   script `.claude/hooks/session-start-fetch.sh` is plain bash and git. Only its
   registration is Claude Code's.
 - **Tool names in the bodies.** The skills and agents name tools that exist only
@@ -102,21 +108,30 @@ hold nothing of their own:
    `docs/scenarios/`) keep their names and paths, and `AGENTS.md` requires them
    to be read before writing into their directory.
 2. **Skills** live in `.claude/skills/`. `.agents/skills` is a relative symlink
-   to `../.claude/skills`, and nothing else is under `.agents/`. A test fails
-   if the link is missing, points elsewhere, or was checked out as a file.
+   to `../.claude/skills`, and nothing else is under `.agents/`. The gate's
+   `hygiene` check, which runs on every kind of change, fails if the link is
+   missing, points elsewhere, or was checked out as a file.
 3. **Subagents**: each body lives in `.claude/agents/<name>.md`. Each Codex
    adapter, `.codex/agents/<name>.toml`, holds only the instruction to read and
-   follow that body, the model, and a sandbox no wider than the body's own
-   limits. A test holds the two sets one-to-one.
+   follow that body, and the model. A test holds the two sets one-to-one.
+   In Codex, a body's "never edits" is an instruction, not a sandbox: the
+   subagent has its parent's permissions. What enforces it in both agents is
+   the caller. After a review subagent returns, the caller checks that `HEAD`
+   and the working tree are what they were before it ran, and refuses the
+   round otherwise.
 4. **The `SessionStart` hook** is one script,
    `.claude/hooks/session-start-fetch.sh`, registered by both
-   `.claude/settings.json` and `.codex/hooks.json`.
-5. **A skill or agent body names a capability, not a tool of one agent** —
-   ask the user, dispatch a named subagent, dispatch a read-only explorer, run
-   the generic correctness review. One section of `AGENTS.md` binds each
-   capability to its tool in each agent, and where Codex has no counterpart it
-   says what Codex does instead. That section is the only place a
-   Claude-only or Codex-only tool name appears in a body's instructions.
+   `.claude/settings.json` and `.codex/hooks.json`. In Codex the hook may be
+   skipped, for an untrusted project or an untrusted or changed definition.
+   A session that cannot see the hook's own output reports the repository
+   state as not verified, as it would if the fetch had failed.
+5. **Where a body tells the agent to use something that differs between the
+   two agents, it names a capability** — ask the user, dispatch a named
+   subagent, dispatch a read-only explorer, run the generic correctness review.
+   One section of `AGENTS.md` binds each capability to its tool in each agent.
+   Where Codex has no counterpart, that section says what Codex does instead.
+   The map holds the differences that change what a run does, and nothing
+   else. A tool name may still appear in an explanation or an example.
 6. **What one agent has and the other cannot do is declared, not emulated.**
    `npm run cost` is Claude Code only, and `harness.md` says so.
 7. **The `teachers-` prefix of `ADR-002` applies to every adapter.** Branch names
@@ -129,11 +144,19 @@ The work is `T-066`–`T-070`.
 Claude Code works exactly as before at every step of the migration. The only
 file it reads differently is the root `CLAUDE.md`, through an import. Codex
 gets the same skills, the same gate, the same state files and the same
-documents, so either agent can resume a run the other started.
+documents. In one working tree, either agent can resume a run the other
+started.
 
 A skill keeps working in Claude Code if the link breaks, but disappears from
-Codex. The link test turns that from a silent loss into a red gate on the
-checkout that has it.
+Codex. Because `hygiene` checks the link on every gate run, that becomes a red
+gate on the checkout that has it, not a silent loss. CI checks out on Linux and
+cannot see a developer's checkout, so the local gate is the only place the
+check can fire.
+
+A reviewer's read-only promise is weaker in Codex than in Claude Code.
+Claude Code withholds the edit tools. Codex only refuses the round after the
+fact. A review subagent that edits anyway costs its round, and it cannot slip
+an edit into the diff unnoticed.
 
 A capability that one agent does better than the other is bound per agent, not
 lowered to the common denominator. The generic correctness pass is the one
@@ -153,3 +176,5 @@ Revisit when:
 - Codex subagents do not reliably follow an adapter's instruction to read their
   body. The TOML is then generated from the body, with a test holding them
   equal.
+- Codex lets a custom agent narrow its own sandbox. Decision 3 then sets one,
+  and the caller's check stays as the second line.

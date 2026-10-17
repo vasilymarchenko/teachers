@@ -7,7 +7,7 @@ depends_on: [T-066]
 refs:
   - docs/architecture/decisions/ADR-031-codex-reads-the-harness-through-thin-adapters.md
   - docs/architecture/decisions/ADR-002-skill-project-prefix.md
-  - scripts/gate/skills.test.ts
+  - scripts/gate/hygiene.ts
   - scripts/gate/checks.ts
   - docs/architecture/harness.md
 ---
@@ -16,20 +16,21 @@ refs:
 
 Give Codex the six project skills without a second copy, as `ADR-031`
 decision 2 states: `.agents/skills` is a relative symlink to `../.claude/skills`,
-a convention test fails if the link is broken, and the documents say how each
-agent invokes a skill.
+the gate fails on any checkout where the link is broken, and the documents say
+how each agent invokes a skill.
 
 ## Acceptance criteria
 
 - [ ] `.agents/skills` is committed as a relative symlink to
       `../.claude/skills`, and nothing else is under `.agents/`.
-- [ ] A test in `scripts/gate/` fails when `.agents/skills` is missing, is not
-      a symlink (including a checkout that wrote it as a file), or resolves
-      anywhere but `.claude/skills`. Its failure message names
-      `core.symlinks` as the usual cause on Windows.
-- [ ] `checks.routing.test.ts` asserts that a diff changing only
-      `.agents/skills` is a `code` change, so the gate runs the link test on
-      the one change that can break the link.
+- [ ] `scripts/gate/hygiene.ts` reports a problem when `.agents/skills` in the
+      working tree is missing, is not a symlink (including a checkout that wrote
+      it as a file), or resolves anywhere but `.claude/skills`. The message
+      names `core.symlinks` as the usual cause on Windows.
+- [ ] `hygiene.test.ts` covers each of those three states, and
+      `checks.routing.test.ts` asserts that `hygiene` is selected for a
+      `documentation` diff, for a diff changing only `.agents/skills`, and
+      for an empty diff.
 - [ ] Codex, at the version recorded in `## Notes`, lists all six skills in
       this repository. The check is done by hand and recorded with the command
       used.

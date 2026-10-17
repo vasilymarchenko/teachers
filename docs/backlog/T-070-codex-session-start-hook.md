@@ -28,10 +28,20 @@ of its elements serve one agent only (decision 6).
 - [ ] `.codex/hooks.json` registers `.claude/hooks/session-start-fetch.sh` on
       `SessionStart`. The script is the same file `.claude/settings.json`
       registers, and it reads no variable only one agent sets.
-- [ ] A Codex session in a trusted checkout runs the hook and shows its output.
-      A session in an untrusted checkout does not, and the root instructions'
-      rule for a session whose hook could not run covers that case. Both are
-      checked by hand and recorded.
+- [ ] `AGENTS.md` states that a session that does not see the hook's own
+      output line reports the repository state as not verified. Skipped and
+      failed are treated the same, and a session never infers that startup
+      refreshed `origin/main`.
+- [ ] These Codex cases are checked by hand, and each is recorded with what the
+      session reported:
+  - an untrusted project: the hook does not run, and the session reports the
+    state as not verified;
+  - a trusted project whose hook definition is not yet trusted: the same;
+  - a trusted project and a trusted hook: the hook runs and the session shows
+    its output;
+  - the hook definition changed after it was trusted: the hook is skipped
+    until it is trusted again, and the session reports the state as not
+    verified.
 - [ ] `docs/architecture/harness.md` §4 describes both registrations.
 - [ ] `docs/architecture/harness.md` §1 and §11 mark `npm run cost` as Claude
       Code only, and every other element of §1 as serving both agents or
